@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:racecar_tracker/Presentation/Pages/sign_in.dart';
+import 'package:racecar_tracker/Presentation/Pages/login_page.dart';
+
 import 'package:racecar_tracker/Presentation/Widgets/onboarding_next_button.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/Utils/Constants/text.dart';
@@ -90,7 +91,7 @@ class _OnBoarding3State extends State<OnBoarding3> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => SignIn()),
+                          MaterialPageRoute(builder: (context) => LoginPage()),
                         );
                       },
                       child: Text(
@@ -151,7 +152,7 @@ class _OnBoarding3State extends State<OnBoarding3> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => SignIn()),
+                            MaterialPageRoute(builder: (context) => LoginPage()),
                           );
                         },
                         child: OnboardingNextButton(

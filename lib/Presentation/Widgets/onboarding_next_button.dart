@@ -4,12 +4,13 @@ import 'package:racecar_tracker/Utils/Constants/ui.dart';
 class OnboardingNextButton extends StatelessWidget {
   final String text;
   final IconData icon;
+  final VoidCallback? onPressed;
  
   const OnboardingNextButton({
     super.key,
     required this.text,
     required this.icon,
-    
+     this.onPressed,
   });
 
   @override
@@ -21,7 +22,7 @@ class OnboardingNextButton extends StatelessWidget {
         color: Color(0xFFFFCC29)
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
