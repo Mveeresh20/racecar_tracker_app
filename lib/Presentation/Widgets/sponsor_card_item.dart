@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:racecar_tracker/Presentation/Pages/sponser_detail_screen.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // For kDefaultPadding
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
+import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/sponsor.dart'; // Import the Sponsor model
 
 class SponsorCardItem extends StatelessWidget {
   final Sponsor sponsor;
+  final List<DealItem> Function(String sponsorName) getDealItemsForSponsor;
 
-  const SponsorCardItem({Key? key, required this.sponsor}) : super(key: key);
+  const SponsorCardItem({
+    Key? key,
+    required this.sponsor,
+    required this.getDealItemsForSponsor,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +25,8 @@ class SponsorCardItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           color: const Color(0xFF13386B),
-          
-      ),
-      
-       // Rounded corners for cards
+        ),
+
         child: Padding(
           padding: const EdgeInsets.all(kDefaultPadding),
           child: Column(
@@ -66,7 +71,9 @@ class SponsorCardItem extends StatelessWidget {
                       ),
                       Text(
                         sponsor.email,
-                        style: context.bodyMedium?.copyWith(color: Colors.white),
+                        style: context.bodyMedium?.copyWith(
+                          color: Colors.white,
+                        ),
                         // Sponsor Email
                       ),
                     ],
@@ -74,7 +81,7 @@ class SponsorCardItem extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 7),
-      
+
               // Parts/Categories
               Wrap(
                 spacing: 8.0, // horizontal space between chips
@@ -83,14 +90,14 @@ class SponsorCardItem extends StatelessWidget {
                     sponsor.parts.map((part) => _buildPartChip(part)).toList(),
               ),
               const SizedBox(height: 12),
-      
+
               // Active Deals, Ends Date, and Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Active Deals: ${sponsor.activeDeals}", // Active Deals
-                    style:context.titleSmall?.copyWith(color: Colors.white),
+                    style: context.titleSmall?.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -99,16 +106,14 @@ class SponsorCardItem extends StatelessWidget {
                   ),
                 ],
               ),
-      
+
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Status Button
                   Container(
-                    padding: const EdgeInsets.all(8
-                      
-                    ),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: sponsor.statusColor, // Dynamic status color
                       borderRadius: BorderRadius.circular(
@@ -121,11 +126,13 @@ class SponsorCardItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-      
+
                   Row(
                     children: [
                       // Action Icons
                       _buildActionButton(Icons.remove_red_eye_outlined, () {
+                        final dealsForThisSponsor = getDealItemsForSponsor(sponsor.name);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SponsorDetailScreen(sponsor: sponsor, sponsorDealItems: dealsForThisSponsor)));
                         // Handle View action
                       }),
                       const SizedBox(width: 8),
@@ -157,21 +164,17 @@ class SponsorCardItem extends StatelessWidget {
 
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(text,style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500,color: Colors.white,),),
-      ));
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
   }
-
-  // Widget _buildPartChip(String text) {
-  //   return Chip(
-  //     label: Text(
-  //       text,
-  //       style: const TextStyle(color: Colors.white, fontSize: 12), // Chip text color
-  //     ),
-  //     backgroundColor: const Color(0xFF32487C), // Chip background color
-  //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-  //   );
-  // }
 
   Widget _buildActionButton(IconData icon, VoidCallback onPressed) {
     return InkWell(

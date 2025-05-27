@@ -7,15 +7,21 @@ enum DealStatusType {
 }
 
 class DealItem {
+  final String id;
+ // Unique ID to fetch full details later
   final String title; // e.g., "ABC Motors X Sarah White"
   final String raceType; // e.g., "Summer Race"
   final String dealValue; // e.g., "$1500"
-  final String commission; // e.g., "10%"
+  final String commission;
+   // e.g., "10%"
   final String renewalDate; // e.g., "June 2026"
   final List<String> parts; // e.g., ["Car Doors", "Suit"]
-  final DealStatusType status; // e.g., DealStatusType.pending
+  final DealStatusType status;
+   // e.g., DealStatusType.pending
 
   DealItem({
+    required this.id,
+    
     required this.title,
     required this.raceType,
     required this.dealValue,

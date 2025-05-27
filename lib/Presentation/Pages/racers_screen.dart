@@ -1,148 +1,187 @@
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
-import 'package:racecar_tracker/Presentation/Widgets/deal_card_item.dart';
+import 'package:racecar_tracker/Presentation/Widgets/race_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
-import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 
-class DealsScreen extends StatefulWidget {
-  const DealsScreen({super.key});
+import 'package:racecar_tracker/models/racer.dart';
+
+class RacersScreen extends StatefulWidget {
+  const RacersScreen({super.key,  });
 
   @override
-  State<DealsScreen> createState() => _DealsScreenState();
+  State<RacersScreen> createState() => _RacersScreenState();
 }
 
-class _DealsScreenState extends State<DealsScreen> {
-  int _currentIndex = 4;
-
-   final TextEditingController _searchController = TextEditingController();
-  List<DealItem> _allDeals = []; // Your full list of deals
-  List<DealItem> _filteredDeals = []; // The list shown in the UI
+class _RacersScreenState extends State<RacersScreen> {
+  int _currentIndex = 2;
+  final TextEditingController _searchController = TextEditingController();
+  List<Racer> _allRacers = []; // Your full list of racers
+  List<Racer> _filteredRacers = []; // The list shown in the UI
 
   @override
   void initState() {
     super.initState();
-    _allDeals = _getSampleDeals(); // Initialize with sample data
-    _filteredDeals = _allDeals; // Initially, show all deals
-    _searchController.addListener(_filterDeals); // Listen for search bar changes
+    _allRacers = _getSampleRacers(); // Initialize with sample data
+    _filteredRacers = _allRacers; // Initially, show all racers
+    _searchController.addListener(
+      _filterRacers,
+    ); // Listen for search bar changes
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_filterDeals);
+    _searchController.removeListener(_filterRacers);
     _searchController.dispose();
     super.dispose();
   }
 
-  void _filterDeals() {
+  void _filterRacers() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredDeals = _allDeals;
+        _filteredRacers = _allRacers;
       } else {
-        _filteredDeals = _allDeals.where((deal) {
-          // Search by title, race type, or parts
-          final titleMatches = deal.title.toLowerCase().contains(query);
-          final raceTypeMatches = deal.raceType.toLowerCase().contains(query);
-          final partsMatches = deal.parts.any((part) => part.toLowerCase().contains(query));
-          return titleMatches || raceTypeMatches || partsMatches;
-        }).toList();
+        _filteredRacers =
+            _allRacers.where((racer) {
+              // Search by name, vehicle model, team, or current event
+              final nameMatches = racer.name.toLowerCase().contains(query);
+              final vehicleMatches = racer.vehicleModel.toLowerCase().contains(
+                query,
+              );
+              final teamMatches = racer.teamName.toLowerCase().contains(query);
+              final eventMatches = racer.currentEvent.toLowerCase().contains(
+                query,
+              );
+              return nameMatches ||
+                  vehicleMatches ||
+                  teamMatches ||
+                  eventMatches;
+            }).toList();
       }
     });
   }
 
-  // --- Sample Deal Data (Replace with your actual data source) ---
-  List<DealItem> _getSampleDeals() {
+  List<Racer> _getSampleRacers() {
     return [
-      DealItem(
-        id: "1",
-        title: "ABC Motors X Sarah White",
-        raceType: "Summer Race",
-        dealValue: "\$1500",
-        commission: "10%",
-        renewalDate: "June 2026",
-        parts: ["Car Doors", "Suit"],
-        status: DealStatusType.pending,
+      Racer(
+        contactNumber: "+88 1234567890", // Example data
+        vehicleNumber: "WB 22 F2004", // Example data
+        activeRaces: 2,
+        totalRaces: 15,
+
+        initials: "WB",
+        vehicleImageUrl: Images.raceCar1, // Example Blue Car
+        name: "Wayne Brotzký",
+        vehicleModel: "Ferrari F2004",
+        teamName: "Speed Rebels",
+        currentEvent: "Summer GP 2025",
+        earnings: "\$5,200",
       ),
-      DealItem(
-        id: "2",
-        title: "DC Auto X Jonathan Meave",
-        raceType: "Drift Race",
-        dealValue: "\$8000",
-        commission: "15%",
-        renewalDate: "August 2026",
-        parts: ["Hood", "Suit", "Side Doors"],
-        status: DealStatusType.paid,
+      Racer(
+        contactNumber: "+88 1545246988", // Matches Racer Detail screen
+        vehicleNumber: "MJ 25 GT 1205", // Matches Racer Detail screen
+        activeRaces: 2, // Matches Racer Detail screen
+        totalRaces: 12,
+        initials: "JM",
+        vehicleImageUrl: Images.raceCar2, // Example Yellow Car
+        name: "Jonathan Lauren",
+        vehicleModel: "Ferrari F2004",
+        teamName: "Speed Rebels",
+        currentEvent: "Summer GP 2025",
+        earnings: "\$2,700",
       ),
-      DealItem(
-        id: "3",
-        title: "Formula One Corp X Max Speed",
-        raceType: "Grand Prix",
-        dealValue: "\$12000",
-        commission: "20%",
-        renewalDate: "July 2027",
-        parts: ["Aerodynamics", "Engine"],
-        status: DealStatusType.pending,
+      Racer(
+        contactNumber: "+88 9876543210",
+        vehicleNumber: "SA 07 MW11",
+        activeRaces: 1,
+        totalRaces: 8,
+        initials: "AH",
+        vehicleImageUrl: Images.raceCar1,
+        name: "Alice Hiller",
+        vehicleModel: "McLaren MP4",
+        teamName: "Velocity Vipers",
+        currentEvent: "Drift Challenge",
+        earnings: "\$3,500",
       ),
-      DealItem(
-        id: "4",
-        title: "Turbo Chargers Inc X Alice Race",
-        raceType: "Circuit Race",
-        dealValue: "\$5000",
-        commission: "12%",
-        renewalDate: "April 2026",
-        parts: ["Turbo Kit", "Exhaust"],
-        status: DealStatusType.paid,
+      Racer(
+        contactNumber: "+88 9876543210",
+        vehicleNumber: "SA 07 MW11",
+        activeRaces: 1,
+        totalRaces: 8,
+        initials: "MS",
+        vehicleImageUrl: Images.raceCar2,
+        name: "Max Speed",
+        vehicleModel: "Porsche 911",
+        teamName: "Turbo Titans",
+        currentEvent: "Circuit Race",
+        earnings: "\$7,800",
       ),
+      Racer(
+        contactNumber: "+88 9876543210",
+        vehicleNumber: "SA 07 MW11",
+        activeRaces: 1,
+        totalRaces: 8,
+        initials: "MS",
+        vehicleImageUrl: Images.raceCar1, // Example Red Car
+        name: "Max Speed",
+        vehicleModel: "Porsche 911",
+        teamName: "Turbo Titans",
+        currentEvent: "Circuit Race",
+        earnings: "\$7,800",
+      ),
+      // Add more sample racers as needed
     ];
   }
 
-  DealDetailItem? _fetchDealDetailItemById(String id) {
-    if (id == "1") {
-      return DealDetailItem(
-        id: "1",
-        title: "ABC Motors X Sarah White",
-        raceType: "Summer Race",
-        totalDealAmount: "\$1,20,000", // Full detail amount
-        yourCommission: "20%", // Full detail commission
-        yourEarn: "\$20,000",
-        renewalReminder: "2 Days Before",
-        startDate: DateTime(2025, 3, 12),
-        endDate: DateTime(2025, 3, 25),
-        parts: ["Car Doors", "Suit", "Tires"], // Potentially more parts in detail
-        brandingImageUrls: [
-          Images.brandingImg1, // Use placeholder image
-          Images.brandingImg2, // Use placeholder image
-        ],
-        status: DealStatusType.pending,
-        sponsorInitials: "AB", // For detail screen
-        racerInitials: "SW", // For detail screen
-      );
-    } else if (id == "2") {
-      return DealDetailItem(
-        id: "2",
-        title: "DC Auto X John Meave",
-        raceType: "Drift Race",
-        totalDealAmount: "\$80,000",
-        yourCommission: "15%",
-        yourEarn: "\$12,000",
-        renewalReminder: "7 Days Before",
-        startDate: DateTime(2024, 8, 1),
-        endDate: DateTime(2024, 12, 31),
-        parts: ["Helmet", "Engine Cover", "Spoilers"],
-        brandingImageUrls: [
-          Images.onboarding1, // Another placeholder image
-        ],
-        status: DealStatusType.paid,
-        sponsorInitials: "DC",
-        racerInitials: "JM",
-      );
+  List<DealItem> _getDealItemsForRacer(String racerName) {
+    switch (racerName) {
+      case "Wayne Brotzký":
+        return [
+          DealItem(
+            id: "1",
+            
+            title: "Wayne Brotzký X DC Autos", // Matches screenshot
+            raceType: "Summer Race", // Matches screenshot
+            dealValue: "\$1500", // Matches screenshot
+            commission: "30", // No commission shown in screenshot for this deal
+            renewalDate: "June 2026", // Matches screenshot
+            parts: [], // No parts shown in screenshot for this deal
+            status: DealStatusType.pending, // Matches screenshot
+          ),
+          DealItem(
+            id: "2",
+            
+            title: "Wayne Brotzký X Sarah White", // Matches screenshot
+            raceType: "Summer Race", // Matches screenshot
+            dealValue: "\$1500", // Matches screenshot
+            commission: "20%", // Matches screenshot
+            renewalDate: "June 2026", // Matches screenshot
+            parts: [], // No parts shown in screenshot for this deal
+            status: DealStatusType.pending, // Matches screenshot
+          ),
+          // Add more deals for John Maeve if necessary
+        ];
+      case "Alice Hiller":
+        return [
+          DealItem(
+            id: "3",
+            
+            title: "Wayne Brotzký X Speedy Sponsors",
+            raceType: "Winter Rally",
+            dealValue: "\$2500",
+            commission: "12%",
+            renewalDate: "Jan 2026",
+            parts: ["Engine Parts"],
+            status: DealStatusType.paid,
+          ),
+        ];
+      default:
+        return []; // No deals found for other racers
     }
-    return null; // Deal not found
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,13 +202,13 @@ class _DealsScreenState extends State<DealsScreen> {
                       Image.network(
                         Images.homeScreen,
                         height: 240,
-        
+
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                       Container(
                         height: 240,
-        
+
                         width: double.infinity,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -205,7 +244,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                         horizontal: 8,
                                       ),
                                       child: Image.network(
-                                        Images.sponser1,
+                                        Images.helmet,
+                                        color: Colors.white,
                                         height: 24,
                                         width: 24,
                                         fit: BoxFit.cover,
@@ -213,7 +253,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                     ),
                                     SizedBox(width: 10),
                                     Text(
-                                      "Sponsers",
+                                      "Racers",
                                       style: TextStyle(
                                         color: Color(0xFFFFCC29),
                                         fontSize: 18,
@@ -244,9 +284,9 @@ class _DealsScreenState extends State<DealsScreen> {
                               ],
                             ),
                           ),
-        
+
                           SizedBox(height: 20),
-        
+
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: kDefaultPadding,
@@ -257,7 +297,7 @@ class _DealsScreenState extends State<DealsScreen> {
                               style: const TextStyle(color: Colors.black),
                               decoration: InputDecoration(
                                 hintText:
-                                    "Search Sponsors, Racers...", // Search hint text
+                                    "Search Racers...", // Search hint text
                                 hintStyle: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -269,7 +309,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                   size: 16,
                                 ), // Search icon
                                 filled: true,
-                                fillColor: Colors.white, // Search bar background
+                                fillColor:
+                                    Colors.white, // Search bar background
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(60),
                                   borderSide: BorderSide.none,
@@ -300,7 +341,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                   size: 16,
                                 ), // Add icon
                                 label: const Text(
-                                  "Make a New Deal", // Button text
+                                  "Add New Racer", // Button text
                                   style: TextStyle(
                                     color: Colors.black,
                                     fontWeight: FontWeight.w700,
@@ -329,34 +370,65 @@ class _DealsScreenState extends State<DealsScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
-        
-                _filteredDeals.isEmpty
+
+                SizedBox(height: 16),
+
+                _filteredRacers.isEmpty
                     ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? "No deals available."
-                              : "No deals found for '${_searchController.text}'.",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        itemCount: _filteredDeals.length,
-                        itemBuilder: (context, index) {
-                          final deal = _filteredDeals[index];
-                          return DealCardItem(deal: deal, fetchDealDetail: _fetchDealDetailItemById);
-                        },
+                      child: Text(
+                        _searchController.text.isEmpty
+                            ? "No racers available."
+                            : "No racers found for '${_searchController.text}'.",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                       ),
+                    )
+                    : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 2,
+                        vertical: 0,
+                      ), // Adjust padding for grid
+                      // Adjust padding for grid
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+
+                        // Two columns as per screenshot
+                        crossAxisSpacing: 0, // Spacing between columns
+                        mainAxisSpacing: 10, // Spacing between rows
+                        childAspectRatio:
+                            0.48, // Adjust to fit card content (width/height ratio)
+                      ),
+                      itemCount: _filteredRacers.length,
+                      itemBuilder: (context, index) {
+                        final racer = _filteredRacers[index];
+                        return RacerCardItem(
+                          racer: racer,
+                          getDealItemsForRacer: _getDealItemsForRacer,
+                        );
+                      },
+                    ),
+                SizedBox(height: 100),
               ],
             ),
           ],
         ),
       ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Color(0xFF13386B),
+          ),
+          child: _buildBottomNavBar(),
+        ),
+      ),
     );
   }
+
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
