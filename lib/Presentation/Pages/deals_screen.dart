@@ -1,22 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/deal_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:racecar_tracker/models/event.dart';
+import 'package:racecar_tracker/models/racer.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
+
 
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
 
   @override
   State<DealsScreen> createState() => _DealsScreenState();
+  
+
+
+
 }
 
 class _DealsScreenState extends State<DealsScreen> {
+  List<Racer> getSampleRacers() {
+  return [
+    Racer(
+      initials: "WB",
+      vehicleImageUrl: "https://via.placeholder.com/50/FF0000",
+      name: "Wayne Brotzký",
+      vehicleModel: "Ferrari F2004",
+      teamName: "Speed Rebels",
+      currentEvent: "Summer GP 2025",
+      earnings: "\$5,200",
+      contactNumber: "+88 1234567890",
+      vehicleNumber: "WB 22 F2004",
+      activeRaces: 2,
+      totalRaces: 15,
+    ),
+    // ... more racers
+  ];
+}
+
+  List<Sponsor> getSampleSponsors() {
+  return [
+    Sponsor(
+      initials: "DC",
+      name: "DC Autos",
+      email: "john@dcauto.com",
+      parts: ["Car Doors", "Rear Bumper", "Suit"],
+      activeDeals: 2,
+      endDate: DateTime(2025, 6, 15),
+      status: SponsorStatus.active,
+    ),
+    // ... more sponsors
+  ];
+}
+
+  
+List<Event> getSampleEvents() {
+  return [
+    Event(
+      raceName: "Circuit Race",
+      type: "Summer Race",
+      location: "Longmilan track",
+      title: "Summer GP Thunder Series",
+      raceType: "Summer Race",
+      dateTime: DateTime(2025, 6, 20, 22, 0),
+      trackName: "Longmilan track",
+      currentRacers: 10,
+      maxRacers: 16,
+      status: EventStatusType.registrationOpen,
+      racerImageUrls: [],
+      totalOtherRacers: 6,
+    ),
+    // ... more events
+  ];
+}
+  
+  
+  List<Sponsor> sponsors = []; // Your full list of sponsors
+List<Racer> racers = [];     // Your full list of racers
+List<Event> events = []; 
   int _currentIndex = 4;
 
-   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<DealItem> _allDeals = []; // Your full list of deals
   List<DealItem> _filteredDeals = []; // The list shown in the UI
 
@@ -24,9 +93,19 @@ class _DealsScreenState extends State<DealsScreen> {
   void initState() {
     super.initState();
     _allDeals = _getSampleDeals(); // Initialize with sample data
-    _filteredDeals = _allDeals; // Initially, show all deals
-    _searchController.addListener(_filterDeals); // Listen for search bar changes
+    _filteredDeals = _allDeals;
+    racers = getSampleRacers();
+  events = getSampleEvents();
+  sponsors = getSampleSponsors(); // Initially, show all deals
+    _searchController.addListener(
+      _filterDeals,
+       
+ 
+
+    );
+   
   }
+  
 
   @override
   void dispose() {
@@ -41,16 +120,43 @@ class _DealsScreenState extends State<DealsScreen> {
       if (query.isEmpty) {
         _filteredDeals = _allDeals;
       } else {
-        _filteredDeals = _allDeals.where((deal) {
-          // Search by title, race type, or parts
-          final titleMatches = deal.title.toLowerCase().contains(query);
-          final raceTypeMatches = deal.raceType.toLowerCase().contains(query);
-          final partsMatches = deal.parts.any((part) => part.toLowerCase().contains(query));
-          return titleMatches || raceTypeMatches || partsMatches;
-        }).toList();
+        _filteredDeals =
+            _allDeals.where((deal) {
+              // Search by title, race type, or parts
+              final titleMatches = deal.title.toLowerCase().contains(query);
+              final raceTypeMatches = deal.raceType.toLowerCase().contains(
+                query,
+              );
+              final partsMatches = deal.parts.any(
+                (part) => part.toLowerCase().contains(query),
+              );
+              return titleMatches || raceTypeMatches || partsMatches;
+            }).toList();
       }
     });
   }
+  void _navigateToAddDealScreen() async {
+  final newDeal = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => AddNewDealScreen(
+        sponsors: sponsors,
+
+        racers: racers,
+        events: events,
+      ),
+    ),
+  );
+
+  if (newDeal != null && newDeal is DealItem) {
+    setState(() {
+      _allDeals.add(newDeal);
+      _filterDeals();
+    });
+  }
+
+}
+
 
   // --- Sample Deal Data (Replace with your actual data source) ---
   List<DealItem> _getSampleDeals() {
@@ -99,50 +205,37 @@ class _DealsScreenState extends State<DealsScreen> {
   }
 
   DealDetailItem? _fetchDealDetailItemById(String id) {
-    if (id == "1") {
+    // Try to find a matching detail for existing deals
+    if (id == "1") { }
+    // Fallback for new deals
+    DealItem? deal;
+    for (final d in _allDeals) {
+      if (d.id == id) {
+        deal = d;
+        break;
+      }
+    }
+    if (deal != null) {
       return DealDetailItem(
-        id: "1",
-        title: "ABC Motors X Sarah White",
-        raceType: "Summer Race",
-        totalDealAmount: "\$1,20,000", // Full detail amount
-        yourCommission: "20%", // Full detail commission
-        yourEarn: "\$20,000",
-        renewalReminder: "2 Days Before",
-        startDate: DateTime(2025, 3, 12),
-        endDate: DateTime(2025, 3, 25),
-        parts: ["Car Doors", "Suit", "Tires"], // Potentially more parts in detail
-        brandingImageUrls: [
-          Images.brandingImg1, // Use placeholder image
-          Images.brandingImg2, // Use placeholder image
-        ],
-        status: DealStatusType.pending,
-        sponsorInitials: "AB", // For detail screen
-        racerInitials: "SW", // For detail screen
-      );
-    } else if (id == "2") {
-      return DealDetailItem(
-        id: "2",
-        title: "DC Auto X John Meave",
-        raceType: "Drift Race",
-        totalDealAmount: "\$80,000",
-        yourCommission: "15%",
-        yourEarn: "\$12,000",
-        renewalReminder: "7 Days Before",
-        startDate: DateTime(2024, 8, 1),
-        endDate: DateTime(2024, 12, 31),
-        parts: ["Helmet", "Engine Cover", "Spoilers"],
-        brandingImageUrls: [
-          Images.onboarding1, // Another placeholder image
-        ],
-        status: DealStatusType.paid,
-        sponsorInitials: "DC",
-        racerInitials: "JM",
+        id: deal.id,
+        title: deal.title,
+        raceType: deal.raceType,
+        totalDealAmount: deal.dealValue,
+        yourCommission: deal.commission,
+        yourEarn: "\$0", // You can calculate or add this field
+        renewalReminder: "1 Day Before",
+        startDate: DateTime.now(),
+        endDate: DateTime.now().add(Duration(days: 30)),
+        parts: deal.parts,
+        brandingImageUrls: [],
+        status: deal.status,
+        sponsorInitials: deal.title.split(" ").first.substring(0, 2).toUpperCase(),
+        racerInitials: deal.title.split(" ").last.substring(0, 2).toUpperCase(),
       );
     }
-    return null; // Deal not found
+    return null;
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,13 +256,13 @@ class _DealsScreenState extends State<DealsScreen> {
                       Image.network(
                         Images.homeScreen,
                         height: 240,
-        
+
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                       Container(
                         height: 240,
-        
+
                         width: double.infinity,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -244,9 +337,9 @@ class _DealsScreenState extends State<DealsScreen> {
                               ],
                             ),
                           ),
-        
+
                           SizedBox(height: 20),
-        
+
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: kDefaultPadding,
@@ -269,7 +362,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                   size: 16,
                                 ), // Search icon
                                 filled: true,
-                                fillColor: Colors.white, // Search bar background
+                                fillColor:
+                                    Colors.white, // Search bar background
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(60),
                                   borderSide: BorderSide.none,
@@ -290,10 +384,7 @@ class _DealsScreenState extends State<DealsScreen> {
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // Handle Add Sponsor button tap
-                                  print("Add Sponsor button tapped!");
-                                },
+                                onPressed: _navigateToAddDealScreen,
                                 icon: const Icon(
                                   Icons.add,
                                   color: Colors.black,
@@ -330,26 +421,31 @@ class _DealsScreenState extends State<DealsScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-        
+
                 _filteredDeals.isEmpty
                     ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? "No deals available."
-                              : "No deals found for '${_searchController.text}'.",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        itemCount: _filteredDeals.length,
-                        itemBuilder: (context, index) {
-                          final deal = _filteredDeals[index];
-                          return DealCardItem(deal: deal, fetchDealDetail: _fetchDealDetailItemById);
-                        },
+                      child: Text(
+                        _searchController.text.isEmpty
+                            ? "No deals available."
+                            : "No deals found for '${_searchController.text}'.",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                       ),
+                    )
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      itemCount: _filteredDeals.length,
+                      itemBuilder: (context, index) {
+                        final deal = _filteredDeals[index];
+                        return DealCardItem(
+                          deal: deal,
+                          fetchDealDetail: _fetchDealDetailItemById,
+                        );
+                      },
+                    ),
               ],
             ),
           ],
@@ -357,94 +453,6 @@ class _DealsScreenState extends State<DealsScreen> {
       ),
     );
   }
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: Color(0xFF13386B),
-      ),
 
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          backgroundColor: Color(0xFF13386B),
-
-          type: BottomNavigationBarType.fixed,
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.home,
-                isSelected: _currentIndex == 0,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-                // Pass selected color
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.flag,
-                isSelected: _currentIndex == 1,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.headIcon,
-                isSelected: _currentIndex == 2,
-
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.sponsorIcon,
-                isSelected: _currentIndex == 3,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.handshake,
-                isSelected: _currentIndex == 4,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }

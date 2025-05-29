@@ -14,7 +14,8 @@ class Racer {
   final String vehicleNumber;
   final int activeRaces;
   final int totalRaces;
-
+  final String? racerImageUrl; // URL for the racer's profile image
+  final bool isLocalImage; // Flag to indicate if the image is local or network
 
   Racer({
     required this.initials,
@@ -29,9 +30,7 @@ class Racer {
     required this.vehicleNumber,
     required this.activeRaces,
     required this.totalRaces,
-  }
-  );
-  
-
-  
+    this.racerImageUrl,
+    this.isLocalImage = true,
+  });
 }

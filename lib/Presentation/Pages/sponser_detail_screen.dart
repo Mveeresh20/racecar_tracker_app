@@ -176,7 +176,7 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "Automobile", // Hardcoded as per screenshot. Consider adding to Sponsor model if dynamic.
+                            sponsor.industryType??"N/A", // Hardcoded as per screenshot. Consider adding to Sponsor model if dynamic.
                             style: context.labelMedium?.copyWith(
                               color: Colors.white,
                             ),

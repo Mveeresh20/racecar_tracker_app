@@ -26,6 +26,8 @@ class _SignUpState extends State<SignUp> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+      print("Trying to sign up with: ${_emailController.text.trim()}");
+      print("Password: ${_passwordController.text.trim()}");
 
       if (user != null) {
         print("User signed up: ${user.email}");

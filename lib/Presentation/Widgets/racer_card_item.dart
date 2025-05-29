@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/racer_details_screen.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/deal_item.dart'; // Import DealItem model
+import 'dart:io';
 // Import the new screen
 
 class RacerCardItem extends StatelessWidget {
@@ -27,7 +29,10 @@ class RacerCardItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
           gradient: const LinearGradient(
-            colors: [Color(0xFF8B6AD2), Color(0xFF211E83)], // Gradient from screenshots
+            colors: [
+              Color(0xFF8B6AD2),
+              Color(0xFF211E83),
+            ], // Gradient from screenshots
           ),
         ),
         child: Icon(icon, color: Colors.white, size: 20),
@@ -35,10 +40,74 @@ class RacerCardItem extends StatelessWidget {
     );
   }
 
+  Widget _buildRacerAvatar(Racer racer) {
+    if (racer.racerImageUrl != null && racer.racerImageUrl!.isNotEmpty) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: const Color(0xFF252D38).withOpacity(0.8),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child:
+              racer.isLocalImage
+                  ? Image.file(
+                    File(racer.racerImageUrl!.replaceAll('file://', '')),
+                    fit: BoxFit.cover,
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Error loading local racer image: $error');
+                      return _buildInitialsContainer(racer.initials);
+                    },
+                  )
+                  : Image.network(
+                    racer.racerImageUrl!,
+                    fit: BoxFit.cover,
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Error loading network racer image: $error');
+                      return _buildInitialsContainer(racer.initials);
+                    },
+                  ),
+        ),
+      );
+    } else {
+      return _buildInitialsContainer(racer.initials);
+    }
+  }
+
+  Widget _buildInitialsContainer(String initials) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFF252D38).withOpacity(0.8),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Color(0xFFFFCC29),
+          fontWeight: FontWeight.w700,
+          fontSize: 16,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding).copyWith(bottom: 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kDefaultPadding,
+      ).copyWith(bottom: 16),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
@@ -50,18 +119,38 @@ class RacerCardItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Racer Image and Initials
+              // Racer Image and Initials or Profile Image
               Stack(
                 alignment: Alignment.center,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      racer.vehicleImageUrl, // Dynamic vehicle image
-                      height: 120, // Adjusted height for card view
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                    child:
+                        racer.isLocalImage
+                            ? Image.file(
+                              File(racer.vehicleImageUrl),
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                            : Image.network(
+                              racer.vehicleImageUrl,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 120,
+                                  width: double.infinity,
+                                  color: Colors.grey[800],
+                                  child: const Icon(
+                                    Icons.error_outline,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
+                                );
+                              },
+                            ),
                   ),
                   Positioned(
                     top: 10, // Adjust position as needed
@@ -71,20 +160,58 @@ class RacerCardItem extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFF252D38).withOpacity(0.8), // Semi-transparent dark grey
+                        color: const Color(0xFF252D38).withOpacity(0.8),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.3),
                           width: 1,
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        racer.initials, // Dynamic initials
-                        style: const TextStyle(
-                          color: Color(0xFFFFCC29), // Yellow initials
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child:
+                            racer.isLocalImage
+                                ? Image.file(
+                                  File(racer.racerImageUrl!),
+                                  fit: BoxFit.cover,
+                                  width: 40,
+                                  height: 40,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print(
+                                      'Error loading local racer image: $error',
+                                    );
+                                    return Center(
+                                      child: Text(
+                                        racer.initials,
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFCC29),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                                : Image.network(
+                                  racer.racerImageUrl!,
+                                  fit: BoxFit.cover,
+                                  width: 40,
+                                  height: 40,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print(
+                                      'Error loading network racer image: $error',
+                                    );
+                                    return Center(
+                                      child: Text(
+                                        racer.initials,
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFCC29),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                       ),
                     ),
                   ),
@@ -129,20 +256,21 @@ class RacerCardItem extends StatelessWidget {
               const SizedBox(height: 16),
 
               // "View Racer" button
-              _buildActionButton(Icons.play_arrow, () { // Using play_arrow as a placeholder for the triangle icon
+              _buildActionButton(Icons.play_arrow, () {
+                // Using play_arrow as a placeholder for the triangle icon
                 // 1. Fetch deals for the specific racer using the callback function
                 final dealsForThisRacer = getDealItemsForRacer(racer.name);
 
                 // 2. Navigate to RacerDetailScreen, passing the current racer and its deals
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => RacerDetailScreen(
-                //       racer: racer, // Pass the specific racer object
-                //       racerDealItems: dealsForThisRacer, // Pass the relevant deals
-                //     ),
-                //   ),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RacerDetailsScreen(
+                      racer: racer, // Pass the specific racer object
+                      racerDealItems: dealsForThisRacer, // Pass the relevant deals
+                    ),
+                  ),
+                );
               }),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_sponsor_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/sponsor_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
@@ -23,7 +24,7 @@ class _SponsersScreenState extends State<SponsersScreen> {
   @override
   void initState() {
     super.initState();
-    _allSponsors = _getSampleSponsors(); // Initialize with sample data
+    _allSponsors = getSampleSponsors(); // Initialize with sample data
     _filteredSponsors = _allSponsors; // Initially, show all sponsors
     _searchController.addListener(
       _filterSponsors,
@@ -57,8 +58,23 @@ class _SponsersScreenState extends State<SponsersScreen> {
     });
   }
 
+  // In your Sponsors screen, when the "Add Sponsor" button is tapped:
+void _navigateToAddSponsorScreen() async {
+  final newSponsor = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => AddNewSponsorScreen()), // Replace with your AddNewSponsorScreen
+  );
+
+  if (newSponsor != null && newSponsor is Sponsor) {
+    setState(() {
+      _allSponsors.add(newSponsor); // Add the new sponsor to your list
+      _filterSponsors(); // Re-filter if search is active
+    });
+  }
+}
+
   // --- Sample Sponsor Data (Replace with your actual data source) ---
-  List<Sponsor> _getSampleSponsors() {
+  List<Sponsor> getSampleSponsors() {
     return [
       Sponsor(
         initials: "DC",
@@ -329,6 +345,7 @@ class _SponsersScreenState extends State<SponsersScreen> {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
                                 onPressed: () {
+                                  _navigateToAddSponsorScreen();
                                   // Handle Add Sponsor button tap
                                   print("Add Sponsor button tapped!");
                                 },
@@ -395,107 +412,9 @@ class _SponsersScreenState extends State<SponsersScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Color(0xFF13386B),
-          ),
-          child: _buildBottomNavBar(),
-        ),
-      ),
+     
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: Color(0xFF13386B),
-      ),
-
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          backgroundColor: Color(0xFF13386B),
-
-          type: BottomNavigationBarType.fixed,
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.home,
-                isSelected: _currentIndex == 0,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-                // Pass selected color
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.flag,
-                isSelected: _currentIndex == 1,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.headIcon,
-                isSelected: _currentIndex == 2,
-
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.sponsorIcon,
-                isSelected: _currentIndex == 3,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.handshake,
-                isSelected: _currentIndex == 4,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }

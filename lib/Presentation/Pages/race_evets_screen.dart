@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/event_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
@@ -293,10 +294,18 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // Handle Add Sponsor button tap
-                                  print("Add Sponsor button tapped!");
-                                },
+                                onPressed: () async {
+  final newEvent = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => AddNewEventScreen()),
+  );
+  if (newEvent != null && newEvent is Event) {
+    setState(() {
+      _allEvents.add(newEvent);
+      _filterEvents();
+    });
+  }
+},
                                 icon: const Icon(
                                   Icons.add,
                                   color: Colors.black,
@@ -360,107 +369,11 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Color(0xFF13386B),
-          ),
-          child: _buildBottomNavBar(),
-        ),
-      ),
+      
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: Color(0xFF13386B),
-      ),
-
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          backgroundColor: Color(0xFF13386B),
-
-          type: BottomNavigationBarType.fixed,
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.home,
-                isSelected: _currentIndex == 0,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-                // Pass selected color
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.flag,
-                isSelected: _currentIndex == 1,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.headIcon,
-                isSelected: _currentIndex == 2,
-
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.sponsorIcon,
-                isSelected: _currentIndex == 3,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.handshake,
-                isSelected: _currentIndex == 4,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
+    
+  
 }

@@ -154,7 +154,7 @@ class _OnBoarding2State extends State<OnBoarding2> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => LoginPage()),
+                            MaterialPageRoute(builder: (context) => OnBoarding3()),
                           );
                         },
                         child: OnboardingNextButton(

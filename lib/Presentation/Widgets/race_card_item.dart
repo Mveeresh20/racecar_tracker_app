@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/Presentation/Pages/racer_details_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
@@ -41,8 +43,8 @@ class RacerCardItem extends StatelessWidget {
 
               child: Stack(
                 children: [
-                  Image.network(
-                    racer.vehicleImageUrl,
+                  Image.file(
+                    File(racer.vehicleImageUrl),
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,

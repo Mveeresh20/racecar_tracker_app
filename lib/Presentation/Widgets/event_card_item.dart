@@ -247,25 +247,6 @@ class EventCardItem extends StatelessWidget {
               ],
             ),
 
-            // Racers Images
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.start,
-            //   mainAxisSize: MainAxisSize.min,
-            //   children: [
-            //     Text(
-            //       "Racers:",
-            //       style: Theme.of(
-            //         context,
-            //       ).textTheme.bodyMedium?.copyWith(color: Colors.white),
-            //     ),
-            //     const SizedBox(width: 8),
-            //     _buildRacerAvatars(
-            //       event.racerImageUrls,
-            //       event.totalOtherRacers,
-            //       constraints.maxWidth,
-            //     ),
-            //   ],
-            // ),
             const SizedBox(height: 16),
 
             // Action Buttons (Assign Racers & Edit)

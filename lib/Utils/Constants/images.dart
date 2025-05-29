@@ -45,6 +45,13 @@ class Images {
   static const String helmet = 'https://ik.imagekit.io/sports123/fc22d06e1c3418610da0aa5e3563f3eaacb80220%20(1).png?updatedAt=1747988193541';
   static const String brandingImg1 = 'https://ik.imagekit.io/sports123/0d3297e75d50170379de388a877c40c316904d80.png?updatedAt=1748316483865';
   static const String brandingImg2 = 'https://ik.imagekit.io/sports123/18c92e6c7261fa758fa425276704b35852349396.png?updatedAt=1748316613730';
+  static const String track1 = 'https://ik.imagekit.io/sports123/d88d8a0590acb236b7739353e61db830fe6f2064.png?updatedAt=1747977994258'; // Placeholder
+  static const String track2 = 'https://ik.imagekit.io/sports123/199a17752238aad63a2efba59f82a00247401b05.png?updatedAt=1747977957465'; 
+  
+  static const String track3 = 'https://ik.imagekit.io/sports123/6f7018a656dc16b87c74dbc129473d642d4e62ab%20(1).png?updatedAt=1747978436352';
+  static const String track4 = 'https://ik.imagekit.io/sports123/9f4a0b576bd5786b2fa1876de2c46bfa63ffd24d%20(1).png?updatedAt=1748429793676';
+  static const String premiumPurchase = 'https://ik.imagekit.io/sports123/27ec400a1efa5f555d0b38c59c8df5d71f91633b.png?updatedAt=1748507765330';
+
   // Add more as needed for other track names
   
 }

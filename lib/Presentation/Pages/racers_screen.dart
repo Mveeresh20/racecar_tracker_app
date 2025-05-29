@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/racer_details_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/race_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
@@ -6,9 +8,10 @@ import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 
 import 'package:racecar_tracker/models/racer.dart';
+import 'package:racecar_tracker/models/event.dart';
 
 class RacersScreen extends StatefulWidget {
-  const RacersScreen({super.key,  });
+  const RacersScreen({super.key});
 
   @override
   State<RacersScreen> createState() => _RacersScreenState();
@@ -19,6 +22,38 @@ class _RacersScreenState extends State<RacersScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Racer> _allRacers = []; // Your full list of racers
   List<Racer> _filteredRacers = []; // The list shown in the UI
+
+  // Add a static sample events list for the dropdown
+  final List<Event> _sampleEvents = [
+    Event(
+      raceName: "Circuit Race",
+      type: "Summer Race",
+      location: "Longmilan track",
+      title: "Summer GP Thunder Series",
+      raceType: "Summer Race",
+      dateTime: DateTime(2025, 6, 20, 22, 0),
+      trackName: "Longmilan track",
+      currentRacers: 10,
+      maxRacers: 16,
+      status: EventStatusType.registrationOpen,
+      racerImageUrls: [],
+      totalOtherRacers: 6,
+    ),
+    Event(
+      raceName: "Drift Race",
+      type: "Drift",
+      location: "Drift Track",
+      title: "Jersey Annual Series",
+      raceType: "Drift Race",
+      dateTime: DateTime(2025, 6, 29, 11, 0),
+      trackName: "Drift Track",
+      currentRacers: 7,
+      maxRacers: 18,
+      status: EventStatusType.registrationOpen,
+      racerImageUrls: [],
+      totalOtherRacers: 11,
+    ),
+  ];
 
   @override
   void initState() {
@@ -141,7 +176,7 @@ class _RacersScreenState extends State<RacersScreen> {
         return [
           DealItem(
             id: "1",
-            
+
             title: "Wayne Brotzký X DC Autos", // Matches screenshot
             raceType: "Summer Race", // Matches screenshot
             dealValue: "\$1500", // Matches screenshot
@@ -152,7 +187,7 @@ class _RacersScreenState extends State<RacersScreen> {
           ),
           DealItem(
             id: "2",
-            
+
             title: "Wayne Brotzký X Sarah White", // Matches screenshot
             raceType: "Summer Race", // Matches screenshot
             dealValue: "\$1500", // Matches screenshot
@@ -167,7 +202,7 @@ class _RacersScreenState extends State<RacersScreen> {
         return [
           DealItem(
             id: "3",
-            
+
             title: "Wayne Brotzký X Speedy Sponsors",
             raceType: "Winter Rally",
             dealValue: "\$2500",
@@ -331,9 +366,23 @@ class _RacersScreenState extends State<RacersScreen> {
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // Handle Add Sponsor button tap
-                                  print("Add Sponsor button tapped!");
+                                onPressed: () async {
+                                  // Add New Racer and refresh list
+                                  final newRacer = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => AddNewRacerScreen(
+                                            events: _sampleEvents,
+                                          ),
+                                    ),
+                                  );
+                                  if (newRacer != null && newRacer is Racer) {
+                                    setState(() {
+                                      _allRacers.add(newRacer);
+                                      _filterRacers();
+                                    });
+                                  }
                                 },
                                 icon: const Icon(
                                   Icons.add,
@@ -391,11 +440,8 @@ class _RacersScreenState extends State<RacersScreen> {
                         horizontal: 2,
                         vertical: 0,
                       ), // Adjust padding for grid
-                      // Adjust padding for grid
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-
-                        // Two columns as per screenshot
                         crossAxisSpacing: 0, // Spacing between columns
                         mainAxisSpacing: 10, // Spacing between rows
                         childAspectRatio:
@@ -404,9 +450,26 @@ class _RacersScreenState extends State<RacersScreen> {
                       itemCount: _filteredRacers.length,
                       itemBuilder: (context, index) {
                         final racer = _filteredRacers[index];
-                        return RacerCardItem(
-                          racer: racer,
-                          getDealItemsForRacer: _getDealItemsForRacer,
+                        return GestureDetector(
+                          onTap: () {
+                            // Navigate to RacerDetailsScreen with racer data
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => RacerDetailsScreen(
+                                      racer: racer,
+                                      racerDealItems: _getDealItemsForRacer(
+                                        racer.name,
+                                      ),
+                                    ),
+                              ),
+                            );
+                          },
+                          child: RacerCardItem(
+                            racer: racer,
+                            getDealItemsForRacer: _getDealItemsForRacer,
+                          ),
                         );
                       },
                     ),
@@ -416,107 +479,9 @@ class _RacersScreenState extends State<RacersScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Color(0xFF13386B),
-          ),
-          child: _buildBottomNavBar(),
-        ),
-      ),
+    
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: Color(0xFF13386B),
-      ),
-
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          backgroundColor: Color(0xFF13386B),
-
-          type: BottomNavigationBarType.fixed,
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.home,
-                isSelected: _currentIndex == 0,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-                // Pass selected color
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.flag,
-                isSelected: _currentIndex == 1,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.headIcon,
-                isSelected: _currentIndex == 2,
-
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.sponsorIcon,
-                isSelected: _currentIndex == 3,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.handshake,
-                isSelected: _currentIndex == 4,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }
