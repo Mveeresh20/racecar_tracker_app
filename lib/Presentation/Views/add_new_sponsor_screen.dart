@@ -58,6 +58,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
       // Create the new Sponsor object
       final newSponsor = Sponsor(
+        id: "sponsor1",
         initials: initials,
         name: sponsorName,
         email:

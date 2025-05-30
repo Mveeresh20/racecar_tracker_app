@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/home_screen.dart';
@@ -11,11 +12,30 @@ import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/track_map_screen.dart';
 import 'package:racecar_tracker/firebase_options.dart';
 import 'package:racecar_tracker/models/racer.dart';
+import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
+  // Initialize Firebase App Check
+  await FirebaseAppCheck.instance.activate(
+    webProvider: ReCaptchaV3Provider(
+      'your-recaptcha-site-key',
+    ), // Add your reCAPTCHA site key
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.appAttest,
+  );
+
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => EditProfileProvider())],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -24,15 +44,17 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        scaffoldBackgroundColor: Color(0xFF002251),
-
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => EditProfileProvider())],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          scaffoldBackgroundColor: Color(0xFF002251),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        home: OnBoarding1(),
       ),
-      home: ProfilePage(),
     );
   }
 }

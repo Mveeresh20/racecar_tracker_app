@@ -100,6 +100,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
       );
       // For this model, we use start time as event time
       final event = Event(
+        id: "event1",
         title: _titleController.text,
         type: _raceTypeController.text,
         dateTime: startDateTime,

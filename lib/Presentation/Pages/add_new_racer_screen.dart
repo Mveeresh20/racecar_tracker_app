@@ -93,6 +93,7 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
 
       // Create the racer with local image paths
       final racer = Racer(
+        id: "",
         initials: initials,
         vehicleImageUrl: _carImage!.path,
         name: name,

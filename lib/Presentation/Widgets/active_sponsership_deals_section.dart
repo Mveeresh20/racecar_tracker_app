@@ -3,10 +3,10 @@ import 'package:racecar_tracker/Presentation/Widgets/dash_board_section_card.dar
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsorship_deals_content.dart'; // Ensure correct import
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // Ensure correct import
 import 'package:racecar_tracker/Utils/Constants/images.dart'; // Ensure correct import for image asset
-import 'package:racecar_tracker/models/sponser_ship_deal.dart'; // Ensure correct import
+import 'package:racecar_tracker/models/deal_item.dart'; // Ensure correct import
 
 class ActiveSponsorshipDealsSection extends StatelessWidget {
-  final List<SponsorshipDeal> deals;
+  final List<DealItem> deals;
   final VoidCallback onGoToDealsPressed; // Callback for the single button
 
   const ActiveSponsorshipDealsSection({
@@ -20,26 +20,32 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: const Color(0xFF0F2A55), // Background color for the whole section
+        color:
+            const Color(0xFF0F2A55), // Background color for the whole section
       ),
-      margin: const EdgeInsets.symmetric(horizontal: kDefaultPadding, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(
+          horizontal: kDefaultPadding, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // The main section heading
           Padding(
-            padding: const EdgeInsets.all(kDefaultPadding), 
+            padding: const EdgeInsets.all(kDefaultPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                  
-                    Image.network(Images.totalSponsersImg, height: 20, width: 20), // Use appropriate image
+                    Image.network(Images.totalSponsersImg,
+                        height: 20, width: 20), // Use appropriate image
                     const SizedBox(width: 8),
                     Text(
                       "Active Sponsorship Deals",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: "Montserrat"),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontFamily: "Montserrat"),
                     ),
                   ],
                 ),
@@ -49,35 +55,31 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
                   height: 1,
                   decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+                      bottom: BorderSide(
+                          color: Colors.white.withOpacity(0.1), width: 1),
                     ),
                   ),
                 ),
-                
               ],
             ),
           ),
           SizedBox(
-            height: 160, 
+            height: 160,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: deals.length,
-              
               itemBuilder: (context, index) {
                 final deal = deals[index];
                 return Container(
-                  width: MediaQuery.of(context).size.width * 0.96, 
-                 
+                  width: MediaQuery.of(context).size.width * 0.96,
                   child: DashboardSectionCard(
-                    
-                    innerContent: ActiveSponsorshipDealsContent(deal: deal),
-                    cardColor: Color(0xFF13386B) 
-                  ),
+                      innerContent: ActiveSponsorshipDealsContent(deal: deal),
+                      cardColor: Color(0xFF13386B)),
                 );
               },
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.all(kDefaultPadding),
             child: SizedBox(
@@ -87,13 +89,19 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kButtonColor,
                   foregroundColor: kButtonTextColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(60)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(60)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Go to Deals",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w700,fontSize: 16,fontFamily: "Montserrat")),
+                    Text("Go to Deals",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontFamily: "Montserrat")),
                     SizedBox(width: 8),
                     Icon(Icons.play_arrow, size: 20),
                   ],

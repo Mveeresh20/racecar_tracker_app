@@ -5,8 +5,12 @@ import 'package:racecar_tracker/Presentation/Widgets/sponsor_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/models/racer.dart';
+import 'package:racecar_tracker/models/event.dart';
 
 class SponsersScreen extends StatefulWidget {
   const SponsersScreen({super.key});
@@ -28,7 +32,8 @@ class _SponsersScreenState extends State<SponsersScreen> {
     _filteredSponsors = _allSponsors; // Initially, show all sponsors
     _searchController.addListener(
       _filterSponsors,
-    ); // Listen for search bar changes
+    );
+    // Listen for search bar changes
   }
 
   @override
@@ -44,39 +49,41 @@ class _SponsersScreenState extends State<SponsersScreen> {
       if (query.isEmpty) {
         _filteredSponsors = _allSponsors;
       } else {
-        _filteredSponsors =
-            _allSponsors.where((sponsor) {
-              // Search by name, email, or parts
-              final nameMatches = sponsor.name.toLowerCase().contains(query);
-              final emailMatches = sponsor.email.toLowerCase().contains(query);
-              final partsMatches = sponsor.parts.any(
-                (part) => part.toLowerCase().contains(query),
-              );
-              return nameMatches || emailMatches || partsMatches;
-            }).toList();
+        _filteredSponsors = _allSponsors.where((sponsor) {
+          // Search by name, email, or parts
+          final nameMatches = sponsor.name.toLowerCase().contains(query);
+          final emailMatches = sponsor.email.toLowerCase().contains(query);
+          final partsMatches = sponsor.parts.any(
+            (part) => part.toLowerCase().contains(query),
+          );
+          return nameMatches || emailMatches || partsMatches;
+        }).toList();
       }
     });
   }
 
   // In your Sponsors screen, when the "Add Sponsor" button is tapped:
-void _navigateToAddSponsorScreen() async {
-  final newSponsor = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => AddNewSponsorScreen()), // Replace with your AddNewSponsorScreen
-  );
+  void _navigateToAddSponsorScreen() async {
+    final newSponsor = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddNewSponsorScreen(),
+      ), // Replace with your AddNewSponsorScreen
+    );
 
-  if (newSponsor != null && newSponsor is Sponsor) {
-    setState(() {
-      _allSponsors.add(newSponsor); // Add the new sponsor to your list
-      _filterSponsors(); // Re-filter if search is active
-    });
+    if (newSponsor != null && newSponsor is Sponsor) {
+      setState(() {
+        _allSponsors.add(newSponsor); // Add the new sponsor to your list
+        _filterSponsors(); // Re-filter if search is active
+      });
+    }
   }
-}
 
   // --- Sample Sponsor Data (Replace with your actual data source) ---
   List<Sponsor> getSampleSponsors() {
     return [
       Sponsor(
+        id: "sponsor1",
         initials: "DC",
         name: "DC Autos",
         email: "john@dcauto.com",
@@ -86,40 +93,92 @@ void _navigateToAddSponsorScreen() async {
         status: SponsorStatus.active,
       ),
       Sponsor(
-        initials: "AB",
+        id: "sponsor2",
+        initials: "AM",
         name: "ABC Motors",
-        email: "abcmotors@gmail.com",
-        parts: ["Car Hood", "Side Doors", "Front Wing"],
+        email: "contact@abcmotors.com",
+        parts: ["Car Doors", "Suit"],
         activeDeals: 1,
-        endDate: DateTime(2025, 6, 23),
-        status: SponsorStatus.renewSoon,
+        endDate: DateTime(2026, 6, 1),
+        status: SponsorStatus.active,
       ),
       Sponsor(
+        id: "sponsor3",
         initials: "KA",
         name: "Kane Automobiles",
-        email: "kane@am.com",
-        parts: ["Car Doors", "Suit"],
+        email: "info@kaneauto.com",
+        parts: ["Front Wing", "Tyres", "Spoiler"],
         activeDeals: 2,
-        endDate: DateTime(2025, 6, 15),
-        status: SponsorStatus.renewSoon,
-      ),
-      Sponsor(
-        initials: "GT",
-        name: "Grand Touring Solutions",
-        email: "info@gt.com",
-        parts: ["Tires", "Suspension", "Brakes"],
-        activeDeals: 3,
-        endDate: DateTime(2026, 1, 1),
+        endDate: DateTime(2025, 11, 1),
         status: SponsorStatus.active,
       ),
-      Sponsor(
-        initials: "SP",
-        name: "Speed Parts Co.",
-        email: "sales@speedparts.com",
-        parts: ["Engine Blocks", "Turbo Chargers"],
-        activeDeals: 1,
-        endDate: DateTime(2025, 9, 30),
-        status: SponsorStatus.active,
+    ];
+  }
+
+  List<Racer> getSampleRacers() {
+    return [
+      Racer(
+        id: "racer1",
+        initials: "JM",
+        vehicleImageUrl: "https://via.placeholder.com/50/0000FF",
+        name: "Jonathan Meave",
+        vehicleModel: "Toyota Supra",
+        teamName: "Drift Kings",
+        currentEvent: "Drift Championship 2025",
+        earnings: "\$8,000",
+        contactNumber: "+88 9876543210",
+        vehicleNumber: "JM 42 SUPRA",
+        activeRaces: 1,
+        totalRaces: 8,
+      ),
+      Racer(
+        id: "racer2",
+        initials: "SW",
+        vehicleImageUrl: "https://via.placeholder.com/50/00FF00",
+        name: "Sarah White",
+        vehicleModel: "Honda Civic",
+        teamName: "Speed Queens",
+        currentEvent: "Summer GP 2025",
+        earnings: "\$1,500",
+        contactNumber: "+88 8765432109",
+        vehicleNumber: "SW 11 CIVIC",
+        activeRaces: 1,
+        totalRaces: 5,
+      ),
+    ];
+  }
+
+  List<Event> getSampleEvents() {
+    return [
+      Event(
+        id: "event1",
+        raceName: "Drift Championship",
+        type: "Drift Race",
+        location: "Tokyo Drift Track",
+        title: "Drift Championship 2025",
+        raceType: "Drift Race",
+        dateTime: DateTime(2025, 8, 15, 20, 0),
+        trackName: "Tokyo Drift Track",
+        currentRacers: 8,
+        maxRacers: 16,
+        status: EventStatusType.registrationOpen,
+        racerImageUrls: [],
+        totalOtherRacers: 7,
+      ),
+      Event(
+        id: "event2",
+        raceName: "Summer GP",
+        type: "Summer Race",
+        location: "Summer Circuit",
+        title: "Summer GP 2025",
+        raceType: "Summer Race",
+        dateTime: DateTime(2025, 6, 1, 15, 0),
+        trackName: "Summer Circuit",
+        currentRacers: 12,
+        maxRacers: 20,
+        status: EventStatusType.registrationOpen,
+        racerImageUrls: [],
+        totalOtherRacers: 11,
       ),
     ];
   }
@@ -129,33 +188,28 @@ void _navigateToAddSponsorScreen() async {
       case "DC Autos":
         return [
           DealItem(
-            id: "1",
-            
-            title: "DC Autos X Sarah White",
-            raceType: "Summer Race",
-            dealValue: "\$1500",
-            commission: "20%",
-            renewalDate: "June 2026",
-            parts: ["Car Doors", "Suit"],
-            status: DealStatusType.pending,
-          ),
-          DealItem(
             id: "2",
-            
-            title: "DC Autos X Jonathan Meave", // Example from Deals screen
+            sponsorId: "sponsor1",
+            racerId: "racer1",
+            eventId: "event1",
+            title: "DC Autos X Jonathan Meave",
             raceType: "Drift Race",
             dealValue: "\$8000",
             commission: "15%",
             renewalDate: "August 2026",
             parts: ["Hood", "Suit", "Side Doors"],
             status: DealStatusType.paid,
+            sponsorInitials: "DA",
+            racerInitials: "JM",
           ),
         ];
       case "ABC Motors":
         return [
           DealItem(
             id: "3",
-            
+            sponsorId: "sponsor2",
+            racerId: "racer2",
+            eventId: "event2",
             title: "ABC Motors X Sarah White",
             raceType: "Summer Race",
             dealValue: "\$1500",
@@ -163,13 +217,17 @@ void _navigateToAddSponsorScreen() async {
             renewalDate: "June 2026",
             parts: ["Car Doors", "Suit"],
             status: DealStatusType.pending,
+            sponsorInitials: "AM",
+            racerInitials: "SW",
           ),
         ];
       case "Kane Automobiles":
         return [
           DealItem(
             id: "4",
-            
+            sponsorId: "sponsor3",
+            racerId: "racer3",
+            eventId: "event3",
             title: "Kane Automobiles X Racer One",
             raceType: "Circuit Race",
             dealValue: "\$2500",
@@ -177,10 +235,14 @@ void _navigateToAddSponsorScreen() async {
             renewalDate: "October 2025",
             parts: ["Front Wing"],
             status: DealStatusType.paid,
+            sponsorInitials: "KA",
+            racerInitials: "RO",
           ),
           DealItem(
             id: "5",
-            
+            sponsorId: "sponsor3",
+            racerId: "racer4",
+            eventId: "event4",
             title: "Kane Automobiles X Racer Two",
             raceType: "Rally Event",
             dealValue: "\$3000",
@@ -188,13 +250,14 @@ void _navigateToAddSponsorScreen() async {
             renewalDate: "November 2025",
             parts: ["Tyres", "Spoiler"],
             status: DealStatusType.pending,
+            sponsorInitials: "KA",
+            racerInitials: "RT",
           ),
         ];
       default:
-        return []; // No deals found for other sponsors
+        return [];
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -216,13 +279,11 @@ void _navigateToAddSponsorScreen() async {
                       Image.network(
                         Images.homeScreen,
                         height: 240,
-
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                       Container(
                         height: 240,
-
                         width: double.infinity,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -286,20 +347,34 @@ void _navigateToAddSponsorScreen() async {
                                   ),
                                   padding: EdgeInsets.all(2),
                                   child: ClipOval(
-                                    child: Image.network(
-                                      Images.profile,
-                                      height: 24,
-                                      width: 24,
-                                      fit: BoxFit.cover,
+                                    child: Consumer<EditProfileProvider>(
+                                      builder: (context, provider, child) {
+                                        return Image.network(
+                                          provider.getProfileImageUrl(),
+                                          height: 24,
+                                          width: 24,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Image.network(
+                                              Images.profileImg,
+                                              height: 24,
+                                              width: 24,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-
                           SizedBox(height: 20),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: kDefaultPadding,
@@ -387,34 +462,37 @@ void _navigateToAddSponsorScreen() async {
                 SizedBox(height: 16),
                 _filteredSponsors.isEmpty
                     ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "No sponsors available."
-                            : "No sponsors found for '${_searchController.text}'.",
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                      ),
-                    )
+                        child: Text(
+                          _searchController.text.isEmpty
+                              ? "No sponsors available."
+                              : "No sponsors found for '${_searchController.text}'.",
+                          style: Theme.of(
+                            context,
+                          )
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                        ),
+                      )
                     : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding:
-                          EdgeInsets.zero, // Remove default ListView padding
-                      itemCount: _filteredSponsors.length,
-                      itemBuilder: (context, index) {
-                        final sponsor = _filteredSponsors[index];
-                        return SponsorCardItem(sponsor: sponsor,getDealItemsForSponsor: _getDealItemsForSponsor);
-                      },
-                    ),
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        padding:
+                            EdgeInsets.zero, // Remove default ListView padding
+                        itemCount: _filteredSponsors.length,
+                        itemBuilder: (context, index) {
+                          final sponsor = _filteredSponsors[index];
+                          return SponsorCardItem(
+                            sponsor: sponsor,
+                            getDealItemsForSponsor: _getDealItemsForSponsor,
+                          );
+                        },
+                      ),
               ],
             ),
           ],
         ),
       ),
-     
     );
   }
-
-  
 }

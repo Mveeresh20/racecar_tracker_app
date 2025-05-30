@@ -9,6 +9,8 @@ import 'package:racecar_tracker/models/deal_item.dart';
 
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class RacersScreen extends StatefulWidget {
   const RacersScreen({super.key});
@@ -26,6 +28,7 @@ class _RacersScreenState extends State<RacersScreen> {
   // Add a static sample events list for the dropdown
   final List<Event> _sampleEvents = [
     Event(
+      id: "event1",
       raceName: "Circuit Race",
       type: "Summer Race",
       location: "Longmilan track",
@@ -40,6 +43,7 @@ class _RacersScreenState extends State<RacersScreen> {
       totalOtherRacers: 6,
     ),
     Event(
+      id: "event2",
       raceName: "Drift Race",
       type: "Drift",
       location: "Drift Track",
@@ -78,22 +82,18 @@ class _RacersScreenState extends State<RacersScreen> {
       if (query.isEmpty) {
         _filteredRacers = _allRacers;
       } else {
-        _filteredRacers =
-            _allRacers.where((racer) {
-              // Search by name, vehicle model, team, or current event
-              final nameMatches = racer.name.toLowerCase().contains(query);
-              final vehicleMatches = racer.vehicleModel.toLowerCase().contains(
+        _filteredRacers = _allRacers.where((racer) {
+          // Search by name, vehicle model, team, or current event
+          final nameMatches = racer.name.toLowerCase().contains(query);
+          final vehicleMatches = racer.vehicleModel.toLowerCase().contains(
                 query,
               );
-              final teamMatches = racer.teamName.toLowerCase().contains(query);
-              final eventMatches = racer.currentEvent.toLowerCase().contains(
+          final teamMatches = racer.teamName.toLowerCase().contains(query);
+          final eventMatches = racer.currentEvent.toLowerCase().contains(
                 query,
               );
-              return nameMatches ||
-                  vehicleMatches ||
-                  teamMatches ||
-                  eventMatches;
-            }).toList();
+          return nameMatches || vehicleMatches || teamMatches || eventMatches;
+        }).toList();
       }
     });
   }
@@ -101,72 +101,33 @@ class _RacersScreenState extends State<RacersScreen> {
   List<Racer> _getSampleRacers() {
     return [
       Racer(
-        contactNumber: "+88 1234567890", // Example data
-        vehicleNumber: "WB 22 F2004", // Example data
-        activeRaces: 2,
-        totalRaces: 15,
-
+        id: "racer1",
         initials: "WB",
-        vehicleImageUrl: Images.raceCar1, // Example Blue Car
+        vehicleImageUrl: "https://via.placeholder.com/50/FF0000",
         name: "Wayne Brotzký",
         vehicleModel: "Ferrari F2004",
         teamName: "Speed Rebels",
         currentEvent: "Summer GP 2025",
         earnings: "\$5,200",
+        contactNumber: "+88 1234567890",
+        vehicleNumber: "WB 22 F2004",
+        activeRaces: 2,
+        totalRaces: 15,
       ),
       Racer(
-        contactNumber: "+88 1545246988", // Matches Racer Detail screen
-        vehicleNumber: "MJ 25 GT 1205", // Matches Racer Detail screen
-        activeRaces: 2, // Matches Racer Detail screen
-        totalRaces: 12,
-        initials: "JM",
-        vehicleImageUrl: Images.raceCar2, // Example Yellow Car
-        name: "Jonathan Lauren",
-        vehicleModel: "Ferrari F2004",
-        teamName: "Speed Rebels",
-        currentEvent: "Summer GP 2025",
-        earnings: "\$2,700",
-      ),
-      Racer(
-        contactNumber: "+88 9876543210",
-        vehicleNumber: "SA 07 MW11",
-        activeRaces: 1,
-        totalRaces: 8,
+        id: "racer2",
         initials: "AH",
-        vehicleImageUrl: Images.raceCar1,
+        vehicleImageUrl: "https://via.placeholder.com/50/00FF00",
         name: "Alice Hiller",
-        vehicleModel: "McLaren MP4",
-        teamName: "Velocity Vipers",
-        currentEvent: "Drift Challenge",
-        earnings: "\$3,500",
-      ),
-      Racer(
-        contactNumber: "+88 9876543210",
-        vehicleNumber: "SA 07 MW11",
-        activeRaces: 1,
-        totalRaces: 8,
-        initials: "MS",
-        vehicleImageUrl: Images.raceCar2,
-        name: "Max Speed",
         vehicleModel: "Porsche 911",
-        teamName: "Turbo Titans",
-        currentEvent: "Circuit Race",
-        earnings: "\$7,800",
-      ),
-      Racer(
-        contactNumber: "+88 9876543210",
-        vehicleNumber: "SA 07 MW11",
+        teamName: "Winter Warriors",
+        currentEvent: "Winter Rally 2025",
+        earnings: "\$2,500",
+        contactNumber: "+88 2345678901",
+        vehicleNumber: "AH 33 911",
         activeRaces: 1,
-        totalRaces: 8,
-        initials: "MS",
-        vehicleImageUrl: Images.raceCar1, // Example Red Car
-        name: "Max Speed",
-        vehicleModel: "Porsche 911",
-        teamName: "Turbo Titans",
-        currentEvent: "Circuit Race",
-        earnings: "\$7,800",
+        totalRaces: 3,
       ),
-      // Add more sample racers as needed
     ];
   }
 
@@ -175,45 +136,56 @@ class _RacersScreenState extends State<RacersScreen> {
       case "Wayne Brotzký":
         return [
           DealItem(
-            id: "1",
-
-            title: "Wayne Brotzký X DC Autos", // Matches screenshot
-            raceType: "Summer Race", // Matches screenshot
-            dealValue: "\$1500", // Matches screenshot
-            commission: "30", // No commission shown in screenshot for this deal
-            renewalDate: "June 2026", // Matches screenshot
-            parts: [], // No parts shown in screenshot for this deal
-            status: DealStatusType.pending, // Matches screenshot
+            id: "deal1",
+            sponsorId: "sponsor1",
+            racerId: "racer1",
+            eventId: "event1",
+            title: "Wayne Brotzký X DC Autos",
+            raceType: "Summer Race",
+            dealValue: "\$1500",
+            commission: "30%",
+            renewalDate: "June 2026",
+            parts: [],
+            status: DealStatusType.pending,
+            sponsorInitials: "DA",
+            racerInitials: "WB",
           ),
           DealItem(
-            id: "2",
-
-            title: "Wayne Brotzký X Sarah White", // Matches screenshot
-            raceType: "Summer Race", // Matches screenshot
-            dealValue: "\$1500", // Matches screenshot
-            commission: "20%", // Matches screenshot
-            renewalDate: "June 2026", // Matches screenshot
-            parts: [], // No parts shown in screenshot for this deal
-            status: DealStatusType.pending, // Matches screenshot
+            id: "deal2",
+            sponsorId: "sponsor2",
+            racerId: "racer1",
+            eventId: "event1",
+            title: "Wayne Brotzký X Sarah White",
+            raceType: "Summer Race",
+            dealValue: "\$1500",
+            commission: "20%",
+            renewalDate: "June 2026",
+            parts: [],
+            status: DealStatusType.pending,
+            sponsorInitials: "SW",
+            racerInitials: "WB",
           ),
-          // Add more deals for John Maeve if necessary
         ];
       case "Alice Hiller":
         return [
           DealItem(
-            id: "3",
-
-            title: "Wayne Brotzký X Speedy Sponsors",
+            id: "deal3",
+            sponsorId: "sponsor3",
+            racerId: "racer2",
+            eventId: "event2",
+            title: "Alice Hiller X Speedy Sponsors",
             raceType: "Winter Rally",
             dealValue: "\$2500",
             commission: "12%",
             renewalDate: "Jan 2026",
             parts: ["Engine Parts"],
             status: DealStatusType.paid,
+            sponsorInitials: "SS",
+            racerInitials: "AH",
           ),
         ];
       default:
-        return []; // No deals found for other racers
+        return [];
     }
   }
 
@@ -237,13 +209,11 @@ class _RacersScreenState extends State<RacersScreen> {
                       Image.network(
                         Images.homeScreen,
                         height: 240,
-
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                       Container(
                         height: 240,
-
                         width: double.infinity,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -308,20 +278,34 @@ class _RacersScreenState extends State<RacersScreen> {
                                   ),
                                   padding: EdgeInsets.all(2),
                                   child: ClipOval(
-                                    child: Image.network(
-                                      Images.profile,
-                                      height: 24,
-                                      width: 24,
-                                      fit: BoxFit.cover,
+                                    child: Consumer<EditProfileProvider>(
+                                      builder: (context, provider, child) {
+                                        return Image.network(
+                                          provider.getProfileImageUrl(),
+                                          height: 24,
+                                          width: 24,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Image.network(
+                                              Images.profileImg,
+                                              height: 24,
+                                              width: 24,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-
                           SizedBox(height: 20),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: kDefaultPadding,
@@ -371,10 +355,9 @@ class _RacersScreenState extends State<RacersScreen> {
                                   final newRacer = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (context) => AddNewRacerScreen(
-                                            events: _sampleEvents,
-                                          ),
+                                      builder: (context) => AddNewRacerScreen(
+                                        events: _sampleEvents,
+                                      ),
                                     ),
                                   );
                                   if (newRacer != null && newRacer is Racer) {
@@ -419,69 +402,66 @@ class _RacersScreenState extends State<RacersScreen> {
                     ],
                   ),
                 ),
-
                 SizedBox(height: 16),
-
                 _filteredRacers.isEmpty
                     ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "No racers available."
-                            : "No racers found for '${_searchController.text}'.",
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                      ),
-                    )
+                        child: Text(
+                          _searchController.text.isEmpty
+                              ? "No racers available."
+                              : "No racers found for '${_searchController.text}'.",
+                          style: Theme.of(
+                            context,
+                          )
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                        ),
+                      )
                     : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 2,
-                        vertical: 0,
-                      ), // Adjust padding for grid
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 0, // Spacing between columns
-                        mainAxisSpacing: 10, // Spacing between rows
-                        childAspectRatio:
-                            0.48, // Adjust to fit card content (width/height ratio)
-                      ),
-                      itemCount: _filteredRacers.length,
-                      itemBuilder: (context, index) {
-                        final racer = _filteredRacers[index];
-                        return GestureDetector(
-                          onTap: () {
-                            // Navigate to RacerDetailsScreen with racer data
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => RacerDetailsScreen(
-                                      racer: racer,
-                                      racerDealItems: _getDealItemsForRacer(
-                                        racer.name,
-                                      ),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 2,
+                          vertical: 0,
+                        ), // Adjust padding for grid
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 0, // Spacing between columns
+                          mainAxisSpacing: 10, // Spacing between rows
+                          childAspectRatio:
+                              0.48, // Adjust to fit card content (width/height ratio)
+                        ),
+                        itemCount: _filteredRacers.length,
+                        itemBuilder: (context, index) {
+                          final racer = _filteredRacers[index];
+                          return GestureDetector(
+                            onTap: () {
+                              // Navigate to RacerDetailsScreen with racer data
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RacerDetailsScreen(
+                                    racer: racer,
+                                    racerDealItems: _getDealItemsForRacer(
+                                      racer.name,
                                     ),
-                              ),
-                            );
-                          },
-                          child: RacerCardItem(
-                            racer: racer,
-                            getDealItemsForRacer: _getDealItemsForRacer,
-                          ),
-                        );
-                      },
-                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: RacerCardItem(
+                              racer: racer,
+                              getDealItemsForRacer: _getDealItemsForRacer,
+                            ),
+                          );
+                        },
+                      ),
                 SizedBox(height: 100),
               ],
             ),
           ],
         ),
       ),
-    
     );
   }
-
-  
 }

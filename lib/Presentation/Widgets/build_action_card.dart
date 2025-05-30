@@ -15,7 +15,7 @@ class BuildActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: GestureDetector(
         
         onTap: onTap,
@@ -38,7 +38,7 @@ class BuildActionCard extends StatelessWidget {
                 child: Image.network(imageUrl),
               )),
             ),
-            Center(child: Text(text, style: TextStyle(color:Colors.white ,fontSize: 14, fontWeight: FontWeight.w700, fontFamily: "Montserrat",),)),
+            Center(child: Text(text,textAlign: TextAlign.center, style: TextStyle(color:Colors.white ,fontSize: 14, fontWeight: FontWeight.w700, fontFamily: "Montserrat",),)),
           ],
         ),
       ),

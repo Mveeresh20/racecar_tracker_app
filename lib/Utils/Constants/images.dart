@@ -51,6 +51,7 @@ class Images {
   static const String track3 = 'https://ik.imagekit.io/sports123/6f7018a656dc16b87c74dbc129473d642d4e62ab%20(1).png?updatedAt=1747978436352';
   static const String track4 = 'https://ik.imagekit.io/sports123/9f4a0b576bd5786b2fa1876de2c46bfa63ffd24d%20(1).png?updatedAt=1748429793676';
   static const String premiumPurchase = 'https://ik.imagekit.io/sports123/27ec400a1efa5f555d0b38c59c8df5d71f91633b.png?updatedAt=1748507765330';
+  static const String profileImg = 'https://ik.imagekit.io/sports123/person.jpg?updatedAt=1748518296969';
 
   // Add more as needed for other track names
   

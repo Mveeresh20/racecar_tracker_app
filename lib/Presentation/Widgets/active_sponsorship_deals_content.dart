@@ -1,22 +1,27 @@
-
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
-import 'package:racecar_tracker/models/sponser_ship_deal.dart'; // Make sure this import path is correct
+import 'package:racecar_tracker/models/deal_item.dart';
 
 class ActiveSponsorshipDealsContent extends StatelessWidget {
-  final SponsorshipDeal deal; // Now accepts a single SponsorshipDeal object
+  final DealItem deal;
 
-  const ActiveSponsorshipDealsContent({Key? key, required this.deal }) : super(key: key);
+  const ActiveSponsorshipDealsContent({Key? key, required this.deal})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column( 
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(deal.title, style: TextStyle(color: Colors.white,fontWeight: FontWeight.w700,fontSize: 14,fontFamily: "Montserrat")),
+            Text(deal.title,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontFamily: "Montserrat")),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -30,17 +35,18 @@ class ActiveSponsorshipDealsContent extends StatelessWidget {
             ),
           ],
         ),
-        Text("Summer race", style: context.bodyMedium?.copyWith(color: Colors.white)),
+        Text(deal.raceType,
+            style: context.bodyMedium?.copyWith(color: Colors.white)),
         const SizedBox(height: 4),
-         Container(
-                height: 1,
-              decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.white.withOpacity(0.1),width: 1),
-              )
-
-              ),
+        Container(
+          height: 1,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom:
+                  BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
             ),
+          ),
+        ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -48,22 +54,43 @@ class ActiveSponsorshipDealsContent extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Deal Value", style: context.bodyMedium?.copyWith(color: Colors.white)),
-                Text(deal.dealValue,textAlign: TextAlign.center, style: TextStyle(fontSize: 14,fontWeight: FontWeight.w700,fontFamily: "Montserrat",color: Colors.white,)),
+                Text("Deal Value",
+                    style: context.bodyMedium?.copyWith(color: Colors.white)),
+                Text(deal.dealValue,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: "Montserrat",
+                        color: Colors.white)),
               ],
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Text("Commission", style: context.bodyMedium?.copyWith(color: Colors.white))),
-                Text(deal.commission, style: TextStyle(fontSize: 14,fontWeight: FontWeight.w700,fontFamily: "Montserrat",color: Colors.white,)),
+                Center(
+                    child: Text("Commission",
+                        style:
+                            context.bodyMedium?.copyWith(color: Colors.white))),
+                Text(deal.commission,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: "Montserrat",
+                        color: Colors.white)),
               ],
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Renewal", style: context.bodyMedium?.copyWith(color: Colors.white)),
-                Text(deal.renewalDate, style: TextStyle(fontSize: 14,fontWeight: FontWeight.w700,fontFamily: "Montserrat",color: Colors.white,)),
+                Text("Renewal",
+                    style: context.bodyMedium?.copyWith(color: Colors.white)),
+                Text(deal.renewalDate,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: "Montserrat",
+                        color: Colors.white)),
               ],
             ),
           ],

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/deal_card_item.dart';
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
@@ -11,78 +14,74 @@ import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
 
-
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
 
   @override
   State<DealsScreen> createState() => _DealsScreenState();
-  
-
-
-
 }
 
 class _DealsScreenState extends State<DealsScreen> {
   List<Racer> getSampleRacers() {
-  return [
-    Racer(
-      initials: "WB",
-      vehicleImageUrl: "https://via.placeholder.com/50/FF0000",
-      name: "Wayne Brotzký",
-      vehicleModel: "Ferrari F2004",
-      teamName: "Speed Rebels",
-      currentEvent: "Summer GP 2025",
-      earnings: "\$5,200",
-      contactNumber: "+88 1234567890",
-      vehicleNumber: "WB 22 F2004",
-      activeRaces: 2,
-      totalRaces: 15,
-    ),
-    // ... more racers
-  ];
-}
+    return [
+      Racer(
+        id: "racer1",
+        initials: "WB",
+        vehicleImageUrl: "https://via.placeholder.com/50/FF0000",
+        name: "Wayne Brotzký",
+        vehicleModel: "Ferrari F2004",
+        teamName: "Speed Rebels",
+        currentEvent: "Summer GP 2025",
+        earnings: "\$5,200",
+        contactNumber: "+88 1234567890",
+        vehicleNumber: "WB 22 F2004",
+        activeRaces: 2,
+        totalRaces: 15,
+      ),
+      // ... more racers
+    ];
+  }
 
   List<Sponsor> getSampleSponsors() {
-  return [
-    Sponsor(
-      initials: "DC",
-      name: "DC Autos",
-      email: "john@dcauto.com",
-      parts: ["Car Doors", "Rear Bumper", "Suit"],
-      activeDeals: 2,
-      endDate: DateTime(2025, 6, 15),
-      status: SponsorStatus.active,
-    ),
-    // ... more sponsors
-  ];
-}
+    return [
+      Sponsor(
+        id: "sponsor1",
+        initials: "DC",
+        name: "DC Autos",
+        email: "john@dcauto.com",
+        parts: ["Car Doors", "Rear Bumper", "Suit"],
+        activeDeals: 2,
+        endDate: DateTime(2025, 6, 15),
+        status: SponsorStatus.active,
+      ),
+      // ... more sponsors
+    ];
+  }
 
-  
-List<Event> getSampleEvents() {
-  return [
-    Event(
-      raceName: "Circuit Race",
-      type: "Summer Race",
-      location: "Longmilan track",
-      title: "Summer GP Thunder Series",
-      raceType: "Summer Race",
-      dateTime: DateTime(2025, 6, 20, 22, 0),
-      trackName: "Longmilan track",
-      currentRacers: 10,
-      maxRacers: 16,
-      status: EventStatusType.registrationOpen,
-      racerImageUrls: [],
-      totalOtherRacers: 6,
-    ),
-    // ... more events
-  ];
-}
-  
-  
+  List<Event> getSampleEvents() {
+    return [
+      Event(
+        id: "event1",
+        raceName: "Circuit Race",
+        type: "Summer Race",
+        location: "Longmilan track",
+        title: "Summer GP Thunder Series",
+        raceType: "Summer Race",
+        dateTime: DateTime(2025, 6, 20, 22, 0),
+        trackName: "Longmilan track",
+        currentRacers: 10,
+        maxRacers: 16,
+        status: EventStatusType.registrationOpen,
+        racerImageUrls: [],
+        totalOtherRacers: 6,
+      ),
+      // ... more events
+    ];
+  }
+
   List<Sponsor> sponsors = []; // Your full list of sponsors
-List<Racer> racers = [];     // Your full list of racers
-List<Event> events = []; 
+  List<Racer> racers = []; // Your full list of racers
+  List<Event> events = [];
   int _currentIndex = 4;
 
   final TextEditingController _searchController = TextEditingController();
@@ -95,17 +94,18 @@ List<Event> events = [];
     _allDeals = _getSampleDeals(); // Initialize with sample data
     _filteredDeals = _allDeals;
     racers = getSampleRacers();
-  events = getSampleEvents();
-  sponsors = getSampleSponsors(); // Initially, show all deals
+    events = getSampleEvents();
+    sponsors = getSampleSponsors(); // Initially, show all deals
     _searchController.addListener(
       _filterDeals,
-       
- 
-
     );
-   
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<EditProfileProvider>(
+        context,
+        listen: false,
+      ).fetchUserProfileDetails();
+    });
   }
-  
 
   @override
   void dispose() {
@@ -120,49 +120,49 @@ List<Event> events = [];
       if (query.isEmpty) {
         _filteredDeals = _allDeals;
       } else {
-        _filteredDeals =
-            _allDeals.where((deal) {
-              // Search by title, race type, or parts
-              final titleMatches = deal.title.toLowerCase().contains(query);
-              final raceTypeMatches = deal.raceType.toLowerCase().contains(
+        _filteredDeals = _allDeals.where((deal) {
+          // Search by title, race type, or parts
+          final titleMatches = deal.title.toLowerCase().contains(query);
+          final raceTypeMatches = deal.raceType.toLowerCase().contains(
                 query,
               );
-              final partsMatches = deal.parts.any(
-                (part) => part.toLowerCase().contains(query),
-              );
-              return titleMatches || raceTypeMatches || partsMatches;
-            }).toList();
+          final partsMatches = deal.parts.any(
+            (part) => part.toLowerCase().contains(query),
+          );
+          return titleMatches || raceTypeMatches || partsMatches;
+        }).toList();
       }
     });
   }
+
   void _navigateToAddDealScreen() async {
-  final newDeal = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => AddNewDealScreen(
-        sponsors: sponsors,
-
-        racers: racers,
-        events: events,
+    final newDeal = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddNewDealScreen(
+          sponsors: sponsors,
+          racers: racers,
+          events: events,
+        ),
       ),
-    ),
-  );
+    );
 
-  if (newDeal != null && newDeal is DealItem) {
-    setState(() {
-      _allDeals.add(newDeal);
-      _filterDeals();
-    });
+    if (newDeal != null && newDeal is DealItem) {
+      setState(() {
+        _allDeals.add(newDeal);
+        _filterDeals();
+      });
+    }
   }
-
-}
-
 
   // --- Sample Deal Data (Replace with your actual data source) ---
   List<DealItem> _getSampleDeals() {
     return [
       DealItem(
         id: "1",
+        sponsorId: "sponsor1",
+        racerId: "racer1",
+        eventId: "event1",
         title: "ABC Motors X Sarah White",
         raceType: "Summer Race",
         dealValue: "\$1500",
@@ -170,9 +170,14 @@ List<Event> events = [];
         renewalDate: "June 2026",
         parts: ["Car Doors", "Suit"],
         status: DealStatusType.pending,
+        sponsorInitials: "AM",
+        racerInitials: "SW",
       ),
       DealItem(
         id: "2",
+        sponsorId: "sponsor2",
+        racerId: "racer2",
+        eventId: "event2",
         title: "DC Auto X Jonathan Meave",
         raceType: "Drift Race",
         dealValue: "\$8000",
@@ -180,9 +185,14 @@ List<Event> events = [];
         renewalDate: "August 2026",
         parts: ["Hood", "Suit", "Side Doors"],
         status: DealStatusType.paid,
+        sponsorInitials: "DA",
+        racerInitials: "JM",
       ),
       DealItem(
         id: "3",
+        sponsorId: "sponsor3",
+        racerId: "racer3",
+        eventId: "event3",
         title: "Formula One Corp X Max Speed",
         raceType: "Grand Prix",
         dealValue: "\$12000",
@@ -190,9 +200,14 @@ List<Event> events = [];
         renewalDate: "July 2027",
         parts: ["Aerodynamics", "Engine"],
         status: DealStatusType.pending,
+        sponsorInitials: "FC",
+        racerInitials: "MS",
       ),
       DealItem(
         id: "4",
+        sponsorId: "sponsor4",
+        racerId: "racer4",
+        eventId: "event4",
         title: "Turbo Chargers Inc X Alice Race",
         raceType: "Circuit Race",
         dealValue: "\$5000",
@@ -200,13 +215,15 @@ List<Event> events = [];
         renewalDate: "April 2026",
         parts: ["Turbo Kit", "Exhaust"],
         status: DealStatusType.paid,
+        sponsorInitials: "TC",
+        racerInitials: "AR",
       ),
     ];
   }
 
   DealDetailItem? _fetchDealDetailItemById(String id) {
     // Try to find a matching detail for existing deals
-    if (id == "1") { }
+    if (id == "1") {}
     // Fallback for new deals
     DealItem? deal;
     for (final d in _allDeals) {
@@ -217,19 +234,25 @@ List<Event> events = [];
     }
     if (deal != null) {
       return DealDetailItem(
+        sponsorId: deal.sponsorId,
+        racerId: deal.racerId,
+        eventId: deal.eventId,
+
         id: deal.id,
         title: deal.title,
         raceType: deal.raceType,
-        totalDealAmount: deal.dealValue,
-        yourCommission: deal.commission,
-        yourEarn: "\$0", // You can calculate or add this field
+        dealValue: double.tryParse(deal.dealValue) ?? 0.0,
+        commissionAmount: double.tryParse(deal.commission) ?? 0.0,
+
+        commissionPercentage: 0, // You can calculate or add this field
         renewalReminder: "1 Day Before",
         startDate: DateTime.now(),
         endDate: DateTime.now().add(Duration(days: 30)),
         parts: deal.parts,
         brandingImageUrls: [],
         status: deal.status,
-        sponsorInitials: deal.title.split(" ").first.substring(0, 2).toUpperCase(),
+        sponsorInitials:
+            deal.title.split(" ").first.substring(0, 2).toUpperCase(),
         racerInitials: deal.title.split(" ").last.substring(0, 2).toUpperCase(),
       );
     }
@@ -256,13 +279,11 @@ List<Event> events = [];
                       Image.network(
                         Images.homeScreen,
                         height: 240,
-
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                       Container(
                         height: 240,
-
                         width: double.infinity,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -306,7 +327,7 @@ List<Event> events = [];
                                     ),
                                     SizedBox(width: 10),
                                     Text(
-                                      "Sponsers",
+                                      "Deals",
                                       style: TextStyle(
                                         color: Color(0xFFFFCC29),
                                         fontSize: 18,
@@ -316,30 +337,54 @@ List<Event> events = [];
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      width: 3,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  padding: EdgeInsets.all(2),
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      Images.profile,
-                                      height: 24,
-                                      width: 24,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+                                Consumer<EditProfileProvider>(
+                                  builder: (context, provider, child) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ProfilePage(),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            width: 3,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.all(2),
+                                        child: ClipOval(
+                                          child: Image.network(
+                                            provider.getProfileImageUrl(),
+                                            height: 24,
+                                            width: 24,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Image.network(
+                                                Images.profileImg,
+                                                height: 24,
+                                                width: 24,
+                                                fit: BoxFit.cover,
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
                           ),
-
                           SizedBox(height: 20),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: kDefaultPadding,
@@ -421,31 +466,33 @@ List<Event> events = [];
                   ),
                 ),
                 SizedBox(height: 20),
-
                 _filteredDeals.isEmpty
                     ? Center(
-                      child: Text(
-                        _searchController.text.isEmpty
-                            ? "No deals available."
-                            : "No deals found for '${_searchController.text}'.",
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                      ),
-                    )
+                        child: Text(
+                          _searchController.text.isEmpty
+                              ? "No deals available."
+                              : "No deals found for '${_searchController.text}'.",
+                          style: Theme.of(
+                            context,
+                          )
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                        ),
+                      )
                     : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: _filteredDeals.length,
-                      itemBuilder: (context, index) {
-                        final deal = _filteredDeals[index];
-                        return DealCardItem(
-                          deal: deal,
-                          fetchDealDetail: _fetchDealDetailItemById,
-                        );
-                      },
-                    ),
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: _filteredDeals.length,
+                        itemBuilder: (context, index) {
+                          final deal = _filteredDeals[index];
+                          return DealCardItem(
+                            deal: deal,
+                            fetchDealDetail: _fetchDealDetailItemById,
+                          );
+                        },
+                      ),
               ],
             ),
           ],
@@ -453,6 +500,4 @@ List<Event> events = [];
       ),
     );
   }
-
-  
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/race_evets_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
@@ -27,6 +28,10 @@ import 'package:racecar_tracker/models/deal.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/sponser_ship_deal.dart';
 import 'package:racecar_tracker/models/summary_item.dart';
+import 'package:racecar_tracker/models/deal_item.dart';
+
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -83,82 +88,100 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  final List<Event> upcomingEvents = [
+  List<Event> upcomingEvents = [
     Event(
-      raceType: "race",
-      trackName: "Thunderstruck Circuit B",
-      currentRacers: 10,
+      id: "event1",
+      title: "Summer GP 2025",
+      raceType: "Formula 1",
+      dateTime: DateTime(2025, 6, 15),
+      trackName: "Silverstone Circuit",
+      raceName: "British Grand Prix",
+      location: "Silverstone, UK",
+      type: "Formula 1",
+      currentRacers: 15,
       maxRacers: 20,
       status: EventStatusType.registrationOpen,
-      title: "Summer GP Thunder Series",
-      type: "Summer Race",
-      dateTime: DateTime(2025, 6, 30, 22, 0),
-      location: "Thunderstruck Circuit B",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FF0000', // Red placeholder
-        'https://via.placeholder.com/150/0000FF', // Blue placeholder
-        'https://via.placeholder.com/150/00FF00', // Green placeholder
-      ],
-      totalOtherRacers: 5,
+      racerImageUrls: [],
+      totalOtherRacers: 14,
     ),
     Event(
-      raceType: "race",
-      trackName: "Highland Raceway",
-      currentRacers: 5,
-      maxRacers: 10,
+      id: "event2",
+      title: "Winter Rally 2025",
+      raceType: "Rally",
+      dateTime: DateTime(2025, 1, 20),
+      trackName: "Monte Carlo Rally",
+      raceName: "Monte Carlo Rally",
+      location: "Monte Carlo, Monaco",
+      type: "Rally",
+      currentRacers: 25,
+      maxRacers: 30,
       status: EventStatusType.registrationOpen,
-      title: "Autumn Speed Fest",
-      type: "Grand Prix",
-      dateTime: DateTime(2025, 9, 10, 14, 0),
-      location: "Highland Raceway",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FFFF00', // Yellow
-        'https://via.placeholder.com/150/00FFFF', // Cyan
-      ],
-      totalOtherRacers: 3,
-    ),
-    Event(
-      raceType: "race",
-      trackName: "Snowy Peaks Course",
-      currentRacers: 10,
-      maxRacers: 20,
-      status: EventStatusType.registrationOpen,
-      title: "Winter Endurance Challenge",
-      type: "Charity Run",
-      dateTime: DateTime(2025, 12, 5, 9, 30),
-      location: "Snowy Peaks Course",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FF00FF', // Magenta
-        'https://via.placeholder.com/150/FFC0CB', // Pink
-      ],
-      totalOtherRacers: 10,
+      racerImageUrls: [],
+      totalOtherRacers: 24,
     ),
   ];
 
-  final List<SponsorshipDeal> activeSponsorshipDeals = [
-    SponsorshipDeal(
+  final List<DealItem> activeSponsorshipDeals = [
+    DealItem(
+      id: "home_deal1",
+      sponsorId: "sponsor1",
+      racerId: "racer1",
+      eventId: "event1",
       title: "DC Autos X Sarah White",
+      raceType: "Summer Race",
       dealValue: "\$1500",
       commission: "20%",
       renewalDate: "June 2026",
-      status: DealStatus.pending,
+      parts: ["Car Doors", "Suit"],
+      status: DealStatusType.pending,
+      sponsorInitials: "DA",
+      racerInitials: "SW",
     ),
-    SponsorshipDeal(
+    DealItem(
+      id: "home_deal2",
+      sponsorId: "sponsor2",
+      racerId: "racer2",
+      eventId: "event2",
       title: "Nitro Fuel X Team Alpha",
+      raceType: "Circuit Race",
       dealValue: "\$3000",
       commission: "15%",
       renewalDate: "Dec 2025",
-      status: DealStatus.active,
+      parts: ["Engine", "Tyres"],
+      status: DealStatusType.paid,
+      sponsorInitials: "NF",
+      racerInitials: "TA",
     ),
-    SponsorshipDeal(
+    DealItem(
+      id: "home_deal3",
+      sponsorId: "sponsor3",
+      racerId: "racer3",
+      eventId: "event3",
       title: "Speed Gear Inc. X Max Racer",
+      raceType: "Grand Prix",
       dealValue: "\$2500",
       commission: "10%",
       renewalDate: "Jan 2026",
-      status: DealStatus.completed,
+      parts: ["Helmet", "Suit"],
+      status: DealStatusType.pending,
+      sponsorInitials: "SG",
+      racerInitials: "MR",
     ),
   ];
   int commissionAmount = 100000;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize profile data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<EditProfileProvider>(
+        context,
+        listen: false,
+      ).fetchUserProfileDetails();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,10 +205,8 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(28),
         color: Color(0xFF13386B),
       ),
-
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {
@@ -196,7 +217,6 @@ class _HomeScreenState extends State<HomeScreen> {
           showSelectedLabels: false,
           showUnselectedLabels: false,
           backgroundColor: Color(0xFF13386B),
-
           type: BottomNavigationBarType.fixed,
           items: <BottomNavigationBarItem>[
             BottomNavigationBarItem(
@@ -228,7 +248,6 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: BottomIcons(
                 imageUrl: Images.headIcon,
                 isSelected: _currentIndex == 2,
-
                 defaultColor: Colors.grey,
                 selectedColor: Colors.green,
                 selectedBorderColor:
@@ -298,77 +317,82 @@ class HomeContent extends StatelessWidget {
 
   final List<Event> upcomingEvents = [
     Event(
-      raceType: "race",
-      trackName: "Thunderstruck Circuit B",
-      currentRacers: 10,
+      id: "event1",
+      title: "Summer GP 2025",
+      raceType: "Formula 1",
+      dateTime: DateTime(2025, 6, 15),
+      trackName: "Silverstone Circuit",
+      raceName: "British Grand Prix",
+      location: "Silverstone, UK",
+      type: "Formula 1",
+      currentRacers: 15,
       maxRacers: 20,
       status: EventStatusType.registrationOpen,
-      title: "Summer GP Thunder Series",
-      type: "Summer Race",
-      dateTime: DateTime(2025, 6, 30, 22, 0),
-      location: "Thunderstruck Circuit B",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FF0000',
-        'https://via.placeholder.com/150/0000FF',
-        'https://via.placeholder.com/150/00FF00',
-      ],
-      totalOtherRacers: 5,
+      racerImageUrls: [],
+      totalOtherRacers: 14,
     ),
     Event(
-      raceType: "race",
-      trackName: "Highland Raceway",
-      currentRacers: 5,
-      maxRacers: 10,
+      id: "event2",
+      title: "Winter Rally 2025",
+      raceType: "Rally",
+      dateTime: DateTime(2025, 1, 20),
+      trackName: "Monte Carlo Rally",
+      raceName: "Monte Carlo Rally",
+      location: "Monte Carlo, Monaco",
+      type: "Rally",
+      currentRacers: 25,
+      maxRacers: 30,
       status: EventStatusType.registrationOpen,
-      title: "Autumn Speed Fest",
-      type: "Grand Prix",
-      dateTime: DateTime(2025, 9, 10, 14, 0),
-      location: "Highland Raceway",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FFFF00',
-        'https://via.placeholder.com/150/00FFFF',
-      ],
-      totalOtherRacers: 3,
-    ),
-    Event(
-      raceType: "race",
-      trackName: "Snowy Peaks Course",
-      currentRacers: 10,
-      maxRacers: 20,
-      status: EventStatusType.registrationOpen,
-      title: "Winter Endurance Challenge",
-      type: "Charity Run",
-      dateTime: DateTime(2025, 12, 5, 9, 30),
-      location: "Snowy Peaks Course",
-      racerImageUrls: [
-        'https://via.placeholder.com/150/FF00FF',
-        'https://via.placeholder.com/150/FFC0CB',
-      ],
-      totalOtherRacers: 10,
+      racerImageUrls: [],
+      totalOtherRacers: 24,
     ),
   ];
 
-  final List<SponsorshipDeal> activeSponsorshipDeals = [
-    SponsorshipDeal(
+  final List<DealItem> activeSponsorshipDeals = [
+    DealItem(
+      id: "home_deal1",
+      sponsorId: "sponsor1",
+      racerId: "racer1",
+      eventId: "event1",
       title: "DC Autos X Sarah White",
+      raceType: "Summer Race",
       dealValue: "\$1500",
       commission: "20%",
       renewalDate: "June 2026",
-      status: DealStatus.pending,
+      parts: ["Car Doors", "Suit"],
+      status: DealStatusType.pending,
+      sponsorInitials: "DA",
+      racerInitials: "SW",
     ),
-    SponsorshipDeal(
+    DealItem(
+      id: "home_deal2",
+      sponsorId: "sponsor2",
+      racerId: "racer2",
+      eventId: "event2",
       title: "Nitro Fuel X Team Alpha",
+      raceType: "Circuit Race",
       dealValue: "\$3000",
       commission: "15%",
       renewalDate: "Dec 2025",
-      status: DealStatus.active,
+      parts: ["Engine", "Tyres"],
+      status: DealStatusType.paid,
+      sponsorInitials: "NF",
+      racerInitials: "TA",
     ),
-    SponsorshipDeal(
+    DealItem(
+      id: "home_deal3",
+      sponsorId: "sponsor3",
+      racerId: "racer3",
+      eventId: "event3",
       title: "Speed Gear Inc. X Max Racer",
+      raceType: "Grand Prix",
       dealValue: "\$2500",
       commission: "10%",
       renewalDate: "Jan 2026",
-      status: DealStatus.completed,
+      parts: ["Helmet", "Suit"],
+      status: DealStatusType.pending,
+      sponsorInitials: "SG",
+      racerInitials: "MR",
     ),
   ];
 
@@ -447,39 +471,68 @@ class HomeContent extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    width: 3,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                padding: EdgeInsets.all(2),
-                                child: ClipOval(
-                                  child: Image.network(
-                                    Images.profile,
-                                    height: 24,
-                                    width: 24,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                              Consumer<EditProfileProvider>(
+                                builder: (context, provider, child) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ProfilePage(),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          width: 3,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.all(2),
+                                      child: ClipOval(
+                                        child: Image.network(
+                                          provider.getProfileImageUrl(),
+                                          height: 24,
+                                          width: 24,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Image.network(
+                                              Images.profileImg,
+                                              height: 24,
+                                              width: 24,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
                         ),
                         SizedBox(height: 26),
-
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            "Hello Admin",
-                            style: TextStyle(
-                              color: Color(0xFFFFCC29),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: "Montserrat",
-                            ),
+                          child: Consumer<EditProfileProvider>(
+                            builder: (context, provider, child) {
+                              return Text(
+                                "Hello ${provider.profileDetails?.userName ?? 'User'}",
+                                style: TextStyle(
+                                  color: Color(0xFFFFCC29),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: "Montserrat",
+                                ),
+                              );
+                            },
                           ),
                         ),
                         SizedBox(height: 16),
@@ -530,9 +583,7 @@ class HomeContent extends StatelessWidget {
                   ],
                 ),
               ),
-
               SizedBox(height: 24),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -545,8 +596,8 @@ class HomeContent extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => AddNewRacerScreen(events: []),
+                              builder: (context) =>
+                                  AddNewRacerScreen(events: []),
                             ),
                           );
                         },
@@ -556,7 +607,7 @@ class HomeContent extends StatelessWidget {
                     Expanded(
                       child: BuildActionCard(
                         imageUrl: Images.totalSponsersImg,
-                        text: "Add\nRacer",
+                        text: "Add\nSponsor",
                         onTap: () {
                           Navigator.push(
                             context,
@@ -576,12 +627,11 @@ class HomeContent extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => AddNewDealScreen(
-                                    sponsors: [],
-                                    racers: [],
-                                    events: [],
-                                  ),
+                              builder: (context) => AddNewDealScreen(
+                                sponsors: [],
+                                racers: [],
+                                events: [],
+                              ),
                             ),
                           );
                         },
@@ -605,7 +655,6 @@ class HomeContent extends StatelessWidget {
                   ],
                 ),
               ),
-
               DashboardSectionCard(
                 title: "Commission Summary",
                 imagurl: Images.totalCommissionEarnedImg,
@@ -613,7 +662,6 @@ class HomeContent extends StatelessWidget {
                   details: commissionDetails,
                 ),
               ),
-
               DashboardSectionCard(
                 title: "Pending Renewals/Expired Deals",
                 imagurl: Images.totalDealsCrackedImg,
@@ -628,7 +676,6 @@ class HomeContent extends StatelessWidget {
                 },
                 buttonText: "Go to Deals",
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -636,7 +683,6 @@ class HomeContent extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     color: Color(0xFF0F2A55),
                   ),
-
                   child: UpcomingEventsSection(
                     events: upcomingEvents,
                     onGoToEventsPressed: () {
@@ -650,7 +696,6 @@ class HomeContent extends StatelessWidget {
                   ),
                 ),
               ),
-
               ActiveSponsorshipDealsSection(
                 deals: activeSponsorshipDeals,
                 onGoToDealsPressed: () {
@@ -660,7 +705,6 @@ class HomeContent extends StatelessWidget {
                   );
                 },
               ),
-
               const SizedBox(height: 20),
             ],
           ),

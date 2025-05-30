@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/event_card_item.dart';
+import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/models/event.dart';
+import 'package:provider/provider.dart';
 
 class RaceEvetsScreen extends StatefulWidget {
   const RaceEvetsScreen({super.key});
@@ -26,7 +29,14 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
     _filteredEvents = _allEvents; // Initially, show all events
     _searchController.addListener(
       _filterEvents,
-    ); // Listen for search bar changes
+    ); 
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<EditProfileProvider>(
+        context,
+        listen: false,
+      ).fetchUserProfileDetails();
+    });// Listen for search bar changes
   }
 
   @override
@@ -62,6 +72,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
   List<Event> _getSampleEvents() {
     return [
       Event(
+        id: "event1",
         raceName: "Circuit Race",
         type: "Summer Race",
         location: "Longmilan track",
@@ -90,6 +101,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
         totalOtherRacers: 6, // 10 current + 6 others = 16 max
       ),
       Event(
+        id: "event2",
         raceName: "Drift Race",
         type: "Summer Race",
         location: "Longmilan track",
@@ -108,6 +120,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
         totalOtherRacers: 11, // 7 current + 11 others = 18 max
       ),
       Event(
+        id: "event3",
         raceName: "Circuit Race",
         type: "Summer Race",
         location: "Longmilan track",
@@ -126,6 +139,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
         totalOtherRacers: 5,
       ),
       Event(
+        id: "event4",
         raceName: "Circuit Race",
         type: "Summer Race",
         location: "Longmilan track",
@@ -212,7 +226,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                         Icons.flag,
                                         size: 20,
                                         color: Colors.white,
-                                      )
+                                      ),
                                     ),
                                     SizedBox(width: 10),
                                     Text(
@@ -226,24 +240,50 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      width: 3,
-                                      color: Colors.white,
+                               Consumer<EditProfileProvider>(
+                                builder: (context, provider, child) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ProfilePage(),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          width: 3,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.all(2),
+                                      child: ClipOval(
+                                        child: Image.network(
+                                          provider.getProfileImageUrl(),
+                                          height: 24,
+                                          width: 24,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Image.network(
+                                              Images.profileImg,
+                                              height: 24,
+                                              width: 24,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  padding: EdgeInsets.all(2),
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      Images.profile,
-                                      height: 24,
-                                      width: 24,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
+                                  );
+                                },
+                              ),
                               ],
                             ),
                           ),
@@ -295,17 +335,19 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-  final newEvent = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => AddNewEventScreen()),
-  );
-  if (newEvent != null && newEvent is Event) {
-    setState(() {
-      _allEvents.add(newEvent);
-      _filterEvents();
-    });
-  }
-},
+                                  final newEvent = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AddNewEventScreen(),
+                                    ),
+                                  );
+                                  if (newEvent != null && newEvent is Event) {
+                                    setState(() {
+                                      _allEvents.add(newEvent);
+                                      _filterEvents();
+                                    });
+                                  }
+                                },
                                 icon: const Icon(
                                   Icons.add,
                                   color: Colors.black,
@@ -369,11 +411,6 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
           ],
         ),
       ),
-      
     );
   }
-
-  
-    
-  
 }

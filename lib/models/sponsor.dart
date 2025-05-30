@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 enum SponsorStatus {
   active,
   renewSoon,
- 
 }
 
 class Sponsor {
+  final String id;
   final String initials;
   final String name;
   final String email;
@@ -20,9 +20,10 @@ class Sponsor {
   final int activeDeals;
   final DateTime endDate;
   final SponsorStatus status;
-     // Use enum for status
+  // Use enum for status
 
   Sponsor({
+    required this.id,
     required this.initials,
     required this.name,
     required this.email,
@@ -37,6 +38,35 @@ class Sponsor {
     this.notes,
   });
 
+  factory Sponsor.fromMap(Map<String, dynamic> map) {
+    return Sponsor(
+      id: map['id'] as String,
+      initials: map['initials'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String,
+      parts: List<String>.from(map['parts'] as List),
+      activeDeals: map['activeDeals'] as int,
+      endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
+      status: SponsorStatus.values.firstWhere(
+        (e) => e.toString() == map['status'],
+        orElse: () => SponsorStatus.active,
+      ),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'initials': initials,
+      'name': name,
+      'email': email,
+      'parts': parts,
+      'activeDeals': activeDeals,
+      'endDate': endDate.millisecondsSinceEpoch,
+      'status': status.toString(),
+    };
+  }
+
   // Helper getters for status text and color
   String get statusText {
     switch (status) {
@@ -46,16 +76,16 @@ class Sponsor {
         return "Renew Soon";
     }
   }
-  
 
   Color get statusColor {
     switch (status) {
       case SponsorStatus.active:
-        return Color(0xFF24C166); 
+        return Color(0xFF24C166);
       case SponsorStatus.renewSoon:
-        return const Color(0xFF8CEAFC); 
+        return const Color(0xFF8CEAFC);
     }
   }
+
   static String generateInitials(String name) {
     if (name.isEmpty) return "";
     List<String> words = name.split(' ');
