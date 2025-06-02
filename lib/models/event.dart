@@ -1,92 +1,189 @@
 import 'package:flutter/material.dart';
 
-enum EventStatusType { registrationOpen, registrationClosed }
+enum EventStatusType {
+  registrationOpen,
+  registrationClosed,
+  upcoming,
+  ongoing,
+  completed,
+}
 
 class Event {
   final String id;
-  final String raceName;
-  final String type;
+  final String userId;
+  final String name;
   final String location;
-  final String title;
-  final String raceType;
-  final DateTime dateTime;
-  final String trackName;
+  final DateTime startDate;
+  final DateTime endDate;
+  final EventStatusType status;
+  final String type;
+  final String description;
+  final String? imageUrl;
+  final List<String>? racerImageUrls;
+  final int totalRacers;
   final int currentRacers;
   final int maxRacers;
-  final EventStatusType status;
-  final List<String> racerImageUrls;
-  final int totalOtherRacers;
+  final int totalSponsors;
+  final double totalPrizeMoney;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? trackName;
 
   Event({
     required this.id,
-    required this.raceName,
-    required this.type,
+    required this.userId,
+    required this.name,
     required this.location,
-    required this.title,
-    required this.raceType,
-    required this.dateTime,
-    required this.trackName,
-    required this.currentRacers,
-    required this.maxRacers,
+    required this.startDate,
+    required this.endDate,
     required this.status,
-    required this.racerImageUrls,
-    required this.totalOtherRacers,
+    required this.type,
+    required this.description,
+    this.imageUrl,
+    this.racerImageUrls,
+    required this.totalRacers,
+    this.currentRacers = 0,
+    this.maxRacers = 0,
+    required this.totalSponsors,
+    required this.totalPrizeMoney,
+    required this.createdAt,
+    required this.updatedAt,
+    this.trackName,
   });
 
   factory Event.fromMap(Map<String, dynamic> map) {
     return Event(
       id: map['id'] as String,
-      raceName: map['raceName'] as String,
-      type: map['type'] as String,
+      userId: map['userId'] as String,
+      name: map['name'] as String,
       location: map['location'] as String,
-      title: map['title'] as String,
-      raceType: map['raceType'] as String,
-      dateTime: DateTime.fromMillisecondsSinceEpoch(map['dateTime'] as int),
-      trackName: map['trackName'] as String,
-      currentRacers: map['currentRacers'] as int,
-      maxRacers: map['maxRacers'] as int,
-      status: EventStatusType.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => EventStatusType.registrationOpen,
+      startDate: DateTime.fromMillisecondsSinceEpoch(
+        map['startDate'] as int? ?? DateTime.now().millisecondsSinceEpoch,
       ),
-      racerImageUrls: List<String>.from(map['racerImageUrls'] as List),
-      totalOtherRacers: map['totalOtherRacers'] as int,
+      endDate: DateTime.fromMillisecondsSinceEpoch(
+        map['endDate'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      status: EventStatusType.values.firstWhere(
+        (e) => e.toString() == map['status']?.toString(),
+        orElse: () => EventStatusType.upcoming,
+      ),
+      type: map['type'] as String? ?? 'race',
+      description: map['description'] as String? ?? '',
+      imageUrl: map['imageUrl'] as String?,
+      racerImageUrls:
+          (map['racerImageUrls'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(),
+      totalRacers: map['totalRacers'] as int? ?? 0,
+      currentRacers: map['currentRacers'] as int? ?? 0,
+      maxRacers: map['maxRacers'] as int? ?? 0,
+      totalSponsors: map['totalSponsors'] as int? ?? 0,
+      totalPrizeMoney: (map['totalPrizeMoney'] as num?)?.toDouble() ?? 0.0,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        map['updatedAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      trackName: map['trackName'] as String?,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'raceName': raceName,
-      'type': type,
+      'userId': userId,
+      'name': name,
       'location': location,
-      'title': title,
-      'raceType': raceType,
-      'dateTime': dateTime.millisecondsSinceEpoch,
-      'trackName': trackName,
+      'startDate': startDate.millisecondsSinceEpoch,
+      'endDate': endDate.millisecondsSinceEpoch,
+      'status': status.toString(),
+      'type': type,
+      'description': description,
+      'imageUrl': imageUrl,
+      'racerImageUrls': racerImageUrls,
+      'totalRacers': totalRacers,
       'currentRacers': currentRacers,
       'maxRacers': maxRacers,
-      'status': status.toString(),
-      'racerImageUrls': racerImageUrls,
-      'totalOtherRacers': totalOtherRacers,
+      'totalSponsors': totalSponsors,
+      'totalPrizeMoney': totalPrizeMoney,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'trackName': trackName,
     };
+  }
+
+  Event copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? location,
+    DateTime? startDate,
+    DateTime? endDate,
+    EventStatusType? status,
+    String? type,
+    String? description,
+    String? imageUrl,
+    List<String>? racerImageUrls,
+    int? totalRacers,
+    int? currentRacers,
+    int? maxRacers,
+    int? totalSponsors,
+    double? totalPrizeMoney,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? trackName,
+  }) {
+    return Event(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      location: location ?? this.location,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      status: status ?? this.status,
+      type: type ?? this.type,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      racerImageUrls: racerImageUrls ?? this.racerImageUrls,
+      totalRacers: totalRacers ?? this.totalRacers,
+      currentRacers: currentRacers ?? this.currentRacers,
+      maxRacers: maxRacers ?? this.maxRacers,
+      totalSponsors: totalSponsors ?? this.totalSponsors,
+      totalPrizeMoney: totalPrizeMoney ?? this.totalPrizeMoney,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      trackName: trackName ?? this.trackName,
+    );
   }
 
   String get statusText {
     switch (status) {
       case EventStatusType.registrationOpen:
-        return "Registration\nopen";
+        return "Registration Open";
       case EventStatusType.registrationClosed:
-        return "Registration\nClosed";
+        return "Registration Closed";
+      case EventStatusType.upcoming:
+        return "Upcoming";
+      case EventStatusType.ongoing:
+        return "Ongoing";
+      case EventStatusType.completed:
+        return "Completed";
     }
   }
 
   Color get statusColor {
     switch (status) {
       case EventStatusType.registrationOpen:
-        return Color(0xFFA8E266); // Green for Open
+        return const Color(0xFFA8E266); // Green
       case EventStatusType.registrationClosed:
-        return const Color(0xFFFE5F38); // Orange for Closed
+        return const Color(0xFFFE5F38); // Orange
+      case EventStatusType.upcoming:
+        return const Color(0xFFA8E266); // Green
+      case EventStatusType.ongoing:
+        return const Color(0xFFFE5F38); // Orange
+      case EventStatusType.completed:
+        return const Color(0xFFFE5F38); // Orange
     }
   }
 }

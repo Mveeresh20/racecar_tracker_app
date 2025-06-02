@@ -3,91 +3,60 @@ import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/event.dart';
 
 class EventService extends BaseService {
-  // Create a new event
-  Future<String> createEvent({
-    required String title,
-    required String raceType,
-    required String trackName,
-    required int maxRacers,
-    required DateTime dateTime,
-    required String location,
-    required String type,
-    List<String>? racerImageUrls,
-  }) async {
-    try {
-      // Create event data
-      final eventData = {
-        'title': title,
-        'raceType': raceType,
-        'trackName': trackName,
-        'maxRacers': maxRacers,
-        'currentRacers': 0,
-        'dateTime': dateTime.millisecondsSinceEpoch,
-        'location': location,
-        'type': type,
-        'racerImageUrls': racerImageUrls ?? [],
-        'status': EventStatusType.registrationOpen.toString(),
-        'createdAt': ServerValue.timestamp,
-        'updatedAt': ServerValue.timestamp,
-      };
+  // Get user-specific events reference
+  DatabaseReference getUserEventsRef(String userId) {
+    return database.ref().child('478_users/$userId/events');
+  }
 
-      return await create(eventsRef, eventData);
-    } catch (e) {
-      rethrow;
-    }
+  // Create new event
+  Future<void> createEvent(String userId, Event event) async {
+    final eventRef = getUserEventsRef(userId).push();
+    await eventRef.set(event.toMap());
+  }
+
+  // Fetch user's events
+  Stream<List<Event>> getUserEvents(String userId) {
+    return getUserEventsRef(userId).onValue.map((event) {
+      if (event.snapshot.value == null) return [];
+
+      final Map<dynamic, dynamic> data = event.snapshot.value as Map;
+      return data.entries.map((entry) {
+        final Map<String, dynamic> eventData = Map<String, dynamic>.from(
+          entry.value,
+        );
+        eventData['id'] = entry.key;
+        return Event.fromMap(eventData);
+      }).toList();
+    });
+  }
+
+  // Fetch all events
+  Stream<List<Event>> getEvents() {
+    return eventsRef.onValue.map((event) {
+      if (event.snapshot.value == null) return [];
+
+      final Map<dynamic, dynamic> data = event.snapshot.value as Map;
+      return data.entries.map((entry) {
+        final Map<String, dynamic> eventData = Map<String, dynamic>.from(
+          entry.value,
+        );
+        eventData['id'] = entry.key;
+        return Event.fromMap(eventData);
+      }).toList();
+    });
   }
 
   // Update event
-  Future<void> updateEvent(
-    String id, {
-    String? title,
-    String? raceType,
-    String? trackName,
-    int? maxRacers,
-    DateTime? dateTime,
-    String? location,
-    String? type,
-    List<String>? racerImageUrls,
-    EventStatusType? status,
-  }) async {
-    try {
-      final event = await getById<Event>(eventsRef, id, _fromMap);
-      if (event == null) throw Exception('Event not found');
-
-      final updates = <String, dynamic>{};
-
-      // Update basic info
-      if (title != null) updates['title'] = title;
-      if (raceType != null) updates['raceType'] = raceType;
-      if (trackName != null) updates['trackName'] = trackName;
-      if (maxRacers != null) {
-        updates['maxRacers'] = maxRacers;
-        // If max racers is less than current racers, update status
-        if (maxRacers <= event.currentRacers) {
-          updates['status'] = EventStatusType.registrationClosed.toString();
-        }
-      }
-      if (dateTime != null)
-        updates['dateTime'] = dateTime.millisecondsSinceEpoch;
-      if (location != null) updates['location'] = location;
-      if (type != null) updates['type'] = type;
-      if (racerImageUrls != null) updates['racerImageUrls'] = racerImageUrls;
-      if (status != null) updates['status'] = status.toString();
-
-      updates['updatedAt'] = ServerValue.timestamp;
-      await update(eventsRef, id, updates);
-    } catch (e) {
-      rethrow;
+  Future<void> updateEvent(String userId, Event event) async {
+    if (event.id.isEmpty) {
+      throw Exception('Event ID is required for update');
     }
+    await getUserEventsRef(userId).child(event.id).update(event.toMap());
   }
 
   // Delete event
-  Future<void> deleteEvent(String id) async {
-    try {
-      await delete(eventsRef, id);
-    } catch (e) {
-      rethrow;
-    }
+  Future<void> deleteEvent(String userId, String eventId) async {
+    await getUserEventsRef(userId).child(eventId).remove();
   }
 
   // Get event by ID
@@ -169,7 +138,7 @@ class EventService extends BaseService {
       };
 
       // Update status if needed
-      if (newCount >= event.maxRacers) {
+      if (newCount >= event.totalRacers) {
         updates['status'] = EventStatusType.registrationClosed.toString();
       } else if (event.status == EventStatusType.registrationClosed) {
         updates['status'] = EventStatusType.registrationOpen.toString();
@@ -184,24 +153,25 @@ class EventService extends BaseService {
   // Helper method to convert Map to Event object
   Event _fromMap(Map<String, dynamic> map) {
     return Event(
+      status: EventStatusType.registrationOpen,
+      
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int),
+      userId: map['userId'] as String,
       id: map['id'] as String,
-      title: map['title'] as String,
-      raceName: map['raceName'] as String,
-      raceType: map['raceType'] as String,
-      trackName: map['trackName'] as String,
-      currentRacers: map['currentRacers'] as int,
-      maxRacers: map['maxRacers'] as int,
-      status: EventStatusType.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => EventStatusType.registrationOpen,
-      ),
+      name: map['name'] as String,
+      startDate: DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int),
+      endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
+      
+      description: map['description'] as String,
+      totalRacers: map['totalRacers'] as int,
+      totalSponsors: map['totalSponsors'] as int,
+      
+
       type: map['type'] as String,
-      dateTime: DateTime.fromMillisecondsSinceEpoch(map['dateTime'] as int),
       location: map['location'] as String,
-      racerImageUrls: List<String>.from(map['racerImageUrls'] as List? ?? []),
-      totalOtherRacers:
-          (map['currentRacers'] as int) -
-          (map['racerImageUrls'] as List? ?? []).length,
+      totalPrizeMoney: map['totalPrizeMoney'] as double,
+      
     );
   }
 }

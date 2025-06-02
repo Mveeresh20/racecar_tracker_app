@@ -3,13 +3,15 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/race_evets_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/sponsors_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/track_map_screen.dart';
-import 'package:racecar_tracker/Presentation/Views/add_new_sponsor_screen.dart';
+
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsership_deals_section.dart';
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsorship_deals_content.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
@@ -32,6 +34,10 @@ import 'package:racecar_tracker/models/deal_item.dart';
 
 import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Services/racer_provider.dart';
+import 'package:racecar_tracker/Services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     HomeContent(),
     RaceEvetsScreen(),
     RacersScreen(),
-    SponsersScreen(),
+    SponsorsScreen(),
     DealsScreen(),
   ];
   final List<SummaryItem> summaryItems = [
@@ -90,34 +96,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Event> upcomingEvents = [
     Event(
+      userId: "478",
       id: "event1",
-      title: "Summer GP 2025",
-      raceType: "Formula 1",
-      dateTime: DateTime(2025, 6, 15),
-      trackName: "Silverstone Circuit",
-      raceName: "British Grand Prix",
-      location: "Silverstone, UK",
+      name: "Circuit Race",
       type: "Formula 1",
+      location: "Silverstone Circuit",
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      status: EventStatusType.registrationOpen,
+      description: "British Grand Prix",
+      totalRacers: 20,
+      totalSponsors: 10,
+      totalPrizeMoney: 100000,
       currentRacers: 15,
       maxRacers: 20,
-      status: EventStatusType.registrationOpen,
       racerImageUrls: [],
-      totalOtherRacers: 14,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Event(
+      userId: "478",
       id: "event2",
-      title: "Winter Rally 2025",
-      raceType: "Rally",
-      dateTime: DateTime(2025, 1, 20),
-      trackName: "Monte Carlo Rally",
-      raceName: "Monte Carlo Rally",
-      location: "Monte Carlo, Monaco",
+      name: "Winter Rally 2025",
       type: "Rally",
+      location: "Monte Carlo Rally",
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      status: EventStatusType.registrationOpen,
+      description: "Monte Carlo Rally",
+      totalRacers: 30,
+      totalSponsors: 15,
+      totalPrizeMoney: 150000,
       currentRacers: 25,
       maxRacers: 30,
-      status: EventStatusType.registrationOpen,
       racerImageUrls: [],
-      totalOtherRacers: 24,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -317,34 +331,42 @@ class HomeContent extends StatelessWidget {
 
   final List<Event> upcomingEvents = [
     Event(
+      userId: "478",
       id: "event1",
-      title: "Summer GP 2025",
-      raceType: "Formula 1",
-      dateTime: DateTime(2025, 6, 15),
-      trackName: "Silverstone Circuit",
-      raceName: "British Grand Prix",
-      location: "Silverstone, UK",
+      name: "Circuit Race",
       type: "Formula 1",
+      location: "Silverstone Circuit",
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      status: EventStatusType.registrationOpen,
+      description: "British Grand Prix",
+      totalRacers: 20,
+      totalSponsors: 10,
+      totalPrizeMoney: 100000,
       currentRacers: 15,
       maxRacers: 20,
-      status: EventStatusType.registrationOpen,
       racerImageUrls: [],
-      totalOtherRacers: 14,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Event(
+      userId: "478",
       id: "event2",
-      title: "Winter Rally 2025",
-      raceType: "Rally",
-      dateTime: DateTime(2025, 1, 20),
-      trackName: "Monte Carlo Rally",
-      raceName: "Monte Carlo Rally",
-      location: "Monte Carlo, Monaco",
+      name: "Winter Rally 2025",
       type: "Rally",
+      location: "Monte Carlo Rally",
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      status: EventStatusType.registrationOpen,
+      description: "Monte Carlo Rally",
+      totalRacers: 30,
+      totalSponsors: 15,
+      totalPrizeMoney: 150000,
       currentRacers: 25,
       maxRacers: 30,
-      status: EventStatusType.registrationOpen,
       racerImageUrls: [],
-      totalOtherRacers: 24,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -592,14 +614,24 @@ class HomeContent extends StatelessWidget {
                       child: BuildActionCard(
                         imageUrl: Images.addRacerImg,
                         text: "Add\nRacer",
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  AddNewRacerScreen(events: []),
+                              builder: (context) => const AddNewRacerScreen(),
                             ),
                           );
+
+                          if (result == true) {
+                            // Refresh racers list if needed
+                            final userId = UserService().getCurrentUserId();
+                            if (userId != null) {
+                              await Provider.of<RacerProvider>(
+                                context,
+                                listen: false,
+                              ).initializeRacers(userId);
+                            }
+                          }
                         },
                       ),
                     ),
@@ -612,7 +644,13 @@ class HomeContent extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AddNewSponsorScreen(),
+                              builder:
+                                  (context) => AddNewSponsorScreen(
+                                    provider: Provider.of<SponsorProvider>(
+                                      context,
+                                      listen: false,
+                                    ),
+                                  ),
                             ),
                           );
                         },
@@ -627,11 +665,12 @@ class HomeContent extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AddNewDealScreen(
-                                sponsors: [],
-                                racers: [],
-                                events: [],
-                              ),
+                              builder:
+                                  (context) => AddNewDealScreen(
+                                    sponsors: [],
+                                    racers: [],
+                                    events: [],
+                                  ),
                             ),
                           );
                         },

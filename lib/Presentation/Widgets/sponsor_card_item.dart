@@ -5,6 +5,7 @@ import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // For kDef
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/sponsor.dart'; // Import the Sponsor model
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SponsorCardItem extends StatelessWidget {
   final Sponsor sponsor;
@@ -26,7 +27,6 @@ class SponsorCardItem extends StatelessWidget {
           border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           color: const Color(0xFF13386B),
         ),
-
         child: Padding(
           padding: const EdgeInsets.all(kDefaultPadding),
           child: Column(
@@ -41,11 +41,11 @@ class SponsorCardItem extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: Color(0xFF252D38),
+                      color: const Color(0xFF252D38),
                       border: Border.all(
                         color: Colors.white.withOpacity(0.3),
                         width: 1,
-                      ), // Placeholder color for initials background
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -63,18 +63,17 @@ class SponsorCardItem extends StatelessWidget {
                     children: [
                       Text(
                         sponsor.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFFA8E266),
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                        ), // Sponsor Name
+                        ),
                       ),
                       Text(
                         sponsor.email,
                         style: context.bodyMedium?.copyWith(
                           color: Colors.white,
                         ),
-                        // Sponsor Email
                       ),
                     ],
                   ),
@@ -84,24 +83,23 @@ class SponsorCardItem extends StatelessWidget {
 
               // Parts/Categories
               Wrap(
-                spacing: 8.0, // horizontal space between chips
-                runSpacing: 4.0, // vertical space between lines of chips
+                spacing: 8.0,
+                runSpacing: 4.0,
                 children:
                     sponsor.parts.map((part) => _buildPartChip(part)).toList(),
               ),
               const SizedBox(height: 12),
 
-              // Active Deals, Ends Date, and Action Buttons
+              // Active Deals and End Date
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Active Deals: ${sponsor.activeDeals}", // Active Deals
+                    "Active Deals: ${sponsor.activeDeals}",
                     style: context.titleSmall?.copyWith(color: Colors.white),
                   ),
-                  const SizedBox(height: 4),
                   Text(
-                    "Ends: ${DateFormat('dd/MM/yyyy').format(sponsor.endDate)}", // End Date
+                    "Ends: ${DateFormat('dd/MM/yyyy').format(sponsor.endDate)}",
                     style: context.bodySmall?.copyWith(color: Colors.white),
                   ),
                 ],
@@ -115,13 +113,11 @@ class SponsorCardItem extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: sponsor.statusColor, // Dynamic status color
-                      borderRadius: BorderRadius.circular(
-                        8,
-                      ), // Rounded corners for status button
+                      color: sponsor.statusColor,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      sponsor.statusText, // Dynamic status text
+                      sponsor.statusText,
                       style: context.labelLarge?.copyWith(color: Colors.black),
                     ),
                   ),
@@ -131,9 +127,19 @@ class SponsorCardItem extends StatelessWidget {
                     children: [
                       // Action Icons
                       _buildActionButton(Icons.remove_red_eye_outlined, () {
-                        final dealsForThisSponsor = getDealItemsForSponsor(sponsor.name);
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => SponsorDetailScreen(sponsor: sponsor, sponsorDealItems: dealsForThisSponsor)));
-                        // Handle View action
+                        final dealsForThisSponsor = getDealItemsForSponsor(
+                          sponsor.name,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => SponsorDetailScreen(
+                                  sponsor: sponsor,
+                                  sponsorDealItems: dealsForThisSponsor,
+                                ),
+                          ),
+                        );
                       }),
                       const SizedBox(width: 8),
                       _buildActionButton(Icons.sync, () {
@@ -158,15 +164,14 @@ class SponsorCardItem extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Color(0xFF1B2953),
+        color: const Color(0xFF1B2953),
         border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
-
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Colors.white,
@@ -179,19 +184,17 @@ class SponsorCardItem extends StatelessWidget {
   Widget _buildActionButton(IconData icon, VoidCallback onPressed) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(20), // For ripple effect
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [Color(0xFF8B6AD2), Color(0xFF211E83)],
           ),
-
-          // Action button background color
         ),
-        child: Icon(icon, color: Colors.white, size: 20), // Action icon color
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }

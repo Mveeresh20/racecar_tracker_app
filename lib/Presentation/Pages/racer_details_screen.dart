@@ -4,17 +4,18 @@ import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/racer.dart';
+import 'package:racecar_tracker/Utils/image_url_helper.dart';
+import 'package:racecar_tracker/Services/app_constant.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
 
 class RacerDetailsScreen extends StatelessWidget {
   const RacerDetailsScreen({
     super.key,
     required this.racer,
     required this.racerDealItems,
-
   });
 
   final Racer racer;
-  
 
   final List<DealItem> racerDealItems;
   // Helper widget to build the "Parts" chips for deal items
@@ -132,74 +133,7 @@ class RacerDetailsScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Top Row: Initials/Image and Vehicle Image
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 140,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(racer.vehicleImageUrl),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFF252D38),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1,
-                              ),
-
-                              // Placeholder color for initials background
-                            ),
-
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 24,
-                                  horizontal: 20,
-                                ),
-                                child: Text(
-                                  racer.initials,
-                                  style: TextStyle(
-                                    color: Color(0xFFFFCC29),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // alignment: Alignment.center,
-                            // child: Text(
-                            //   racer.initials,
-                            //   style: const TextStyle(
-                            //     color: Colors.white,
-                            //     fontWeight: FontWeight.bold,
-                            //     fontSize: 16,
-                            //   ),
-                            // ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildImageSection(context, racer),
                 // --- Main Content Section (below header image) ---
                 Padding(
                   padding: const EdgeInsets.all(kDefaultPadding),
@@ -557,4 +491,66 @@ class RacerDetailsScreen extends StatelessWidget {
       ),
     );
   }
+
+ Widget _buildImageSection(BuildContext context, Racer racer) {
+  final imageUtil = ImagePickerUtil();
+
+  final profileImageUrl = imageUtil.getUrlForUserUploadedImage(
+    racer.racerImageUrl ?? '',
+  );
+  final vehicleImageUrl = imageUtil.getUrlForUserUploadedImage(
+    racer.vehicleImageUrl ?? '',
+  );
+
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Stack(
+      children: [
+        // Vehicle Image as background
+        Container(
+          height: 140,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            image: DecorationImage(
+              image: (racer.vehicleImageUrl != null &&
+                      racer.vehicleImageUrl!.isNotEmpty)
+                  ? NetworkImage(vehicleImageUrl)
+                  : const AssetImage("assets/images/vehicle_placeholder.png")
+                      as ImageProvider,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+
+        // Racer profile image in a circle, overlaid at top-left
+        Positioned(
+          top: 12,
+          left: 12,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              color: const Color(0xFF252D38),
+              image: DecorationImage(
+                image: (racer.racerImageUrl != null &&
+                        racer.racerImageUrl!.isNotEmpty)
+                    ? NetworkImage(profileImageUrl)
+                    : const AssetImage("assets/images/profile_placeholder.png")
+                        as ImageProvider,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
 }

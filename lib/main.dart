@@ -14,12 +14,15 @@ import 'package:racecar_tracker/firebase_options.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/edit_profile_provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
+import 'package:racecar_tracker/Services/racer_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize Firebase App Check
   await FirebaseAppCheck.instance.activate(
@@ -32,7 +35,12 @@ void main() async {
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => EditProfileProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => EditProfileProvider()),
+        ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => SponsorProvider()),
+        ChangeNotifierProvider(create: (_) => RacerProvider()),
+      ],
       child: MyApp(),
     ),
   );
@@ -45,7 +53,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => EditProfileProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => EditProfileProvider()),
+        ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => SponsorProvider()),
+        ChangeNotifierProvider(create: (_) => RacerProvider()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',

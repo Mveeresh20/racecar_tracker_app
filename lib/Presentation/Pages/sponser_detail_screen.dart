@@ -10,9 +10,8 @@ import 'package:racecar_tracker/models/deal_item.dart'; // Import the new DealIt
 
 class SponsorDetailScreen extends StatelessWidget {
   final Sponsor sponsor;
-  final List<DealItem>
-  sponsorDealItems;
-   // List of deals specifically for this sponsor
+  final List<DealItem> sponsorDealItems;
+  // List of deals specifically for this sponsor
 
   const SponsorDetailScreen({
     Key? key,
@@ -86,7 +85,6 @@ class SponsorDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +174,8 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            sponsor.industryType??"N/A", // Hardcoded as per screenshot. Consider adding to Sponsor model if dynamic.
+                            sponsor.industryType ??
+                                "N/A", // Hardcoded as per screenshot. Consider adding to Sponsor model if dynamic.
                             style: context.labelMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -305,7 +304,7 @@ class SponsorDetailScreen extends StatelessWidget {
                     style: context.titleLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
-                      fontSize: 16
+                      fontSize: 16,
                     ),
                   ),
 
@@ -335,7 +334,6 @@ class SponsorDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-          
           ],
         ),
       ),

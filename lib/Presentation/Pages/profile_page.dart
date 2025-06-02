@@ -162,20 +162,22 @@ class _ProfilePageState extends State<ProfilePage> {
                                 imageUrl: imageUrl,
                                 fit: BoxFit.cover,
                                 placeholder:
-                                    (context, url) => const Center(
-                                      child: CircularProgressIndicator(),
+                                    (context, url) => Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                 errorWidget:
-                                    (context, url, error) => Image.network(
-                                      Images.profileImg,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const Icon(
-                                                Icons.person,
-                                                size: 60,
-                                                color: Colors.white,
-                                              ),
+                                    (context, url, error) => Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                               );
                             },

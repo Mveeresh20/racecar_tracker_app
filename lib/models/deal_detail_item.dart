@@ -54,30 +54,61 @@ class DealDetailItem {
 
   // Factory method to create from map
   factory DealDetailItem.fromMap(Map<String, dynamic> map) {
-    return DealDetailItem(
-      id: map['id'] as String,
-      sponsorId: map['sponsorId'] as String,
-      racerId: map['racerId'] as String,
-      eventId: map['eventId'] as String,
-      title: map['title'] as String,
-      raceType: map['raceType'] as String,
-      dealValue: (map['dealValue'] as num).toDouble(),
-      commissionPercentage: (map['commissionPercentage'] as num).toDouble(),
-      commissionAmount: (map['commissionAmount'] as num).toDouble(),
-      renewalReminder: map['renewalReminder'] as String,
-      startDate: DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int),
-      endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
-      parts: List<String>.from(map['advertisingPositions'] as List),
-      brandingImageUrls: List<String>.from(
-        map['brandingImageUrls'] as List? ?? [],
-      ),
-      status: DealStatusType.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => DealStatusType.pending,
-      ),
-      sponsorInitials: map['sponsorInitials'] as String,
-      racerInitials: map['racerInitials'] as String,
-    );
+    try {
+      return DealDetailItem(
+        id: map['id']?.toString() ?? '',
+        sponsorId: map['sponsorId']?.toString() ?? '',
+        racerId: map['racerId']?.toString() ?? '',
+        eventId: map['eventId']?.toString() ?? '',
+        title: map['title']?.toString() ?? '',
+        raceType: map['raceType']?.toString() ?? '',
+        dealValue:
+            (map['dealValue'] is num)
+                ? (map['dealValue'] as num).toDouble()
+                : double.tryParse(map['dealValue']?.toString() ?? '0') ?? 0.0,
+        commissionPercentage:
+            (map['commissionPercentage'] is num)
+                ? (map['commissionPercentage'] as num).toDouble()
+                : double.tryParse(
+                      map['commissionPercentage']?.toString() ?? '0',
+                    ) ??
+                    0.0,
+        commissionAmount:
+            (map['commissionAmount'] is num)
+                ? (map['commissionAmount'] as num).toDouble()
+                : double.tryParse(map['commissionAmount']?.toString() ?? '0') ??
+                    0.0,
+        renewalReminder: map['renewalReminder']?.toString() ?? '',
+        startDate:
+            map['startDate'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int)
+                : DateTime.now(),
+        endDate:
+            map['endDate'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int)
+                : DateTime.now().add(const Duration(days: 365)),
+        parts:
+            (map['advertisingPositions'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        brandingImageUrls:
+            (map['brandingImageUrls'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        status: DealStatusType.values.firstWhere(
+          (e) => e.toString() == map['status']?.toString(),
+          orElse: () => DealStatusType.pending,
+        ),
+        sponsorInitials: map['sponsorInitials']?.toString() ?? '',
+        racerInitials: map['racerInitials']?.toString() ?? '',
+      );
+    } catch (e) {
+      print('Error creating DealDetailItem from map: $e');
+      print('Map data: $map');
+      rethrow;
+    }
   }
 
   // Convert to map

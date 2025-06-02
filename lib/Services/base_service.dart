@@ -9,6 +9,9 @@ class BaseService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final _uuid = Uuid();
 
+  // Getter for database instance
+  FirebaseDatabase get database => _database;
+
   // Database references
   DatabaseReference get racersRef => _database.ref().child('racers');
   DatabaseReference get sponsorsRef => _database.ref().child('sponsors');
@@ -59,7 +62,10 @@ class BaseService {
   }
 
   Future<void> update<T>(
-      DatabaseReference ref, String id, Map<String, dynamic> data) async {
+    DatabaseReference ref,
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       await ref.child(id).update(data);
     } catch (e) {

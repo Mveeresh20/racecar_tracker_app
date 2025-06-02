@@ -2,175 +2,310 @@ import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:uuid/uuid.dart';
 
 class SponsorService extends BaseService {
+  final _uuid = const Uuid();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+
+  // Get reference to user's sponsors
+  DatabaseReference getUserSponsorsRef(String userId) {
+    return _database.child('478_users').child(userId).child('sponsors');
+  }
+
   // Create a new sponsor
-  Future<String> createSponsor({
-    required String name,
-    required String email,
-    required String contactPerson,
-    required String contactNumber,
-    required String industryType,
-    required List<String> parts,
-    required DateTime endDate,
-    File? logo,
-    String? notes,
-  }) async {
+  Future<void> createSponsor(String userId, Sponsor sponsor) async {
     try {
-      String? logoUrl;
-
-      // Upload logo if provided
-      if (logo != null) {
-        logoUrl = await uploadFile(logo, sponsorsStorageRef.child('logos'));
+      // Validate the sponsor data
+      if (sponsor.id.isEmpty) {
+        throw Exception('Sponsor ID cannot be empty');
       }
 
-      // Create sponsor data
-      final sponsorData = {
-        'name': name,
-        'email': email,
-        'contactPerson': contactPerson,
-        'contactNumber': contactNumber,
-        'industryType': industryType,
-        'parts': parts,
-        'endDate': endDate.millisecondsSinceEpoch,
-        'logoUrl': logoUrl,
-        'notes': notes,
-        'initials': Sponsor.generateInitials(name),
-        'activeDeals': 0,
-        'status': SponsorStatus.active.toString(),
-        'createdAt': ServerValue.timestamp,
-        'updatedAt': ServerValue.timestamp,
-      };
+      // Convert sponsor to map and validate the data
+      final sponsorMap = sponsor.toMap();
 
-      return await create(sponsorsRef, sponsorData);
+      // Ensure all required fields are present and of correct type
+      if (sponsorMap['name'] == null || sponsorMap['name'].toString().isEmpty) {
+        throw Exception('Sponsor name is required');
+      }
+      if (sponsorMap['email'] == null ||
+          sponsorMap['email'].toString().isEmpty) {
+        throw Exception('Sponsor email is required');
+      }
+      if (sponsorMap['userId'] == null ||
+          sponsorMap['userId'].toString().isEmpty) {
+        throw Exception('User ID is required');
+      }
+
+      // Ensure parts is a list
+      if (sponsorMap['parts'] is! List) {
+        sponsorMap['parts'] = [];
+      }
+
+      // Ensure dates are stored as timestamps
+      if (sponsorMap['endDate'] is! int) {
+        sponsorMap['endDate'] =
+            DateTime.now()
+                .add(const Duration(days: 365))
+                .millisecondsSinceEpoch;
+      }
+      if (sponsorMap['createdAt'] is! int) {
+        sponsorMap['createdAt'] = DateTime.now().millisecondsSinceEpoch;
+      }
+      if (sponsorMap['updatedAt'] is! int) {
+        sponsorMap['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
+      }
+
+      // Ensure numeric fields are numbers
+      if (sponsorMap['activeDeals'] is! int) {
+        sponsorMap['activeDeals'] = 0;
+      }
+      if (sponsorMap['totalDeals'] is! int) {
+        sponsorMap['totalDeals'] = 0;
+      }
+
+      // Save to Firebase
+      final sponsorRef = getUserSponsorsRef(userId).child(sponsor.id);
+      await sponsorRef.set(sponsorMap);
+
+      print('Successfully saved sponsor: ${sponsor.name}');
     } catch (e) {
-      // Delete uploaded logo if sponsor creation fails
-      rethrow;
+      print('Error creating sponsor: $e');
+      throw Exception('Failed to create sponsor: $e');
     }
   }
 
-  // Update sponsor
-  Future<void> updateSponsor(
-    String id, {
-    String? name,
-    String? email,
-    String? contactPerson,
-    String? contactNumber,
-    String? industryType,
-    List<String>? parts,
-    DateTime? endDate,
-    File? logo,
-    String? notes,
-  }) async {
-    try {
-      final sponsor = await getById<Sponsor>(sponsorsRef, id, _fromMap);
-      if (sponsor == null) throw Exception('Sponsor not found');
-
-      final updates = <String, dynamic>{};
-
-      // Update basic info
-      if (name != null) {
-        updates['name'] = name;
-        updates['initials'] = Sponsor.generateInitials(name);
-      }
-      if (email != null) updates['email'] = email;
-      if (contactPerson != null) updates['contactPerson'] = contactPerson;
-      if (contactNumber != null) updates['contactNumber'] = contactNumber;
-      if (industryType != null) updates['industryType'] = industryType;
-      if (parts != null) updates['parts'] = parts;
-      if (endDate != null) {
-        updates['endDate'] = endDate.millisecondsSinceEpoch;
-        // Update status based on end date
-        final daysUntilEnd = endDate.difference(DateTime.now()).inDays;
-        updates['status'] =
-            daysUntilEnd <= 30
-                ? SponsorStatus.renewSoon.toString()
-                : SponsorStatus.active.toString();
+  // Get real-time stream of sponsors
+  Stream<List<Sponsor>> getSponsorsStream(String userId) {
+    return getUserSponsorsRef(userId).onValue.map((event) {
+      if (event.snapshot.value == null) {
+        print('No data found for user $userId');
+        return [];
       }
 
-      // Handle logo update
-      if (logo != null) {
-        if (sponsor.logoUrl != null) {
-          await deleteFile(sponsor.logoUrl!);
+      final data = event.snapshot.value;
+      print('Raw data from Firebase: $data'); // Debug log
+
+      if (data == null) {
+        print('Data is null');
+        return [];
+      }
+
+      try {
+        // Handle single sponsor case (when data is a map with fields at root level)
+        if (data is Map) {
+          // Check if this is a single sponsor entry (has required fields)
+          if (data.containsKey('name') && data.containsKey('email')) {
+            // This is a single sponsor entry
+            final sponsorData = Map<String, dynamic>.from(data);
+
+            // Ensure required fields are present
+            sponsorData['id'] = sponsorData['id']?.toString() ?? _uuid.v4();
+            sponsorData['userId'] = userId;
+
+            // Handle parts list
+            if (sponsorData['parts'] is List) {
+              sponsorData['parts'] = List<String>.from(sponsorData['parts']);
+            } else if (sponsorData['parts'] is String) {
+              sponsorData['parts'] = [sponsorData['parts']];
+            } else {
+              sponsorData['parts'] = [];
+            }
+
+            // Handle numeric fields
+            sponsorData['activeDeals'] =
+                (sponsorData['activeDeals'] is num)
+                    ? (sponsorData['activeDeals'] as num).toInt()
+                    : 0;
+            sponsorData['totalDeals'] =
+                (sponsorData['totalDeals'] is num)
+                    ? (sponsorData['totalDeals'] as num).toInt()
+                    : 0;
+
+            // Handle dates
+            sponsorData['createdAt'] =
+                (sponsorData['createdAt'] is num)
+                    ? (sponsorData['createdAt'] as num).toInt()
+                    : DateTime.now().millisecondsSinceEpoch;
+            sponsorData['updatedAt'] =
+                (sponsorData['updatedAt'] is num)
+                    ? (sponsorData['updatedAt'] as num).toInt()
+                    : DateTime.now().millisecondsSinceEpoch;
+            sponsorData['endDate'] =
+                (sponsorData['endDate'] is num)
+                    ? (sponsorData['endDate'] as num).toInt()
+                    : DateTime.now()
+                        .add(const Duration(days: 365))
+                        .millisecondsSinceEpoch;
+
+            // Handle status
+            if (!sponsorData.containsKey('status')) {
+              sponsorData['status'] = 'SponsorStatus.active';
+            }
+
+            // Handle commission
+            if (!sponsorData.containsKey('commission')) {
+              sponsorData['commission'] = '0%';
+            }
+
+            try {
+              final sponsor = Sponsor.fromMap(sponsorData);
+              print('Successfully converted single sponsor: ${sponsor.name}');
+              return [sponsor];
+            } catch (e) {
+              print('Error converting single sponsor: $e');
+              print('Sponsor data: $sponsorData');
+              return [];
+            }
+          }
+
+          // Handle map of maps case (multiple sponsors)
+          if (data.isNotEmpty) {
+            final sponsors =
+                data.entries
+                    .map((entry) {
+                      try {
+                        if (entry.value is! Map) {
+                          print(
+                            'Warning: Sponsor data is not a map: ${entry.value}',
+                          );
+                          return null;
+                        }
+
+                        final sponsorData = Map<String, dynamic>.from(
+                          entry.value as Map,
+                        );
+                        sponsorData['id'] = entry.key;
+                        sponsorData['userId'] = userId;
+
+                        // Handle parts list
+                        if (sponsorData['parts'] is List) {
+                          sponsorData['parts'] = List<String>.from(
+                            sponsorData['parts'],
+                          );
+                        } else if (sponsorData['parts'] is String) {
+                          sponsorData['parts'] = [sponsorData['parts']];
+                        } else {
+                          sponsorData['parts'] = [];
+                        }
+
+                        // Handle numeric fields
+                        sponsorData['activeDeals'] =
+                            (sponsorData['activeDeals'] is num)
+                                ? (sponsorData['activeDeals'] as num).toInt()
+                                : 0;
+                        sponsorData['totalDeals'] =
+                            (sponsorData['totalDeals'] is num)
+                                ? (sponsorData['totalDeals'] as num).toInt()
+                                : 0;
+
+                        // Handle dates
+                        sponsorData['createdAt'] =
+                            (sponsorData['createdAt'] is num)
+                                ? (sponsorData['createdAt'] as num).toInt()
+                                : DateTime.now().millisecondsSinceEpoch;
+                        sponsorData['updatedAt'] =
+                            (sponsorData['updatedAt'] is num)
+                                ? (sponsorData['updatedAt'] as num).toInt()
+                                : DateTime.now().millisecondsSinceEpoch;
+                        sponsorData['endDate'] =
+                            (sponsorData['endDate'] is num)
+                                ? (sponsorData['endDate'] as num).toInt()
+                                : DateTime.now()
+                                    .add(const Duration(days: 365))
+                                    .millisecondsSinceEpoch;
+
+                        // Handle status
+                        if (!sponsorData.containsKey('status')) {
+                          sponsorData['status'] = 'SponsorStatus.active';
+                        }
+
+                        // Handle commission
+                        if (!sponsorData.containsKey('commission')) {
+                          sponsorData['commission'] = '0%';
+                        }
+
+                        return Sponsor.fromMap(sponsorData);
+                      } catch (e) {
+                        print('Error converting sponsor data: $e');
+                        print('Problematic data: ${entry.value}');
+                        return null;
+                      }
+                    })
+                    .where((sponsor) => sponsor != null)
+                    .cast<Sponsor>()
+                    .toList();
+
+            print('Successfully converted ${sponsors.length} sponsors');
+            return sponsors;
+          }
         }
-        updates['logoUrl'] = await uploadFile(
-          logo,
-          sponsorsStorageRef.child('logos'),
-        );
-      }
-      if (notes != null) updates['notes'] = notes;
 
-      updates['updatedAt'] = ServerValue.timestamp;
-      await update(sponsorsRef, id, updates);
-    } catch (e) {
-      rethrow;
-    }
+        print('Data is not in expected format: ${data.runtimeType}');
+        return [];
+      } catch (e) {
+        print('Error processing sponsor data: $e');
+        return [];
+      }
+    });
   }
 
-  // Delete sponsor
-  Future<void> deleteSponsor(String id) async {
+  // Update an existing sponsor
+  Future<void> updateSponsor(String userId, Sponsor sponsor) async {
     try {
-      final sponsor = await getById<Sponsor>(sponsorsRef, id, _fromMap);
-      if (sponsor == null) throw Exception('Sponsor not found');
-
-      // Delete associated logo
-      if (sponsor.logoUrl != null) {
-        await deleteFile(sponsor.logoUrl!);
-      }
-
-      await delete(sponsorsRef, id);
+      final sponsorRef = getUserSponsorsRef(userId).child(sponsor.id);
+      await sponsorRef.update(sponsor.toMap());
     } catch (e) {
-      rethrow;
+      throw Exception('Failed to update sponsor: $e');
     }
   }
 
-  // Get sponsor by ID
-  Future<Sponsor?> getSponsor(String id) async {
-    return await getById<Sponsor>(sponsorsRef, id, _fromMap);
+  // Delete a sponsor
+  Future<void> deleteSponsor(String userId, String sponsorId) async {
+    try {
+      final sponsorRef = getUserSponsorsRef(userId).child(sponsorId);
+      await sponsorRef.remove();
+    } catch (e) {
+      throw Exception('Failed to delete sponsor: $e');
+    }
   }
 
-  // Stream all sponsors
-  Stream<List<Sponsor>> streamSponsors() {
-    return streamList<Sponsor>(sponsorsRef, _fromMap);
+  // Get a single sponsor
+  Future<Sponsor?> getSponsor(String userId, String sponsorId) async {
+    try {
+      final snapshot = await getUserSponsorsRef(userId).child(sponsorId).get();
+      if (!snapshot.exists) return null;
+
+      // Convert Map<dynamic, dynamic> to Map<String, dynamic>
+      final rawData = snapshot.value as Map;
+      final data = Map<String, dynamic>.from(rawData);
+      data['id'] = snapshot.key; // Add the key as the sponsor ID
+      return Sponsor.fromMap(data);
+    } catch (e) {
+      throw Exception('Failed to get sponsor: $e');
+    }
   }
 
-  // Get active sponsors
-  Stream<List<Sponsor>> streamActiveSponsors() {
-    return sponsorsRef
-        .orderByChild('status')
-        .equalTo(SponsorStatus.active.toString())
-        .onValue
-        .map((event) {
-          final data = event.snapshot.value as Map<dynamic, dynamic>?;
-          if (data == null) return <Sponsor>[];
-
-          return data.entries.map((entry) {
-            final map = Map<String, dynamic>.from(entry.value as Map);
-            map['id'] = entry.key;
-            return _fromMap(map);
-          }).toList();
-        });
+  // Upload sponsor logo
+  Future<String?> uploadSponsorLogo(
+    File logo,
+    String userId,
+    String sponsorId,
+  ) async {
+    try {
+      final storageRef = sponsorsStorageRef.child('$userId/$sponsorId/logo');
+      return await uploadFile(logo, storageRef);
+    } catch (e) {
+      throw Exception('Failed to upload sponsor logo: $e');
+    }
   }
 
-  // Helper method to convert Map to Sponsor object
-  Sponsor _fromMap(Map<String, dynamic> map) {
-    return Sponsor(
-      id: map['id'] as String,
-      initials: map['initials'] as String,
-      name: map['name'] as String,
-      email: map['email'] as String,
-      contactPerson: map['contactPerson'] as String?,
-      contactNumber: map['contactNumber'] as String?,
-      industryType: map['industryType'] as String?,
-      logoUrl: map['logoUrl'] as String?,
-      notes: map['notes'] as String?,
-      parts: List<String>.from(map['parts'] as List),
-      activeDeals: map['activeDeals'] as int,
-      endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
-      status: SponsorStatus.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => SponsorStatus.active,
-      ),
-    );
+  // Delete sponsor logo
+  Future<void> deleteSponsorLogo(String logoUrl) async {
+    try {
+      await deleteFile(logoUrl);
+    } catch (e) {
+      throw Exception('Failed to delete sponsor logo: $e');
+    }
   }
 }

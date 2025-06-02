@@ -70,25 +70,45 @@ class DealItem {
 
   // Factory method to create from map
   factory DealItem.fromMap(Map<String, dynamic> map) {
-    return DealItem(
-      id: map['id'] as String,
-      sponsorId: map['sponsorId'] as String,
-      racerId: map['racerId'] as String,
-      eventId: map['eventId'] as String,
-      title: map['title'] as String,
-      raceType: map['raceType'] as String,
-      dealValue: (map['dealValue'] as num).toString(),
-      commission: '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%',
-      renewalDate:
-          DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int).toString(),
-      parts: List<String>.from(map['advertisingPositions'] as List),
-      status: DealStatusType.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => DealStatusType.pending,
-      ),
-      sponsorInitials: map['sponsorInitials'] as String,
-      racerInitials: map['racerInitials'] as String,
-    );
+    try {
+      return DealItem(
+        id: map['id']?.toString() ?? '',
+        sponsorId: map['sponsorId']?.toString() ?? '',
+        racerId: map['racerId']?.toString() ?? '',
+        eventId: map['eventId']?.toString() ?? '',
+        title: map['title']?.toString() ?? '',
+        raceType: map['raceType']?.toString() ?? '',
+        dealValue:
+            (map['dealValue'] is num)
+                ? map['dealValue'].toString()
+                : (map['dealValue']?.toString() ?? '0'),
+        commission:
+            map['commissionPercentage'] != null
+                ? '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%'
+                : '0%',
+        renewalDate:
+            map['endDate'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(
+                  map['endDate'] as int,
+                ).toString()
+                : DateTime.now().toString(),
+        parts:
+            (map['advertisingPositions'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        status: DealStatusType.values.firstWhere(
+          (e) => e.toString() == map['status']?.toString(),
+          orElse: () => DealStatusType.pending,
+        ),
+        sponsorInitials: map['sponsorInitials']?.toString() ?? '',
+        racerInitials: map['racerInitials']?.toString() ?? '',
+      );
+    } catch (e) {
+      print('Error creating DealItem from map: $e');
+      print('Map data: $map');
+      rethrow;
+    }
   }
 
   // Convert to map

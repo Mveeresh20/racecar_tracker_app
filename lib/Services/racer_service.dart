@@ -3,165 +3,254 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/Services/app_constant.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
+import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as path;
+import 'package:flutter/material.dart';
 
 class RacerService extends BaseService {
+  final _uuid = const Uuid();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  final ImagePickerUtil _imagePicker = ImagePickerUtil();
+
+  // Get reference to user's racers
+  DatabaseReference getUserRacersRef(String userId) {
+    return _database.child('478_users').child(userId).child('racers');
+  }
+
   // Create a new racer
   Future<String> createRacer({
+    required String userId,
     required String name,
     required String teamName,
     required String vehicleModel,
     required String contactNumber,
     required String vehicleNumber,
     required String currentEvent,
-    File? racerImage,
-    File? vehicleImage,
+    String? racerImageUrl,
+    String? vehicleImageUrl,
+    required BuildContext context,
   }) async {
     try {
-      String? racerImageUrl;
-      String? vehicleImageUrl;
+      // Generate initials from racer name
+      final initials = name
+          .split(' ')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase())
+          .join('');
 
-      // Upload images if provided
-      if (racerImage != null) {
-        racerImageUrl = await uploadFile(
-          racerImage,
-          racersStorageRef.child('profile'),
-        );
-      }
-      if (vehicleImage != null) {
-        vehicleImageUrl = await uploadFile(
-          vehicleImage,
-          racersStorageRef.child('vehicle'),
-        );
-      }
+      final racerId = _uuid.v4();
+      final racer = Racer(
+        id: racerId,
+        userId: userId,
+        name: name,
+        teamName: teamName,
+        vehicleModel: vehicleModel,
+        contactNumber: contactNumber,
+        vehicleNumber: vehicleNumber,
+        currentEvent: currentEvent,
+        racerImageUrl: racerImageUrl,
+        vehicleImageUrl: vehicleImageUrl,
+        initials: initials,
+        activeRaces: 0,
+        totalRaces: 0,
+        earnings: '0',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
-      // Create racer data
-      final racerData = {
-        'name': name,
-        'teamName': teamName,
-        'vehicleModel': vehicleModel,
-        'contactNumber': contactNumber,
-        'vehicleNumber': vehicleNumber,
-        'currentEvent': currentEvent,
-        'racerImageUrl': racerImageUrl,
-        'vehicleImageUrl': vehicleImageUrl,
-        'initials': Sponsor.generateInitials(name),
-        'activeRaces': 0,
-        'totalRaces': 0,
-        'earnings': '0',
-        'createdAt': ServerValue.timestamp,
-        'updatedAt': ServerValue.timestamp,
-      };
-
-      return await create(racersRef, racerData);
+      // Save to Firebase
+      await getUserRacersRef(userId).child(racerId).set(racer.toMap());
+      return racerId;
     } catch (e) {
-      // Delete uploaded images if racer creation fails
+      print('Error creating racer: $e');
       rethrow;
     }
   }
 
-  // Update racer
-  Future<void> updateRacer(
-    String id, {
-    String? name,
-    String? teamName,
-    String? vehicleModel,
-    String? contactNumber,
-    String? vehicleNumber,
-    String? currentEvent,
-    File? racerImage,
-    File? vehicleImage,
-  }) async {
-    try {
-      final racer = await getById<Racer>(racersRef, id, _fromMap);
-      if (racer == null) throw Exception('Racer not found');
-
-      final updates = <String, dynamic>{};
-
-      // Update basic info
-      if (name != null) {
-        updates['name'] = name;
-        updates['initials'] = Sponsor.generateInitials(name);
+  // Get real-time stream of racers
+  Stream<List<Racer>> getRacersStream(String userId) {
+    return getUserRacersRef(userId).onValue.map((event) {
+      if (event.snapshot.value == null) {
+        print('No data found for user $userId');
+        return [];
       }
-      if (teamName != null) updates['teamName'] = teamName;
-      if (vehicleModel != null) updates['vehicleModel'] = vehicleModel;
-      if (contactNumber != null) updates['contactNumber'] = contactNumber;
-      if (vehicleNumber != null) updates['vehicleNumber'] = vehicleNumber;
-      if (currentEvent != null) updates['currentEvent'] = currentEvent;
 
-      // Handle image updates
-      if (racerImage != null) {
-        if (racer.racerImageUrl != null) {
-          await deleteFile(racer.racerImageUrl!);
+      final data = event.snapshot.value;
+      print('Raw data from Firebase: $data'); // Debug log
+
+      if (data == null) {
+        print('Data is null');
+        return [];
+      }
+
+      try {
+        // Handle both Map and List cases
+        if (data is Map) {
+          final racers =
+              data.entries
+                  .map((entry) {
+                    try {
+                      if (entry.value is String) {
+                        print(
+                          'Warning: Racer data is a string instead of a map: ${entry.value}',
+                        );
+                        return null;
+                      }
+
+                      final racerData = Map<String, dynamic>.from(
+                        entry.value as Map,
+                      );
+                      racerData['id'] =
+                          entry.key; // Add the key as the racer ID
+                      return Racer.fromMap(racerData);
+                    } catch (e) {
+                      print('Error converting racer data: $e');
+                      print('Problematic data: ${entry.value}');
+                      return null;
+                    }
+                  })
+                  .where((racer) => racer != null)
+                  .cast<Racer>()
+                  .toList();
+
+          print('Successfully converted ${racers.length} racers');
+          return racers;
+        } else if (data is List) {
+          final racers =
+              data
+                  .asMap()
+                  .entries
+                  .map((entry) {
+                    try {
+                      if (entry.value is String) {
+                        print(
+                          'Warning: Racer data is a string instead of a map: ${entry.value}',
+                        );
+                        return null;
+                      }
+
+                      final racerData = Map<String, dynamic>.from(
+                        entry.value as Map,
+                      );
+                      racerData['id'] =
+                          entry.key.toString(); // Use index as ID if no key
+                      return Racer.fromMap(racerData);
+                    } catch (e) {
+                      print('Error converting racer data: $e');
+                      print('Problematic data: ${entry.value}');
+                      return null;
+                    }
+                  })
+                  .where((racer) => racer != null)
+                  .cast<Racer>()
+                  .toList();
+
+          print('Successfully converted ${racers.length} racers');
+          return racers;
         }
-        updates['racerImageUrl'] = await uploadFile(
-          racerImage,
-          racersStorageRef.child('profile'),
-        );
-      }
-      if (vehicleImage != null) {
-        if (racer.vehicleImageUrl != null) {
-          await deleteFile(racer.vehicleImageUrl);
-        }
-        updates['vehicleImageUrl'] = await uploadFile(
-          vehicleImage,
-          racersStorageRef.child('vehicle'),
-        );
-      }
 
-      updates['updatedAt'] = ServerValue.timestamp;
-      await update(racersRef, id, updates);
-    } catch (e) {
-      rethrow;
-    }
+        print('Data is neither a Map nor a List: ${data.runtimeType}');
+        return [];
+      } catch (e) {
+        print('Error processing racer data: $e');
+        return [];
+      }
+    });
   }
 
-  // Delete racer
-  Future<void> deleteRacer(String id) async {
+  // Update an existing racer
+  Future<void> updateRacer(String userId, Racer racer) async {
     try {
-      final racer = await getById<Racer>(racersRef, id, _fromMap);
-      if (racer == null) throw Exception('Racer not found');
-
-      // Delete associated images
-      if (racer.racerImageUrl != null) {
-        await deleteFile(racer.racerImageUrl!);
-      }
-      if (racer.vehicleImageUrl != null) {
-        await deleteFile(racer.vehicleImageUrl);
-      }
-
-      await delete(racersRef, id);
+      final racerRef = getUserRacersRef(userId).child(racer.id);
+      await racerRef.update(racer.toMap());
     } catch (e) {
-      rethrow;
+      throw Exception('Failed to update racer: $e');
     }
   }
 
-  // Get racer by ID
-  Future<Racer?> getRacer(String id) async {
-    return await getById<Racer>(racersRef, id, _fromMap);
+  // Delete a racer
+  Future<void> deleteRacer(String userId, String racerId) async {
+    try {
+      final racerRef = getUserRacersRef(userId).child(racerId);
+      await racerRef.remove();
+    } catch (e) {
+      throw Exception('Failed to delete racer: $e');
+    }
   }
 
-  // Stream all racers
-  Stream<List<Racer>> streamRacers() {
-    return streamList<Racer>(racersRef, _fromMap);
+  // Get a single racer
+  Future<Racer?> getRacer(String userId, String racerId) async {
+    try {
+      final snapshot = await getUserRacersRef(userId).child(racerId).get();
+      if (!snapshot.exists) return null;
+
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      data['id'] = snapshot.key; // Add the key as the racer ID
+      return Racer.fromMap(data);
+    } catch (e) {
+      throw Exception('Failed to get racer: $e');
+    }
   }
 
-  // Helper method to convert Map to Racer object
-  Racer _fromMap(Map<String, dynamic> map) {
-    return Racer(
-      id: map['id'] as String,
-      initials: map['initials'] as String,
-      name: map['name'] as String,
-      teamName: map['teamName'] as String,
-      vehicleModel: map['vehicleModel'] as String,
-      contactNumber: map['contactNumber'] as String,
-      vehicleNumber: map['vehicleNumber'] as String,
-      currentEvent: map['currentEvent'] as String,
-      activeRaces: map['activeRaces'] as int,
-      totalRaces: map['totalRaces'] as int,
-      earnings: map['earnings'] as String,
-      racerImageUrl: map['racerImageUrl'] as String?,
-      vehicleImageUrl: map['vehicleImageUrl'] as String,
-      isLocalImage: false,
-    );
+  // Update racer image
+  Future<void> updateRacerImage(
+    String userId,
+    String racerId,
+    File imageFile,
+    bool isProfileImage,
+    BuildContext context,
+  ) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final imageType = isProfileImage ? 'profile' : 'vehicle';
+      // Production path structure: images/[type]_[timestamp].[extension]
+      final imagePath =
+          'images/${imageType}_$timestamp${path.extension(imageFile.path)}';
+
+      String? signedUrl = await _imagePicker.getSignedUrl(
+        imagePath,
+        AppConstant.bundleNameForPostAPI,
+      );
+
+      if (signedUrl != null) {
+        String? imageUrl;
+        await _imagePicker.uploadFileToS3WithCallback(
+          signedUrl,
+          imageFile.path,
+          context,
+          (url) => imageUrl = url, // This will be just the filename
+          (error) => throw Exception('Failed to upload image: $error'),
+        );
+
+        if (imageUrl != null) {
+          final racerRef = getUserRacersRef(userId).child(racerId);
+          final updateData =
+              isProfileImage
+                  ? {'racerImageUrl': imageUrl}
+                  : {'vehicleImageUrl': imageUrl};
+          await racerRef.update(updateData);
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to update racer image: $e');
+    }
+  }
+
+  // Delete racer image
+  Future<void> deleteRacerImage(
+    String userId,
+    String racerId,
+    bool isProfileImage,
+  ) async {
+    try {
+      final racerRef = getUserRacersRef(userId).child(racerId);
+      final updateData =
+          isProfileImage ? {'racerImageUrl': null} : {'vehicleImageUrl': null};
+      await racerRef.update(updateData);
+    } catch (e) {
+      throw Exception('Failed to delete racer image: $e');
+    }
   }
 }

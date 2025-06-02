@@ -1,60 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
-import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
-import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
-import 'package:racecar_tracker/Presentation/Widgets/event_card_item.dart';
+
+import 'package:racecar_tracker/Presentation/Widgets/sponsor_card_item.dart';
 import 'package:racecar_tracker/Services/edit_profile_provider.dart';
-import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
-import 'package:racecar_tracker/models/event.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class RaceEvetsScreen extends StatefulWidget {
-  const RaceEvetsScreen({super.key});
+class SponsorsScreen extends StatefulWidget {
+  const SponsorsScreen({super.key});
 
   @override
-  State<RaceEvetsScreen> createState() => _RaceEvetsScreenState();
+  State<SponsorsScreen> createState() => _SponsorsScreenState();
 }
 
-class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
-  int _currentIndex = 1;
+class _SponsorsScreenState extends State<SponsorsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Event> _filteredEvents = [];
+  List<Sponsor> _filteredSponsors = [];
   bool _isInitialized = false;
   String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterEvents);
+    _searchController.addListener(_filterSponsors);
+    // Initialize data immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _initializeData();
+    // This will be called when dependencies change, like when the provider updates
+    if (!_isInitialized) {
+      _initializeData();
+    }
   }
 
   Future<void> _initializeData() async {
+    if (!mounted) return;
+
     final userId = UserService().getCurrentUserId();
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to view sponsors')),
+        );
+      }
+      return;
+    }
 
     // If we're already initialized for this user, don't reinitialize
     if (_isInitialized && userId == _currentUserId) {
       return;
     }
 
-    // Clear existing data
     setState(() {
-      _filteredEvents = [];
+      _filteredSponsors = [];
       _isInitialized = false;
     });
-
-    if (userId == null) {
-      return;
-    }
 
     _currentUserId = userId;
 
@@ -65,15 +77,17 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
         listen: false,
       ).fetchUserProfileDetails();
 
-      // Initialize events
-      await Provider.of<EventProvider>(
+      // Initialize sponsors
+      final sponsorProvider = Provider.of<SponsorProvider>(
         context,
         listen: false,
-      ).initUserEvents(userId);
+      );
+      await sponsorProvider.initUserSponsors(userId);
 
       if (mounted) {
         setState(() {
           _isInitialized = true;
+          _filteredSponsors = sponsorProvider.sponsors;
         });
       }
     } catch (e) {
@@ -87,52 +101,75 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
 
   @override
   void dispose() {
-    _searchController.removeListener(_filterEvents);
+    _searchController.removeListener(_filterSponsors);
     _searchController.dispose();
-    // Clear events when screen is disposed
-    Provider.of<EventProvider>(context, listen: false).logout();
+    // Clear sponsors when screen is disposed
+    Provider.of<SponsorProvider>(context, listen: false).logout();
     super.dispose();
   }
 
-  void _filterEvents() {
+  void _filterSponsors() {
     if (!mounted) return;
 
     final query = _searchController.text.toLowerCase();
-    final events = Provider.of<EventProvider>(context, listen: false).events;
+    final sponsors =
+        Provider.of<SponsorProvider>(context, listen: false).sponsors;
 
     setState(() {
       if (query.isEmpty) {
-        _filteredEvents = events;
+        _filteredSponsors = sponsors;
       } else {
-        _filteredEvents =
-            events.where((event) {
-              final titleMatches = event.name.toLowerCase().contains(query);
-              final raceTypeMatches = event.type.toLowerCase().contains(query);
-              final trackNameMatches = event.location.toLowerCase().contains(
-                query,
-              );
-              return titleMatches || raceTypeMatches || trackNameMatches;
+        _filteredSponsors =
+            sponsors.where((sponsor) {
+              final nameMatches = sponsor.name.toLowerCase().contains(query);
+              final emailMatches = sponsor.email.toLowerCase().contains(query);
+              final industryMatches =
+                  sponsor.industryType?.toLowerCase().contains(query) ?? false;
+              return nameMatches || emailMatches || industryMatches;
             }).toList();
       }
     });
   }
 
+  // Function to get deal items for a sponsor
+  List<DealItem> _getDealItemsForSponsor(String sponsorName) {
+    // TODO: Implement actual deal items fetching from your service
+    // For now, return an empty list
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Consumer<EventProvider>(
-        builder: (context, eventProvider, child) {
-          if (eventProvider.isLoading) {
+      body: Consumer<SponsorProvider>(
+        builder: (context, sponsorProvider, child) {
+          if (!_isInitialized) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (eventProvider.error != null) {
-            return Center(child: Text('Error: ${eventProvider.error}'));
+          if (sponsorProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          // Update filtered events when provider data changes
-          if (_filteredEvents.isEmpty) {
-            _filteredEvents = eventProvider.events;
+          if (sponsorProvider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${sponsorProvider.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _initializeData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Update filtered sponsors when provider data changes
+          if (_filteredSponsors.isEmpty) {
+            _filteredSponsors = sponsorProvider.sponsors;
           }
 
           return Column(
@@ -189,14 +226,14 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                       horizontal: 8,
                                     ),
                                     child: Icon(
-                                      Icons.flag,
+                                      Icons.business,
                                       size: 20,
                                       color: Colors.white,
                                     ),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
-                                    "Events",
+                                    "Sponsors",
                                     style: TextStyle(
                                       color: Color(0xFFFFCC29),
                                       fontSize: 18,
@@ -273,7 +310,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                             controller: _searchController,
                             style: const TextStyle(color: Colors.black),
                             decoration: InputDecoration(
-                              hintText: "Search Events...",
+                              hintText: "Search Sponsors...",
                               hintStyle: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -298,7 +335,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                           ),
                         ),
 
-                        // Add New Event button
+                        // Add New Sponsor button
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: kDefaultPadding,
@@ -311,13 +348,16 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AddNewEventScreen(),
+                                    builder:
+                                        (context) => AddNewSponsorScreen(
+                                          provider: sponsorProvider,
+                                        ),
                                   ),
                                 );
-                                // Refresh events after returning
+                                // Refresh sponsors after returning
                                 final userId = UserService().getCurrentUserId();
                                 if (userId != null) {
-                                  eventProvider.initUserEvents(userId);
+                                  sponsorProvider.initUserSponsors(userId);
                                 }
                               },
                               icon: const Icon(
@@ -326,7 +366,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                 size: 16,
                               ),
                               label: const Text(
-                                "Add New Race Event",
+                                "Add New Sponsor",
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w700,
@@ -352,13 +392,13 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                 ),
               ),
 
-              // Events list or empty state
+              // Sponsors list or empty state
               Expanded(
                 child:
-                    _filteredEvents.isEmpty
+                    _filteredSponsors.isEmpty
                         ? Center(
                           child: Text(
-                            'No race events available',
+                            'No sponsors available',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[600],
@@ -366,9 +406,12 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                           ),
                         )
                         : ListView.builder(
-                          itemCount: _filteredEvents.length,
+                          itemCount: _filteredSponsors.length,
                           itemBuilder: (context, index) {
-                            return EventCardItem(event: _filteredEvents[index]);
+                            return SponsorCardItem(
+                              sponsor: _filteredSponsors[index],
+                              getDealItemsForSponsor: _getDealItemsForSponsor,
+                            );
                           },
                         ),
               ),

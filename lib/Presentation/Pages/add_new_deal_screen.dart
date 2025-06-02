@@ -64,9 +64,10 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   Future<void> _pickDate(BuildContext context, bool isStart) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: isStart
-          ? (_startDate ?? DateTime.now())
-          : (_endDate ?? DateTime.now()),
+      initialDate:
+          isStart
+              ? (_startDate ?? DateTime.now())
+              : (_endDate ?? DateTime.now()),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
@@ -96,20 +97,33 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
         _selectedEvent != null &&
         _startDate != null &&
         _endDate != null) {
+      // Generate initials from names
+      final sponsorInitials = _selectedSponsor!.name
+          .split(' ')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase())
+          .join('');
+
+      final racerInitials = _selectedRacer!.name
+          .split(' ')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase())
+          .join('');
+
       final deal = DealItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         sponsorId: _selectedSponsor!.id,
         racerId: _selectedRacer!.id,
         eventId: _selectedEvent!.id,
         title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-        raceType: _selectedEvent!.raceType,
+        raceType: _selectedEvent!.type,
         dealValue: _dealAmountController.text,
         commission: _commissionController.text,
         renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
         parts: _selectedBranding.toList(),
         status: _paymentStatus,
-        sponsorInitials: _selectedSponsor!.initials,
-        racerInitials: _selectedRacer!.initials,
+        sponsorInitials: sponsorInitials,
+        racerInitials: racerInitials,
       );
       Navigator.pop(context, deal);
     }
@@ -171,11 +185,13 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<Sponsor>(
                   value: _selectedSponsor,
-                  items: widget.sponsors
-                      .map(
-                        (s) => DropdownMenuItem(value: s, child: Text(s.name)),
-                      )
-                      .toList(),
+                  items:
+                      widget.sponsors
+                          .map(
+                            (s) =>
+                                DropdownMenuItem(value: s, child: Text(s.name)),
+                          )
+                          .toList(),
                   onChanged: (val) => setState(() => _selectedSponsor = val),
                   decoration: _dropdownDecoration("Select sponsor..."),
                   style: TextStyle(color: Colors.white),
@@ -190,11 +206,13 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<Racer>(
                   value: _selectedRacer,
-                  items: widget.racers
-                      .map(
-                        (r) => DropdownMenuItem(value: r, child: Text(r.name)),
-                      )
-                      .toList(),
+                  items:
+                      widget.racers
+                          .map(
+                            (r) =>
+                                DropdownMenuItem(value: r, child: Text(r.name)),
+                          )
+                          .toList(),
                   onChanged: (val) => setState(() => _selectedRacer = val),
                   decoration: _dropdownDecoration("Select racer..."),
                   style: TextStyle(color: Colors.white),
@@ -208,14 +226,13 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<Event>(
                   value: _selectedEvent,
-                  items: widget.events
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e.title),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      widget.events
+                          .map(
+                            (e) =>
+                                DropdownMenuItem(value: e, child: Text(e.name)),
+                          )
+                          .toList(),
                   onChanged: (val) => setState(() => _selectedEvent = val),
                   decoration: _dropdownDecoration("Select event..."),
                   style: TextStyle(color: Colors.white),
@@ -281,9 +298,10 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                     Container(
                       height: 36,
                       decoration: BoxDecoration(
-                        color: _paymentStatus == DealStatusType.pending
-                            ? Colors.orange
-                            : const Color(0xFF13386B),
+                        color:
+                            _paymentStatus == DealStatusType.pending
+                                ? Colors.orange
+                                : const Color(0xFF13386B),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -317,9 +335,10 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                     Container(
                       height: 36,
                       decoration: BoxDecoration(
-                        color: _paymentStatus == DealStatusType.paid
-                            ? const Color(0xFF24C166)
-                            : const Color(0xFF13386B),
+                        color:
+                            _paymentStatus == DealStatusType.paid
+                                ? const Color(0xFF24C166)
+                                : const Color(0xFF13386B),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -360,42 +379,43 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   alignment: WrapAlignment.start,
                   spacing: 10.0,
                   runSpacing: 10.0,
-                  children: _brandingLocations.map((part) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFF27518A),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Checkbox(
-                              side: BorderSide(color: Colors.white),
-                              value: _selectedBranding.contains(part),
-                              onChanged: (bool? selected) {
-                                setState(() {
-                                  if (selected == true) {
-                                    _selectedBranding.add(part);
-                                  } else {
-                                    _selectedBranding.remove(part);
-                                  }
-                                });
-                              },
+                  children:
+                      _brandingLocations.map((part) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFF27518A),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: Text(
-                                part,
-                                style: TextStyle(color: Colors.white),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  side: BorderSide(color: Colors.white),
+                                  value: _selectedBranding.contains(part),
+                                  onChanged: (bool? selected) {
+                                    setState(() {
+                                      if (selected == true) {
+                                        _selectedBranding.add(part);
+                                      } else {
+                                        _selectedBranding.remove(part);
+                                      }
+                                    });
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Text(
+                                    part,
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                          ),
+                        );
+                      }).toList(),
                 ),
               ),
 
@@ -446,64 +466,66 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                     height: 80,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      children: _brandingImages.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final file = entry.value;
+                      children:
+                          _brandingImages.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final file = entry.value;
 
-                        if (!file.existsSync()) {
-                          print(
-                              'Error: File does NOT exist at path: ${file.path}');
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-
-                        return Stack(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Image.file(
-                                file,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _brandingImages.removeAt(idx);
-                                  });
-                                },
-                                child: const CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: Colors.red,
-                                  child: Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 16,
+                            if (!file.existsSync()) {
+                              print(
+                                'Error: File does NOT exist at path: ${file.path}',
+                              );
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+                              );
+                            }
+
+                            return Stack(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Image.file(
+                                    file,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _brandingImages.removeAt(idx);
+                                      });
+                                    },
+                                    child: const CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: Colors.red,
+                                      child: Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
                     ),
                   ),
                 ),
@@ -555,11 +577,12 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<String>(
                   value: _renewalReminder,
-                  items: _renewalReminders
-                      .map(
-                        (r) => DropdownMenuItem(value: r, child: Text(r)),
-                      )
-                      .toList(),
+                  items:
+                      _renewalReminders
+                          .map(
+                            (r) => DropdownMenuItem(value: r, child: Text(r)),
+                          )
+                          .toList(),
                   onChanged: (val) => setState(() => _renewalReminder = val),
                   decoration: _dropdownDecoration("Select renewal reminder..."),
                   style: TextStyle(color: Colors.white),
@@ -606,44 +629,44 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   }
 
   Widget _buildLabel(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            text,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
-          ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
         ),
-      );
+      ),
+    ),
+  );
 
   InputDecoration _dropdownDecoration(String hint) => InputDecoration(
-        alignLabelWithHint: true,
-        filled: true,
-        fillColor: const Color(0xFF13386B),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.red),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.red),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      );
+    alignLabelWithHint: true,
+    filled: true,
+    fillColor: const Color(0xFF13386B),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    hintText: hint,
+    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+    enabledBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.red),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.red),
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
 
   Widget _buildTextField(
     TextEditingController controller,
@@ -684,8 +707,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? "Required" : null,
+        validator:
+            (value) => (value == null || value.isEmpty) ? "Required" : null,
       ),
     );
   }
