@@ -19,6 +19,7 @@ import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async'; // Import for StreamSubscription
 
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
@@ -30,12 +31,13 @@ class DealsScreen extends StatefulWidget {
 class _DealsScreenState extends State<DealsScreen> {
   final _searchController = TextEditingController();
   final _dealService = DealService();
-  List<DealItem> _filteredDeals = [];
+  List<DealItem> _allDeals = [];
   bool _isLoading = true;
   String? _error;
   final _racerService = RacerService();
   final _eventService = EventService();
   final _sponsorService = SponsorService();
+  StreamSubscription? _dealsSubscription;
 
   @override
   void initState() {
@@ -54,6 +56,7 @@ class _DealsScreenState extends State<DealsScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _allDeals = [];
     });
 
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -65,13 +68,15 @@ class _DealsScreenState extends State<DealsScreen> {
       return;
     }
 
-    _dealService
+    _dealsSubscription?.cancel();
+
+    _dealsSubscription = _dealService
         .streamDeals(userId)
         .listen(
           (deals) {
             if (mounted) {
               setState(() {
-                _filteredDeals = deals;
+                _allDeals = deals;
                 _isLoading = false;
               });
               _filterDeals();
@@ -82,6 +87,7 @@ class _DealsScreenState extends State<DealsScreen> {
               setState(() {
                 _error = error.toString();
                 _isLoading = false;
+                _allDeals = [];
               });
             }
           },
@@ -90,30 +96,16 @@ class _DealsScreenState extends State<DealsScreen> {
 
   @override
   void dispose() {
+    _dealsSubscription?.cancel();
     _searchController.removeListener(_filterDeals);
     _searchController.dispose();
     super.dispose();
   }
 
   void _filterDeals() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredDeals = List.from(_filteredDeals);
-      } else {
-        _filteredDeals =
-            _filteredDeals.where((deal) {
-              final titleMatches = deal.title.toLowerCase().contains(query);
-              final raceTypeMatches = deal.raceType.toLowerCase().contains(
-                query,
-              );
-              final partsMatches = deal.parts.any(
-                (part) => part.toLowerCase().contains(query),
-              );
-              return titleMatches || raceTypeMatches || partsMatches;
-            }).toList();
-      }
-    });
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _navigateToAddDealScreen() async {
@@ -222,6 +214,21 @@ class _DealsScreenState extends State<DealsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final query = _searchController.text.toLowerCase();
+    final displayedDeals =
+        query.isEmpty
+            ? _allDeals
+            : _allDeals.where((deal) {
+              final titleMatches = deal.title.toLowerCase().contains(query);
+              final raceTypeMatches = deal.raceType.toLowerCase().contains(
+                query,
+              );
+              final partsMatches = deal.parts.any(
+                (part) => part.toLowerCase().contains(query),
+              );
+              return titleMatches || raceTypeMatches || partsMatches;
+            }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF171E45),
       body: SingleChildScrollView(
@@ -436,7 +443,7 @@ class _DealsScreenState extends State<DealsScreen> {
                   ],
                 ),
               )
-            else if (_filteredDeals.isEmpty)
+            else if (displayedDeals.isEmpty)
               Center(
                 child: Text(
                   _searchController.text.isEmpty
@@ -452,10 +459,13 @@ class _DealsScreenState extends State<DealsScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
-                itemCount: _filteredDeals.length,
+                itemCount: displayedDeals.length,
                 itemBuilder: (context, index) {
-                  final deal = _filteredDeals[index];
+                  final deal = displayedDeals[index];
                   return DealCardItem(
+                    dealService: DealService(),
+                    sponsorService: SponsorService(),
+
                     deal: deal,
                     fetchDealDetail: _fetchDealDetailItemById(deal.id),
                   );

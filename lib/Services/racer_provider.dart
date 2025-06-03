@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/Services/racer_service.dart';
@@ -8,6 +9,7 @@ class RacerProvider extends ChangeNotifier {
   List<Racer> _racers = [];
   bool _isLoading = false;
   String? _error;
+  StreamSubscription? _racersSubscription;
 
   List<Racer> get racers => _racers;
   bool get isLoading => _isLoading;
@@ -20,23 +22,38 @@ class RacerProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Listen to real-time updates
-      _racerService
+      // Cancel any existing subscription
+      await _racersSubscription?.cancel();
+
+      // Clear existing data
+      _racers = [];
+      print('RacerProvider: Initializing racers for user $userId');
+
+      // Set up new subscription
+      _racersSubscription = _racerService
           .getRacersStream(userId)
           .listen(
             (updatedRacers) {
+              print(
+                'RacerProvider: Stream emitted ${updatedRacers.length} racers',
+              );
               _racers = updatedRacers;
               _isLoading = false;
               _error = null;
               notifyListeners();
+              print(
+                'RacerProvider: notifyListeners called with ${_racers.length} racers',
+              );
             },
             onError: (error) {
+              print('RacerProvider: Error in stream: $error');
               _error = error.toString();
               _isLoading = false;
               notifyListeners();
             },
           );
     } catch (e) {
+      print('RacerProvider: Error initializing stream: $e');
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -65,7 +82,7 @@ class RacerProvider extends ChangeNotifier {
         contactNumber: contactNumber,
         vehicleNumber: vehicleNumber,
         currentEvent: currentEvent,
-        
+
         context: context,
       );
       return racerId;
@@ -146,4 +163,3 @@ class RacerProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
- 

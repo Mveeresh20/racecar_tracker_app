@@ -22,7 +22,6 @@ class RaceEvetsScreen extends StatefulWidget {
 class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
   int _currentIndex = 1;
   final TextEditingController _searchController = TextEditingController();
-  List<Event> _filteredEvents = [];
   bool _isInitialized = false;
   String? _currentUserId;
 
@@ -48,7 +47,6 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
 
     // Clear existing data
     setState(() {
-      _filteredEvents = [];
       _isInitialized = false;
     });
 
@@ -95,26 +93,9 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
   }
 
   void _filterEvents() {
-    if (!mounted) return;
-
-    final query = _searchController.text.toLowerCase();
-    final events = Provider.of<EventProvider>(context, listen: false).events;
-
-    setState(() {
-      if (query.isEmpty) {
-        _filteredEvents = events;
-      } else {
-        _filteredEvents =
-            events.where((event) {
-              final titleMatches = event.name.toLowerCase().contains(query);
-              final raceTypeMatches = event.type.toLowerCase().contains(query);
-              final trackNameMatches = event.location.toLowerCase().contains(
-                query,
-              );
-              return titleMatches || raceTypeMatches || trackNameMatches;
-            }).toList();
-      }
-    });
+    if (mounted) {
+      setState(() {}); // Trigger rebuild
+    }
   }
 
   @override
@@ -130,10 +111,26 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
             return Center(child: Text('Error: ${eventProvider.error}'));
           }
 
-          // Update filtered events when provider data changes
-          if (_filteredEvents.isEmpty) {
-            _filteredEvents = eventProvider.events;
-          }
+          // Get the current list of events from the provider
+          final allEvents = eventProvider.events;
+
+          // Apply filtering based on the search query
+          final query = _searchController.text.toLowerCase();
+          final displayedEvents =
+              query.isEmpty
+                  ? allEvents
+                  : allEvents.where((event) {
+                    final titleMatches = event.name.toLowerCase().contains(
+                      query,
+                    );
+                    final raceTypeMatches = event.type.toLowerCase().contains(
+                      query,
+                    );
+                    final trackNameMatches = event.location
+                        .toLowerCase()
+                        .contains(query);
+                    return titleMatches || raceTypeMatches || trackNameMatches;
+                  }).toList();
 
           return Column(
             children: [
@@ -355,7 +352,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
               // Events list or empty state
               Expanded(
                 child:
-                    _filteredEvents.isEmpty
+                    displayedEvents.isEmpty
                         ? Center(
                           child: Text(
                             'No race events available',
@@ -366,9 +363,9 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                           ),
                         )
                         : ListView.builder(
-                          itemCount: _filteredEvents.length,
+                          itemCount: displayedEvents.length,
                           itemBuilder: (context, index) {
-                            return EventCardItem(event: _filteredEvents[index]);
+                            return EventCardItem(event: displayedEvents[index]);
                           },
                         ),
               ),

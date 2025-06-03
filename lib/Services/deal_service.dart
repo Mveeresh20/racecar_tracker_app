@@ -117,6 +117,7 @@ class DealService extends BaseService {
   // Update deal
   Future<void> updateDeal(
     String id, {
+    required String userId,
     String? sponsorId,
     String? racerId,
     String? eventId,
@@ -135,8 +136,10 @@ class DealService extends BaseService {
     required BuildContext context,
   }) async {
     try {
+      final userDealsRef = getUserDealsRef(userId);
+
       final deal = await getById<DealDetailItem>(
-        dealsRef,
+        userDealsRef,
         id,
         DealDetailItem.fromMap,
       );
@@ -215,7 +218,7 @@ class DealService extends BaseService {
       }
 
       updates['updatedAt'] = ServerValue.timestamp;
-      await update(dealsRef, id, updates);
+      await update(userDealsRef, id, updates);
 
       // Update sponsor's active deals count if needed
       if (sponsorId != null && sponsorId != deal.sponsorId) {

@@ -27,7 +27,6 @@ class RacersScreen extends StatefulWidget {
 class _RacersScreenState extends State<RacersScreen> {
   int _currentIndex = 2;
   final TextEditingController _searchController = TextEditingController();
-  List<Racer> _filteredRacers = [];
   final UserService _userService = UserService();
   bool _isInitialized = false;
 
@@ -72,30 +71,9 @@ class _RacersScreenState extends State<RacersScreen> {
   }
 
   void _filterRacers() {
-    final query = _searchController.text.toLowerCase();
-    final racerProvider = Provider.of<RacerProvider>(context, listen: false);
-
-    setState(() {
-      if (query.isEmpty) {
-        _filteredRacers = racerProvider.racers;
-      } else {
-        _filteredRacers =
-            racerProvider.racers.where((racer) {
-              final nameMatches = racer.name.toLowerCase().contains(query);
-              final vehicleMatches = racer.vehicleModel.toLowerCase().contains(
-                query,
-              );
-              final teamMatches = racer.teamName.toLowerCase().contains(query);
-              final eventMatches = racer.currentEvent.toLowerCase().contains(
-                query,
-              );
-              return nameMatches ||
-                  vehicleMatches ||
-                  teamMatches ||
-                  eventMatches;
-            }).toList();
-      }
-    });
+    if (mounted) {
+      setState(() {}); // Trigger rebuild
+    }
   }
 
   List<DealItem> _getDealItemsForRacer(String racerName) {
@@ -126,10 +104,32 @@ class _RacersScreenState extends State<RacersScreen> {
             );
           }
 
-          // Update filtered racers when provider data changes
-          if (_filteredRacers.isEmpty && racerProvider.racers.isNotEmpty) {
-            _filteredRacers = racerProvider.racers;
-          }
+          // Get the current list of racers from the provider
+          final allRacers = racerProvider.racers;
+
+          // Apply filtering based on the search query
+          final query = _searchController.text.toLowerCase();
+          final displayedRacers =
+              query.isEmpty
+                  ? allRacers
+                  : allRacers.where((racer) {
+                    final nameMatches = racer.name.toLowerCase().contains(
+                      query,
+                    );
+                    final vehicleMatches = racer.vehicleModel
+                        .toLowerCase()
+                        .contains(query);
+                    final teamMatches = racer.teamName.toLowerCase().contains(
+                      query,
+                    );
+                    final eventMatches = racer.currentEvent
+                        .toLowerCase()
+                        .contains(query);
+                    return nameMatches ||
+                        vehicleMatches ||
+                        teamMatches ||
+                        eventMatches;
+                  }).toList();
 
           return SingleChildScrollView(
             child: Column(
@@ -335,7 +335,7 @@ class _RacersScreenState extends State<RacersScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _filteredRacers.isEmpty
+                    displayedRacers.isEmpty
                         ? Center(
                           child: Text(
                             _searchController.text.isEmpty
@@ -359,9 +359,9 @@ class _RacersScreenState extends State<RacersScreen> {
                                 mainAxisSpacing: 10,
                                 childAspectRatio: 0.48,
                               ),
-                          itemCount: _filteredRacers.length,
+                          itemCount: displayedRacers.length,
                           itemBuilder: (context, index) {
-                            final racer = _filteredRacers[index];
+                            final racer = displayedRacers[index];
                             return GestureDetector(
                               onTap: () {
                                 Navigator.push(
@@ -392,7 +392,6 @@ class _RacersScreenState extends State<RacersScreen> {
           );
         },
       ),
-      
     );
   }
 }

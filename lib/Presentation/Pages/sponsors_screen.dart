@@ -22,7 +22,6 @@ class SponsorsScreen extends StatefulWidget {
 
 class _SponsorsScreenState extends State<SponsorsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Sponsor> _filteredSponsors = [];
   bool _isInitialized = false;
   String? _currentUserId;
 
@@ -64,7 +63,6 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
     }
 
     setState(() {
-      _filteredSponsors = [];
       _isInitialized = false;
     });
 
@@ -87,7 +85,6 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
       if (mounted) {
         setState(() {
           _isInitialized = true;
-          _filteredSponsors = sponsorProvider.sponsors;
         });
       }
     } catch (e) {
@@ -109,26 +106,9 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
   }
 
   void _filterSponsors() {
-    if (!mounted) return;
-
-    final query = _searchController.text.toLowerCase();
-    final sponsors =
-        Provider.of<SponsorProvider>(context, listen: false).sponsors;
-
-    setState(() {
-      if (query.isEmpty) {
-        _filteredSponsors = sponsors;
-      } else {
-        _filteredSponsors =
-            sponsors.where((sponsor) {
-              final nameMatches = sponsor.name.toLowerCase().contains(query);
-              final emailMatches = sponsor.email.toLowerCase().contains(query);
-              final industryMatches =
-                  sponsor.industryType?.toLowerCase().contains(query) ?? false;
-              return nameMatches || emailMatches || industryMatches;
-            }).toList();
-      }
-    });
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   // Function to get deal items for a sponsor
@@ -167,10 +147,26 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
             );
           }
 
-          // Update filtered sponsors when provider data changes
-          if (_filteredSponsors.isEmpty) {
-            _filteredSponsors = sponsorProvider.sponsors;
-          }
+          // Get the current list of sponsors from the provider
+          final allSponsors = sponsorProvider.sponsors;
+
+          // Apply filtering based on the search query
+          final query = _searchController.text.toLowerCase();
+          final displayedSponsors =
+              query.isEmpty
+                  ? allSponsors
+                  : allSponsors.where((sponsor) {
+                    final nameMatches = sponsor.name.toLowerCase().contains(
+                      query,
+                    );
+                    final emailMatches = sponsor.email.toLowerCase().contains(
+                      query,
+                    );
+                    final industryMatches =
+                        sponsor.industryType?.toLowerCase().contains(query) ??
+                        false;
+                    return nameMatches || emailMatches || industryMatches;
+                  }).toList();
 
           return Column(
             children: [
@@ -395,7 +391,7 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
               // Sponsors list or empty state
               Expanded(
                 child:
-                    _filteredSponsors.isEmpty
+                    displayedSponsors.isEmpty
                         ? Center(
                           child: Text(
                             'No sponsors available',
@@ -406,10 +402,10 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                           ),
                         )
                         : ListView.builder(
-                          itemCount: _filteredSponsors.length,
+                          itemCount: displayedSponsors.length,
                           itemBuilder: (context, index) {
                             return SponsorCardItem(
-                              sponsor: _filteredSponsors[index],
+                              sponsor: displayedSponsors[index],
                               getDealItemsForSponsor: _getDealItemsForSponsor,
                             );
                           },

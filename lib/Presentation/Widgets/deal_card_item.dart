@@ -4,15 +4,23 @@ import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // For kDef
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/models/deal_item.dart'; // Import the new DealItem model
+import 'package:racecar_tracker/Services/sponsor_service.dart';
+import 'package:racecar_tracker/Services/deal_service.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/Services/user_service.dart'; // Import UserService
 
 class DealCardItem extends StatelessWidget {
   final DealItem deal;
   final Future<DealDetailItem?> Function(String) fetchDealDetail;
+  final SponsorService sponsorService;
+  final DealService dealService;
 
   const DealCardItem({
     Key? key,
     required this.deal,
     required this.fetchDealDetail,
+    required this.sponsorService,
+    required this.dealService,
   }) : super(key: key);
 
   @override
@@ -159,12 +167,13 @@ class DealCardItem extends StatelessWidget {
                       // Handle View Deal action
                     },
                   ),
+
                   _buildActionButton(
                     context,
                     "Log Payment",
                     Icons.remove_red_eye_outlined,
                     () {
-                      // Handle Log Payment action
+                      _showLogPaymentBottomSheet(context);
                     },
                   ),
                   _buildActionButton(context, "", Icons.edit, () {
@@ -208,52 +217,201 @@ class DealCardItem extends StatelessWidget {
     IconData icon,
     VoidCallback onPressed,
   ) {
-    return ElevatedButton.icon(
-      onPressed: () async {
-        if (label == "View Deal") {
-          try {
-            final detail = await fetchDealDetail(deal.id);
-            if (!context.mounted) return;
+    return Container(
+      height: 32,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B6AD2), Color(0xFF211E83)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          if (label == "View Deal") {
+            try {
+              final detail = await fetchDealDetail(deal.id);
+              if (!context.mounted) return;
 
-            if (detail != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          DealDetailScreen(deal: detail, dealItem: deal),
-                ),
-              );
-            } else {
+              if (detail != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            DealDetailScreen(deal: detail, dealItem: deal),
+                  ),
+                );
+              } else {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No deal detail found.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('No deal detail found.'),
+                SnackBar(
+                  content: Text('Error loading deal detail: $e'),
                   backgroundColor: Colors.red,
                 ),
               );
             }
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error loading deal detail: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
+          } else if (label == "Log Payment") {
+            onPressed();
+          } else {
+            onPressed();
           }
-        } else {
-          onPressed();
-        }
-      },
-      icon: Icon(icon, size: 16),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF27518A),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        textStyle: const TextStyle(fontSize: 12),
+        },
+        icon: Icon(icon, color: Colors.white, size: 20),
+        label: Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          minimumSize: const Size(0, 0),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
       ),
+    );
+  }
+
+  void _showLogPaymentBottomSheet(BuildContext context) async {
+    // Fetch sponsor details to get the name
+    final userId = UserService().getCurrentUserId(); // Use UserService directly
+    Sponsor? sponsor;
+    if (userId != null) {
+      try {
+        sponsor = await sponsorService.getSponsor(userId, deal.sponsorId);
+      } catch (e) {
+        print('Error fetching sponsor for payment confirmation: $e');
+        // Optionally show an error message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error loading sponsor details.')),
+          );
+        }
+        return; // Exit if sponsor cannot be fetched
+      }
+    }
+    if (!context.mounted) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 250, // Adjust height as needed
+          padding: const EdgeInsets.all(kDefaultPadding),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13386B), // Dark blue background
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Log Payment',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Have you received the payment from ${sponsor?.name ?? deal.sponsorInitials}?', // Use sponsor name or initials
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              const SizedBox(height: 30), // Space before the button
+              Center(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Log payment logic here
+                    print('Logging payment for deal ID: ${deal.id}');
+                    try {
+                      // Update deal status to 'paid'
+                      await dealService.updateDeal(
+                        deal.id,
+                        userId: userId!, // Pass the userId
+                        status: DealStatusType.paid,
+                        context:
+                            context, // Pass context if needed by updateDeal
+                      );
+                      print(
+                        'Deal status updated to Paid for deal ID: ${deal.id}',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Payment logged successfully!'),
+                          ),
+                        );
+                        Navigator.pop(context); // Close the bottom sheet
+                      }
+                    } catch (e) {
+                      print('Error logging payment for deal ${deal.id}: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to log payment: $e')),
+                        );
+                        Navigator.pop(
+                          context,
+                        ); // Close the bottom sheet even on error
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFCC29), // Yellow button
+                    foregroundColor: Colors.black, // Black text
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(60), // Rounded shape
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Yes, Log payment',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.play_arrow, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
