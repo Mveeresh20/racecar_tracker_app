@@ -6,7 +6,6 @@ import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/event.dart';
 
-
 class UpcomingEventsSection extends StatelessWidget {
   final List<Event> events;
   final VoidCallback onGoToEventsPressed; // Callback for the single button
@@ -29,59 +28,81 @@ class UpcomingEventsSection extends StatelessWidget {
         children: [
           // The main section heading
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding, vertical: 8.0),
-            child: Row( // Row to include icon next to heading
+            padding: const EdgeInsets.symmetric(
+              horizontal: kDefaultPadding,
+              vertical: 8.0,
+            ),
+            child: Row(
+              // Row to include icon next to heading
               children: [
-               Image.network(Images.upcommingEventsImg,height: 20,width: 20,), // Icon from your screenshot
+                Image.network(
+                  Images.upcommingEventsImg,
+                  height: 20,
+                  width: 20,
+                ), // Icon from your screenshot
                 const SizedBox(width: 8),
                 Text(
                   "Upcoming Events",
-                   style: TextStyle(color: Colors.white,fontWeight: FontWeight.w700,fontSize: 16,fontFamily: "Montserrat"),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontFamily: "Montserrat",
+                  ),
                 ),
               ],
             ),
-            
-            
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-                  height: 1,
-                decoration: BoxDecoration(
+              height: 1,
+              decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.white.withOpacity(0.1),width: 1),
-                )
-            
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
                 ),
               ),
+            ),
           ),
           SizedBox(
-            height: 200,  
-            child: ListView.builder(
-              
-              scrollDirection: Axis.horizontal,
-              itemCount: events.length,
-              
-              itemBuilder: (context, index) {
-                final event = events[index];
-                return Container(
-                  
-                  width: MediaQuery.of(context).size.width * 0.9, 
-                   // Spacing between cards
-                  child: DashboardSectionCard(
-                    cardColor: Color(0xFF13386B),
-
-                    
-                    innerContent: UpcomingEventsContent(event: event),
-                    
-                  ),
-                );
-              },
-            ),
+            height: 200,
+            child:
+                events.isEmpty
+                    ? Center(
+                      child: Text(
+                        "No Upcoming Events",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 16,
+                          fontFamily: "Montserrat",
+                        ),
+                      ),
+                    )
+                    : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        return Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          // Spacing between cards
+                          child: DashboardSectionCard(
+                            cardColor: Color(0xFF13386B),
+                            innerContent: UpcomingEventsContent(event: event),
+                          ),
+                        );
+                      },
+                    ),
           ),
           // The single "Go to Events" button below the horizontal list
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: kDefaultPadding,
+              vertical: 8.0,
+            ),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -89,13 +110,23 @@ class UpcomingEventsSection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kButtonColor,
                   foregroundColor: kButtonTextColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(60)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(60),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Go to Events",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w700,fontSize: 16,fontFamily: "Montserrat")), // The text for the single button
+                    Text(
+                      "Go to Events",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontFamily: "Montserrat",
+                      ),
+                    ), // The text for the single button
                     const SizedBox(width: 8),
                     const Icon(Icons.play_arrow, size: 16),
                   ],

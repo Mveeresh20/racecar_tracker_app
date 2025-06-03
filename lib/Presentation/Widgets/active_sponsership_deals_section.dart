@@ -20,11 +20,14 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color:
-            const Color(0xFF0F2A55), // Background color for the whole section
+        color: const Color(
+          0xFF0F2A55,
+        ), // Background color for the whole section
       ),
       margin: const EdgeInsets.symmetric(
-          horizontal: kDefaultPadding, vertical: 8.0),
+        horizontal: kDefaultPadding,
+        vertical: 8.0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -36,16 +39,20 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Image.network(Images.totalSponsersImg,
-                        height: 20, width: 20), // Use appropriate image
+                    Image.network(
+                      Images.totalSponsersImg,
+                      height: 20,
+                      width: 20,
+                    ), // Use appropriate image
                     const SizedBox(width: 8),
                     Text(
                       "Active Sponsorship Deals",
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          fontFamily: "Montserrat"),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontFamily: "Montserrat",
+                      ),
                     ),
                   ],
                 ),
@@ -56,7 +63,9 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                          color: Colors.white.withOpacity(0.1), width: 1),
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
                     ),
                   ),
                 ),
@@ -65,19 +74,34 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
           ),
           SizedBox(
             height: 160,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: deals.length,
-              itemBuilder: (context, index) {
-                final deal = deals[index];
-                return Container(
-                  width: MediaQuery.of(context).size.width * 0.96,
-                  child: DashboardSectionCard(
-                      innerContent: ActiveSponsorshipDealsContent(deal: deal),
-                      cardColor: Color(0xFF13386B)),
-                );
-              },
-            ),
+            child:
+                deals.isEmpty
+                    ? Center(
+                      child: Text(
+                        "No Active Sponsorship Deals",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 16,
+                          fontFamily: "Montserrat",
+                        ),
+                      ),
+                    )
+                    : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: deals.length,
+                      itemBuilder: (context, index) {
+                        final deal = deals[index];
+                        return Container(
+                          width: MediaQuery.of(context).size.width * 0.96,
+                          child: DashboardSectionCard(
+                            innerContent: ActiveSponsorshipDealsContent(
+                              deal: deal,
+                            ),
+                            cardColor: Color(0xFF13386B),
+                          ),
+                        );
+                      },
+                    ),
           ),
 
           Padding(
@@ -90,18 +114,22 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
                   backgroundColor: kButtonColor,
                   foregroundColor: kButtonTextColor,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(60)),
+                    borderRadius: BorderRadius.circular(60),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Go to Deals",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            fontFamily: "Montserrat")),
+                    Text(
+                      "Go to Deals",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontFamily: "Montserrat",
+                      ),
+                    ),
                     SizedBox(width: 8),
                     Icon(Icons.play_arrow, size: 20),
                   ],
