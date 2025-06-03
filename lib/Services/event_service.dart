@@ -79,18 +79,22 @@ class EventService extends BaseService {
   }
 
   // Stream upcoming events
-  Stream<List<Event>> streamUpcomingEvents() {
+  Stream<List<Event>> streamUpcomingEvents(String userId) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    return eventsRef.orderByChild('dateTime').startAt(now).onValue.map((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>?;
-      if (data == null) return <Event>[];
+    return getUserEventsRef(userId)
+        .orderByChild('endDate')
+        .startAt(now) // Show events that haven't ended yet
+        .onValue
+        .map((event) {
+          final data = event.snapshot.value as Map<dynamic, dynamic>?;
+          if (data == null) return <Event>[];
 
-      return data.entries.map((entry) {
-        final map = Map<String, dynamic>.from(entry.value as Map);
-        map['id'] = entry.key;
-        return _fromMap(map);
-      }).toList();
-    });
+          return data.entries.map((entry) {
+            final map = Map<String, dynamic>.from(entry.value as Map);
+            map['id'] = entry.key;
+            return _fromMap(map);
+          }).toList();
+        });
   }
 
   // Stream events by status
@@ -162,8 +166,12 @@ class EventService extends BaseService {
   // Helper method to convert Map to Event object
   Event _fromMap(Map<String, dynamic> map) {
     return Event(
-      status: EventStatusType.registrationOpen,
-
+      status: EventStatusType.values.firstWhere(
+        (e) =>
+            e.toString().split('.').last ==
+            map['status']?.toString().split('.').last,
+        orElse: () => EventStatusType.upcoming,
+      ),
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int),
       userId: map['userId'] as String,
@@ -171,14 +179,15 @@ class EventService extends BaseService {
       name: map['name'] as String,
       startDate: DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int),
       endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
-
       description: map['description'] as String,
       totalRacers: map['totalRacers'] as int,
       totalSponsors: map['totalSponsors'] as int,
-
       type: map['type'] as String,
       location: map['location'] as String,
-      totalPrizeMoney: map['totalPrizeMoney'] as double,
+      totalPrizeMoney:
+          (map['totalPrizeMoney'] is int)
+              ? (map['totalPrizeMoney'] as int).toDouble()
+              : (map['totalPrizeMoney'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

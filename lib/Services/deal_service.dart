@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
 
 class DealService extends BaseService {
   final ImagePickerUtil _imagePicker = ImagePickerUtil();
@@ -337,6 +338,7 @@ class DealService extends BaseService {
 
   // Helper method to convert Map to DealItem (simplified version)
   DealItem _fromMapSimple(Map<String, dynamic> map) {
+    final endDate = DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int);
     return DealItem(
       sponsorId: map['sponsorId'] as String,
       racerId: map['racerId'] as String,
@@ -348,8 +350,7 @@ class DealService extends BaseService {
       raceType: map['raceType'] as String,
       dealValue: (map['dealValue'] as num).toString(),
       commission: '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%',
-      renewalDate:
-          DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int).toString(),
+      renewalDate: DateFormat('MMMM yyyy').format(endDate),
       parts: List<String>.from(map['advertisingPositions'] as List),
       status: DealStatusType.values.firstWhere(
         (e) => e.toString() == map['status'],

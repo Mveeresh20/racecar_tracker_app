@@ -64,7 +64,9 @@ class Event {
         map['endDate'] as int? ?? DateTime.now().millisecondsSinceEpoch,
       ),
       status: EventStatusType.values.firstWhere(
-        (e) => e.toString() == map['status']?.toString(),
+        (e) =>
+            e.toString().split('.').last ==
+            map['status']?.toString().split('.').last,
         orElse: () => EventStatusType.upcoming,
       ),
       type: map['type'] as String? ?? 'race',
@@ -78,7 +80,10 @@ class Event {
       currentRacers: map['currentRacers'] as int? ?? 0,
       maxRacers: map['maxRacers'] as int? ?? 0,
       totalSponsors: map['totalSponsors'] as int? ?? 0,
-      totalPrizeMoney: (map['totalPrizeMoney'] as num?)?.toDouble() ?? 0.0,
+      totalPrizeMoney:
+          (map['totalPrizeMoney'] is int)
+              ? (map['totalPrizeMoney'] as int).toDouble()
+              : (map['totalPrizeMoney'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         map['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
       ),

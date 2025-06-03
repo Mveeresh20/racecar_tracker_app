@@ -377,6 +377,7 @@ class _HomeContentState extends State<HomeContent> {
   final DealService _dealService = DealService();
   final SponsorService _sponsorService = SponsorService();
   final EventService _eventService = EventService();
+  final RacerService _racerService = RacerService();
 
   // Stream subscriptions
   StreamSubscription? _dealsSubscription;
@@ -497,23 +498,25 @@ class _HomeContentState extends State<HomeContent> {
         );
 
     // Stream upcoming events
-    _upcomingEventsSubscription = _eventService.streamUpcomingEvents().listen(
-      (events) {
-        if (mounted) {
-          setState(() {
-            _upcomingEvents = events ?? [];
-          });
-        }
-      },
-      onError: (error) {
-        print('Error fetching upcoming events: $error');
-        if (mounted) {
-          setState(() {
-            _upcomingEvents = [];
-          });
-        }
-      },
-    );
+    _upcomingEventsSubscription = _eventService
+        .streamUpcomingEvents(userId)
+        .listen(
+          (events) {
+            if (mounted) {
+              setState(() {
+                _upcomingEvents = events ?? [];
+              });
+            }
+          },
+          onError: (error) {
+            print('Error fetching upcoming events: $error');
+            if (mounted) {
+              setState(() {
+                _upcomingEvents = [];
+              });
+            }
+          },
+        );
   }
 
   // Helper function to update Commission Summary data
@@ -626,69 +629,91 @@ class _HomeContentState extends State<HomeContent> {
   // Helper function to update Pending and Active Deals data
   void _updatePendingAndActiveDeals(String userId, List<DealItem> deals) async {
     if (!mounted) return;
-    // Implement logic to filter deals for pending renewals/expired and active sponsorships
+
+    print('Updating pending and active deals for user: $userId');
+    print('Total deals received: ${deals.length}');
+
     final now = DateTime.now();
-    final pendingOrExpiredThreshold = now.add(
-      Duration(days: 30),
-    ); // Deals expiring in the next 30 days or expired
+    final pendingOrExpiredThreshold = now.add(Duration(days: 30));
 
-    final pendingDealsList =
-        deals
-            .where((deal) {
-              // Check if renewalDate is not null or empty before parsing
-              if (deal.renewalDate == null || deal.renewalDate.isEmpty)
-                return false;
+    // Filter deals based on their status and end date
+    final List<Deal> pendingDealsList = [];
+    final List<DealItem> activeDealsList =
+        []; // Use DealItem for active deals list
 
-              try {
-                final endDate = DateFormat('MMMM yyyy').parse(
-                  deal.renewalDate,
-                ); // Assuming renewalDate is in 'MMMM yyyy' format
-                return endDate.isBefore(now) ||
-                    (endDate.isAfter(now) &&
-                        endDate.isBefore(pendingOrExpiredThreshold));
-              } catch (e) {
-                print('Error parsing date for deal ${deal.id}: $e');
-                return false; // Exclude deals with invalid dates
-              }
-            })
-            .map(
-              (dealItem) => Deal(
-                name:
-                    dealItem
-                        .sponsorInitials, // Assuming sponsor initials can be used as name
-                client:
-                    dealItem
-                        .racerInitials, // Assuming racer initials can be used as client
-                expiryDate: DateFormat('MMMM yyyy').parse(
-                  dealItem.renewalDate,
-                ), // Assuming renewalDate is in 'MMMM yyyy' format
-              ),
-            )
-            .toList();
+    for (final deal in deals) {
+      print(
+        'Processing deal ID: ${deal.id}, Status: ${deal.status}, RenewalDate: ${deal.renewalDate}',
+      );
 
-    final activeDealsList =
-        deals.where((deal) {
-          // Check if renewalDate is not null or empty before parsing
-          if (deal.renewalDate == null || deal.renewalDate.isEmpty)
-            return false;
+      // Check for pending deals
+      if (deal.status == DealStatusType.pending) {
+        try {
+          final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+          print(
+            'Parsed endDate for pending deal ${deal.id}: $endDate. Threshold: $pendingOrExpiredThreshold',
+          );
+          if (endDate.isBefore(pendingOrExpiredThreshold)) {
+            print('Deal ${deal.id} is pending and expiring soon.');
+            // Fetch full sponsor and racer details
+            final sponsor = await _sponsorService.getSponsor(
+              userId,
+              deal.sponsorId,
+            );
+            final racer = await _racerService.getRacer(userId, deal.racerId);
 
-          try {
-            final endDate = DateFormat('MMMM yyyy').parse(
-              deal.renewalDate,
-            ); // Assuming renewalDate is in 'MMMM yyyy' format
-            return endDate.isAfter(
-              now,
-            ); // Deals with end date in the future are active
-          } catch (e) {
-            print('Error parsing date for deal ${deal.id}: $e');
-            return false; // Exclude deals with invalid dates
+            if (sponsor != null && racer != null) {
+              pendingDealsList.add(
+                Deal(
+                  name: sponsor.name, // Use full sponsor name
+                  client: racer.name, // Use full racer name
+                  expiryDate: endDate,
+                ),
+              );
+              print('Added deal ${deal.id} to pending deals list.');
+            } else {
+              print(
+                'Sponsor or Racer not found for pending deal ${deal.id}. Sponsor ID: ${deal.sponsorId}, Racer ID: ${deal.racerId}',
+              );
+            }
           }
-        }).toList();
+        } catch (e) {
+          print(
+            'Error parsing date or fetching details for pending deal ${deal.id}: $e',
+          );
+        }
+      }
 
-    setState(() {
-      _pendingDeals = pendingDealsList;
-      _activeSponsorshipDeals = activeDealsList;
-    });
+      // Check for active deals
+      if (deal.status == DealStatusType.paid) {
+        try {
+          final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+          print(
+            'Parsed endDate for active deal ${deal.id}: $endDate. Current date: $now',
+          );
+          if (endDate.isAfter(now)) {
+            activeDealsList.add(deal); // Add the DealItem directly
+            print('Deal ${deal.id} is paid and active.');
+          } else {
+            print('Deal ${deal.id} is paid but expired.');
+          }
+        } catch (e) {
+          print('Error parsing date for active deal ${deal.id}: $e');
+        }
+      }
+    }
+
+    print(
+      'Finished processing deals. Pending deals count: ${pendingDealsList.length}, Active deals count: ${activeDealsList.length}',
+    );
+
+    if (mounted) {
+      setState(() {
+        _pendingDeals = pendingDealsList;
+        _activeSponsorshipDeals = activeDealsList;
+      });
+      print('setState called with updated pending and active deals.');
+    }
   }
 
   @override

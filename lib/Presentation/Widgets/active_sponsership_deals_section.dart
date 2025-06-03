@@ -73,7 +73,7 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
             ),
           ),
           SizedBox(
-            height: 160,
+            height: 190,
             child:
                 deals.isEmpty
                     ? Center(
