@@ -7,12 +7,14 @@ import 'package:racecar_tracker/models/deal_detail_item.dart'; // Import the spe
 // Import shared enum extension
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/models/deal_item.dart'; // Assuming this exists for back button
+import 'package:racecar_tracker/Services/image_picker_util.dart';
 
 class DealDetailScreen extends StatelessWidget {
   final DealDetailItem deal;
-  final DealItem dealItem; // Now expects a DealDetailItem
+  final DealItem dealItem;
+  final _imagePicker = ImagePickerUtil();
 
-  const DealDetailScreen({required this.dealItem, Key? key, required this.deal})
+  DealDetailScreen({required this.dealItem, Key? key, required this.deal})
     : super(key: key);
 
   // Helper widget to build the "Branding" chips (Assigned Branding Locations)
@@ -254,23 +256,32 @@ class DealDetailScreen extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       itemCount: deal.brandingImageUrls.length,
                       itemBuilder: (context, index) {
+                        final imagePath = deal.brandingImageUrls[index];
+                        final imageUrl = _imagePicker
+                            .getUrlForUserUploadedImage(imagePath);
+                        print(
+                          'Loading branding image at index $index: $imageUrl',
+                        );
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              deal.brandingImageUrls[index], // Dynamic branding images
-
+                              imageUrl,
+                              width: 120,
                               height: 120,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
+                                print('Error loading branding image: $error');
+                                print('Image URL: $imageUrl');
                                 return Container(
-                                  
+                                  width: 120,
                                   height: 120,
-                                  color: Colors.grey.shade800,
+                                  color: Colors.grey[800],
                                   child: const Icon(
                                     Icons.broken_image,
-                                    color: Colors.white70,
+                                    color: Colors.white,
+                                    size: 30,
                                   ),
                                 );
                               },
@@ -300,10 +311,7 @@ class DealDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    color: Colors.white,
-                  ),
+                  Icon(Icons.timer_outlined, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(
                     "Deal Duration & Renewal",
@@ -320,7 +328,6 @@ class DealDetailScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
               child: Column(
-                
                 children: [
                   _buildInfoRow(
                     "Start Date:",
@@ -346,7 +353,7 @@ class DealDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 100), 
+            const SizedBox(height: 100),
           ],
         ),
       ),

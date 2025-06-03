@@ -3,10 +3,27 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
+import 'package:racecar_tracker/Services/app_constant.dart';
+import 'package:path/path.dart' as path;
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:uuid/uuid.dart';
 
 class DealService extends BaseService {
+  final ImagePickerUtil _imagePicker = ImagePickerUtil();
+  final _uuid = const Uuid();
+
+  // Get reference to user's deals
+  DatabaseReference getUserDealsRef(String userId) {
+    return database.ref().child('478_users').child(userId).child('deals');
+  }
+
   // Create a new deal
   Future<String> createDeal({
+    required String userId,
     required String sponsorId,
     required String racerId,
     required String eventId,
@@ -22,6 +39,7 @@ class DealService extends BaseService {
     required String renewalReminder,
     required DealStatusType status,
     List<File>? brandingImages,
+    required BuildContext context,
   }) async {
     try {
       List<String>? brandingImageUrls;
@@ -29,9 +47,32 @@ class DealService extends BaseService {
       // Upload branding images if provided
       if (brandingImages != null && brandingImages.isNotEmpty) {
         brandingImageUrls = await Future.wait(
-          brandingImages.map(
-            (file) => uploadFile(file, dealsStorageRef.child('branding')),
-          ),
+          brandingImages.map((file) async {
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final uniqueId = _uuid.v4(); // Generate a unique ID for each image
+            final imagePath =
+                'branding_${timestamp}_$uniqueId${path.extension(file.path)}';
+
+            String? signedUrl = await _imagePicker.getSignedUrl(
+              imagePath,
+              AppConstant.bundleNameForPostAPI,
+            );
+
+            if (signedUrl == null) {
+              throw Exception('Failed to get signed URL for image upload');
+            }
+
+            Completer<String> completer = Completer<String>();
+            await _imagePicker.uploadFileToS3WithCallback(
+              signedUrl,
+              file.path,
+              context,
+              (url) => completer.complete(url),
+              (error) => completer.completeError(error),
+            );
+
+            return await completer.future;
+          }),
         );
       }
 
@@ -40,6 +81,7 @@ class DealService extends BaseService {
 
       // Create deal data
       final dealData = {
+        'userId': userId,
         'sponsorId': sponsorId,
         'racerId': racerId,
         'eventId': eventId,
@@ -60,7 +102,7 @@ class DealService extends BaseService {
         'updatedAt': ServerValue.timestamp,
       };
 
-      final dealId = await create(dealsRef, dealData);
+      final dealId = await create(getUserDealsRef(userId), dealData);
 
       // Update sponsor's active deals count
       await _updateSponsorDealCount(sponsorId, 1);
@@ -89,6 +131,7 @@ class DealService extends BaseService {
     String? renewalReminder,
     DealStatusType? status,
     List<File>? brandingImages,
+    required BuildContext context,
   }) async {
     try {
       final deal = await getById<DealDetailItem>(
@@ -138,17 +181,34 @@ class DealService extends BaseService {
 
       // Handle branding images update
       if (brandingImages != null && brandingImages.isNotEmpty) {
-        // Delete old images
-        if (deal.brandingImageUrls.isNotEmpty) {
-          await Future.wait(
-            deal.brandingImageUrls.map((url) => deleteFile(url)),
-          );
-        }
         // Upload new images
         final newUrls = await Future.wait(
-          brandingImages.map(
-            (file) => uploadFile(file, dealsStorageRef.child('branding')),
-          ),
+          brandingImages.map((file) async {
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final uniqueId = _uuid.v4(); // Generate a unique ID for each image
+            final imagePath =
+                'branding_${timestamp}_$uniqueId${path.extension(file.path)}';
+
+            String? signedUrl = await _imagePicker.getSignedUrl(
+              imagePath,
+              AppConstant.bundleNameForPostAPI,
+            );
+
+            if (signedUrl == null) {
+              throw Exception('Failed to get signed URL for image upload');
+            }
+
+            Completer<String> completer = Completer<String>();
+            await _imagePicker.uploadFileToS3WithCallback(
+              signedUrl,
+              file.path,
+              context,
+              (url) => completer.complete(url),
+              (error) => completer.completeError(error),
+            );
+
+            return await completer.future;
+          }),
         );
         updates['brandingImageUrls'] = newUrls;
       }
@@ -192,17 +252,34 @@ class DealService extends BaseService {
 
   // Get deal by ID
   Future<DealDetailItem?> getDeal(String id) async {
-    return await getById<DealDetailItem>(dealsRef, id, DealDetailItem.fromMap);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      print('No user logged in when trying to get deal');
+      return null;
+    }
+    print('Fetching deal $id for user $userId');
+    final deal = await getById<DealDetailItem>(
+      getUserDealsRef(userId),
+      id,
+      DealDetailItem.fromMap,
+    );
+    if (deal == null) {
+      print('No deal found with ID $id');
+    } else {
+      print('Deal found with ${deal.brandingImageUrls.length} branding images');
+      print('Branding image URLs: ${deal.brandingImageUrls}');
+    }
+    return deal;
   }
 
-  // Stream all deals
-  Stream<List<DealItem>> streamDeals() {
-    return streamList<DealItem>(dealsRef, _fromMapSimple);
+  // Stream all deals for a user
+  Stream<List<DealItem>> streamDeals(String userId) {
+    return streamList<DealItem>(getUserDealsRef(userId), _fromMapSimple);
   }
 
-  // Stream active deals
-  Stream<List<DealItem>> streamActiveDeals() {
-    return dealsRef
+  // Stream active deals for a user
+  Stream<List<DealItem>> streamActiveDeals(String userId) {
+    return getUserDealsRef(userId)
         .orderByChild('status')
         .equalTo(DealStatusType.paid.toString())
         .onValue
@@ -218,11 +295,11 @@ class DealService extends BaseService {
         });
   }
 
-  // Stream deals by sponsor
-  Stream<List<DealItem>> streamDealsBySponsor(String sponsorId) {
-    return dealsRef.orderByChild('sponsorId').equalTo(sponsorId).onValue.map((
-      event,
-    ) {
+  // Stream deals by sponsor for a user
+  Stream<List<DealItem>> streamDealsBySponsor(String userId, String sponsorId) {
+    return getUserDealsRef(
+      userId,
+    ).orderByChild('sponsorId').equalTo(sponsorId).onValue.map((event) {
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
       if (data == null) return <DealItem>[];
 
@@ -234,11 +311,11 @@ class DealService extends BaseService {
     });
   }
 
-  // Stream deals by racer
-  Stream<List<DealItem>> streamDealsByRacer(String racerId) {
-    return dealsRef.orderByChild('racerId').equalTo(racerId).onValue.map((
-      event,
-    ) {
+  // Stream deals by racer for a user
+  Stream<List<DealItem>> streamDealsByRacer(String userId, String racerId) {
+    return getUserDealsRef(
+      userId,
+    ).orderByChild('racerId').equalTo(racerId).onValue.map((event) {
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
       if (data == null) return <DealItem>[];
 

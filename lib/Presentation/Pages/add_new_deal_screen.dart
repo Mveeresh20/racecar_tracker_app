@@ -7,6 +7,9 @@ import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:racecar_tracker/Services/deal_service.dart';
+import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddNewDealScreen extends StatefulWidget {
   final List<Sponsor> sponsors;
@@ -26,6 +29,8 @@ class AddNewDealScreen extends StatefulWidget {
 
 class _AddNewDealScreenState extends State<AddNewDealScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _dealService = DealService();
+  final _uuid = const Uuid();
 
   Sponsor? _selectedSponsor;
   Racer? _selectedRacer;
@@ -61,6 +66,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
     "2 Weeks Before",
   ];
 
+  bool _isLoading = false;
+
   Future<void> _pickDate(BuildContext context, bool isStart) async {
     final picked = await showDatePicker(
       context: context,
@@ -90,42 +97,107 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
     }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() &&
         _selectedSponsor != null &&
         _selectedRacer != null &&
         _selectedEvent != null &&
         _startDate != null &&
         _endDate != null) {
-      // Generate initials from names
-      final sponsorInitials = _selectedSponsor!.name
-          .split(' ')
-          .where((word) => word.isNotEmpty)
-          .map((word) => word[0].toUpperCase())
-          .join('');
+      setState(() {
+        _isLoading = true;
+      });
 
-      final racerInitials = _selectedRacer!.name
-          .split(' ')
-          .where((word) => word.isNotEmpty)
-          .map((word) => word[0].toUpperCase())
-          .join('');
+      try {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId == null) {
+          throw Exception('No user logged in');
+        }
 
-      final deal = DealItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        sponsorId: _selectedSponsor!.id,
-        racerId: _selectedRacer!.id,
-        eventId: _selectedEvent!.id,
-        title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-        raceType: _selectedEvent!.type,
-        dealValue: _dealAmountController.text,
-        commission: _commissionController.text,
-        renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
-        parts: _selectedBranding.toList(),
-        status: _paymentStatus,
-        sponsorInitials: sponsorInitials,
-        racerInitials: racerInitials,
-      );
-      Navigator.pop(context, deal);
+        // Generate initials from names
+        final sponsorInitials = _selectedSponsor!.name
+            .split(' ')
+            .where((word) => word.isNotEmpty)
+            .map((word) => word[0].toUpperCase())
+            .join('');
+
+        final racerInitials = _selectedRacer!.name
+            .split(' ')
+            .where((word) => word.isNotEmpty)
+            .map((word) => word[0].toUpperCase())
+            .join('');
+
+        // Parse deal value and commission
+        final dealValue =
+            double.tryParse(
+              _dealAmountController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+            ) ??
+            0.0;
+        final commissionPercentage =
+            double.tryParse(
+              _commissionController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+            ) ??
+            0.0;
+
+        // Create the deal in Firebase
+        final dealId = await _dealService.createDeal(
+          userId: userId,
+          sponsorId: _selectedSponsor!.id,
+          racerId: _selectedRacer!.id,
+          eventId: _selectedEvent!.id,
+          sponsorInitials: sponsorInitials,
+          racerInitials: racerInitials,
+          title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+          raceType: _selectedEvent!.type,
+          dealValue: dealValue,
+          commissionPercentage: commissionPercentage,
+          advertisingPositions: _selectedBranding.toList(),
+          startDate: _startDate!,
+          endDate: _endDate!,
+          renewalReminder: _renewalReminder ?? "2 Days Before",
+          status: _paymentStatus,
+          brandingImages: _brandingImages,
+          context: context,
+        );
+
+        if (!mounted) return;
+
+        // Create DealItem for the return value
+        final deal = DealItem(
+          id: dealId,
+          sponsorId: _selectedSponsor!.id,
+          racerId: _selectedRacer!.id,
+          eventId: _selectedEvent!.id,
+          title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+          raceType: _selectedEvent!.type,
+          dealValue: '\$${dealValue.toStringAsFixed(2)}',
+          commission: '${commissionPercentage.toStringAsFixed(1)}%',
+          renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
+          parts: _selectedBranding.toList(),
+          status: _paymentStatus,
+          sponsorInitials: sponsorInitials,
+          racerInitials: racerInitials,
+        );
+
+        Navigator.pop(context, deal);
+      } catch (e) {
+        print('Error creating deal: $e');
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating deal: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 

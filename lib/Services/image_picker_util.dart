@@ -10,8 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:racecar_tracker/Services/app_constant.dart';
 import 'package:racecar_tracker/Services/compress_image_params.dart';
 
-
-
 class ImagePickerUtil {
   String uploadedFileUrl = '';
   final ImagePicker _picker = ImagePicker();
@@ -38,8 +36,11 @@ class ImagePickerUtil {
                 title: Text('Gallery'),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the bottom sheet
-                  _pickImageFromGallery(context, onUploadSuccess,
-                      onUploadFailure); // Pass callbacks
+                  _pickImageFromGallery(
+                    context,
+                    onUploadSuccess,
+                    onUploadFailure,
+                  ); // Pass callbacks
                 },
               ),
               ListTile(
@@ -47,8 +48,11 @@ class ImagePickerUtil {
                 title: const Text('Camera'),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the bottom sheet
-                  _pickImageFromCamera(context, onUploadSuccess,
-                      onUploadFailure); // Pass callbacks
+                  _pickImageFromCamera(
+                    context,
+                    onUploadSuccess,
+                    onUploadFailure,
+                  ); // Pass callbacks
                 },
               ),
             ],
@@ -61,7 +65,7 @@ class ImagePickerUtil {
   Future<void> _pickImageFromGallery(
     BuildContext context,
     Function(String) onUploadSuccess, // Callback for success
-    Function(String) onUploadFailure, // Callback for failure
+    Function(String) onUploadFailure,
   ) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
@@ -73,7 +77,11 @@ class ImagePickerUtil {
         file = await pickAndCompressImage(file!);
         debugPrint("Image compressed: ${file!.path}");
         await _showImagePreviewDialog(
-            context, file!, onUploadSuccess, onUploadFailure);
+          context,
+          file!,
+          onUploadSuccess,
+          onUploadFailure,
+        );
       } catch (e) {
         debugPrint("Error compressing image: $e");
         onUploadFailure("Error compressing image: $e");
@@ -85,7 +93,7 @@ class ImagePickerUtil {
   Future<void> _pickImageFromCamera(
     BuildContext context,
     Function(String) onUploadSuccess, // Callback for success
-    Function(String) onUploadFailure, // Callback for failure
+    Function(String) onUploadFailure,
   ) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image != null) {
@@ -97,7 +105,11 @@ class ImagePickerUtil {
         file = await pickAndCompressImage(file!);
         debugPrint("Image compressed: ${file!.path}");
         await _showImagePreviewDialog(
-            context, file!, onUploadSuccess, onUploadFailure);
+          context,
+          file!,
+          onUploadSuccess,
+          onUploadFailure,
+        );
       } catch (e) {
         debugPrint("Error compressing image: $e");
         onUploadFailure("Error compressing image: $e");
@@ -108,8 +120,6 @@ class ImagePickerUtil {
   // Method to generate the signed URL
   Future<String?> getSignedUrl(String fileName, String bundle) async {
     final String url = AppConstant.baseUrlForUploadPostApi;
-    uploadedFileUrl = fileName;
-    log('uploadedFileUrl -> ${url + uploadedFileUrl}');
     final Map<String, String> payload = {
       'fileName': fileName,
       'bundle': bundle,
@@ -120,9 +130,7 @@ class ImagePickerUtil {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonPayload,
       );
 
@@ -134,7 +142,9 @@ class ImagePickerUtil {
           return signedUrl;
         }
       } else {
-        log('getSignedUrl Failed request: ${response.statusCode} : ${response.body}');
+        log(
+          'getSignedUrl Failed request: ${response.statusCode} : ${response.body}',
+        );
       }
     } catch (e) {
       log('getSignedUrl Error: $e');
@@ -168,18 +178,19 @@ class ImagePickerUtil {
         log("File uploaded response: ${response.body}");
 
         if (response.statusCode == 200) {
-          onUploadSuccess(uploadedFileUrl); // Pass the filename to the callback
-          // onUploadSuccess(_fileName);  // Pass the filename to the callback
+          // Extract the file path from the signed URL
+          final uri = Uri.parse(signedUrl);
+          final pathSegments = uri.path.split('/');
+          final fileName = pathSegments.last;
+          onUploadSuccess(fileName); // Pass the filename to the callback
         } else {
-          onUploadFailure(
-              'Failed to upload file: ${response.statusCode}'); // Call failure callback
+          onUploadFailure('Failed to upload file: ${response.statusCode}');
         }
       } else {
-        onUploadFailure(
-            'File not found at the specified path'); // Failure callback
+        onUploadFailure('File not found at the specified path');
       }
     } catch (e) {
-      onUploadFailure('Error uploading file: $e'); // Failure callback
+      onUploadFailure('Error uploading file: $e');
     }
   }
 
@@ -188,6 +199,7 @@ class ImagePickerUtil {
     if (postFilePath.startsWith("/")) {
       return AppConstant.baseUrlToUploadAndFetchUsersImage + postFilePath;
     }
+
     return "${AppConstant.baseUrlToUploadAndFetchUsersImage}/$postFilePath";
   }
 
@@ -203,8 +215,9 @@ class ImagePickerUtil {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -214,8 +227,12 @@ class ImagePickerUtil {
                   imageFile,
                   fit: BoxFit.cover,
                   gaplessPlayback: true,
-                  frameBuilder:
-                      (context, child, frame, wasSynchronouslyLoaded) {
+                  frameBuilder: (
+                    context,
+                    child,
+                    frame,
+                    wasSynchronouslyLoaded,
+                  ) {
                     if (frame != null || wasSynchronouslyLoaded) {
                       return child;
                     }
@@ -234,23 +251,22 @@ class ImagePickerUtil {
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // Close the dialog
               },
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text("Cancel", style: TextStyle(color: Colors.red)),
             ),
             // Upload Button
-            StatefulBuilder(builder: (_context, state) {
-              return loading
-                  ? Container(
+            StatefulBuilder(
+              builder: (_context, state) {
+                return loading
+                    ? Container(
                       width: 50,
                       height: 50,
                       alignment: Alignment.center,
-                      child: const CircularProgressIndicator.adaptive())
-                  : ElevatedButton(
+                      child: const CircularProgressIndicator.adaptive(),
+                    )
+                    : ElevatedButton(
                       style: const ButtonStyle(
-                          // backgroundColor:  color1,
-                          ),
+                        // backgroundColor:  color1,
+                      ),
                       onPressed: () async {
                         String _fileName =
                             'IMG_Profile_${DateTime.now().millisecondsSinceEpoch}${extension(imageFile.path)}';
@@ -262,12 +278,19 @@ class ImagePickerUtil {
                                 loading = true;
                               });
                               String? url = await getSignedUrl(
-                                  _fileName, AppConstant.bundleNameForPostAPI);
+                                _fileName,
+                                AppConstant.bundleNameForPostAPI,
+                              );
                               if (url != null &&
                                   url.isNotEmpty &&
                                   file != null) {
-                                uploadFileToS3WithCallback(url, file!.path,
-                                    context, onUploadSuccess, onUploadFailure);
+                                uploadFileToS3WithCallback(
+                                  url,
+                                  file!.path,
+                                  context,
+                                  onUploadSuccess,
+                                  onUploadFailure,
+                                );
                                 state(() {
                                   loading = false;
                                 });
@@ -287,7 +310,8 @@ class ImagePickerUtil {
                         style: TextStyle(color: Colors.black),
                       ),
                     );
-            }),
+              },
+            ),
           ],
         );
       },
@@ -322,11 +346,18 @@ class ImagePickerUtilForPst {
       _fileName = uniqueFileName;
 
       if (_fileName.isNotEmpty) {
-        String? url =
-            await getSignedUrl(_fileName, AppConstant.bundleNameForPostAPI);
+        String? url = await getSignedUrl(
+          _fileName,
+          AppConstant.bundleNameForPostAPI,
+        );
         if (url != null && url.isNotEmpty && file != null) {
           uploadFileToS3WithCallback(
-              url, file!.path, context, onUploadSuccess, onUploadFailure);
+            url,
+            file!.path,
+            context,
+            onUploadSuccess,
+            onUploadFailure,
+          );
         }
       }
     }
@@ -352,11 +383,18 @@ class ImagePickerUtilForPst {
       _fileName = uniqueFileName;
       log('_fileName  ====> $_fileName');
       if (_fileName.isNotEmpty) {
-        String? url =
-            await getSignedUrl(_fileName, AppConstant.bundleNameForPostAPI);
+        String? url = await getSignedUrl(
+          _fileName,
+          AppConstant.bundleNameForPostAPI,
+        );
         if (url != null && url.isNotEmpty && file != null) {
           uploadFileToS3WithCallback(
-              url, file!.path, context, onUploadSuccess, onUploadFailure);
+            url,
+            file!.path,
+            context,
+            onUploadSuccess,
+            onUploadFailure,
+          );
         }
       }
     }
@@ -378,8 +416,11 @@ class ImagePickerUtilForPst {
                 title: Text('Gallery'),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the bottom sheet
-                  _pickImageFromGallery(context, onUploadSuccess,
-                      onUploadFailure); // Pass callbacks
+                  _pickImageFromGallery(
+                    context,
+                    onUploadSuccess,
+                    onUploadFailure,
+                  ); // Pass callbacks
                 },
               ),
               ListTile(
@@ -387,8 +428,11 @@ class ImagePickerUtilForPst {
                 title: const Text('Camera'),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the bottom sheet
-                  _pickImageFromCamera(context, onUploadSuccess,
-                      onUploadFailure); // Pass callbacks
+                  _pickImageFromCamera(
+                    context,
+                    onUploadSuccess,
+                    onUploadFailure,
+                  ); // Pass callbacks
                 },
               ),
             ],
@@ -413,9 +457,7 @@ class ImagePickerUtilForPst {
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonPayload,
       );
 
@@ -427,7 +469,9 @@ class ImagePickerUtilForPst {
           return signedUrl;
         }
       } else {
-        log('getSignedUrl Failed request: ${response.statusCode} : ${response.body}');
+        log(
+          'getSignedUrl Failed request: ${response.statusCode} : ${response.body}',
+        );
       }
     } catch (e) {
       log('getSignedUrl Error: $e');
@@ -467,14 +511,18 @@ class ImagePickerUtilForPst {
 
           // onUploadSuccess(response.body); // Call success callback with response body
         } else {
-          log('Failed to upload file: ${response.statusCode} : ${response.body}');
+          log(
+            'Failed to upload file: ${response.statusCode} : ${response.body}',
+          );
           onUploadFailure(
-              'Failed to upload file: ${response.statusCode}'); // Call failure callback
+            'Failed to upload file: ${response.statusCode}',
+          ); // Call failure callback
         }
       } else {
         log('File not found at the specified path: $filePath');
         onUploadFailure(
-            'File not found at the specified path'); // Failure callback
+          'File not found at the specified path',
+        ); // Failure callback
       }
     } catch (e) {
       log('Error uploading file: $e');

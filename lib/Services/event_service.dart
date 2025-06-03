@@ -60,8 +60,17 @@ class EventService extends BaseService {
   }
 
   // Get event by ID
-  Future<Event?> getEvent(String id) async {
-    return await getById<Event>(eventsRef, id, _fromMap);
+  Future<Event?> getEvent(String userId, String id) async {
+    try {
+      final snapshot = await getUserEventsRef(userId).child(id).get();
+      if (!snapshot.exists) return null;
+
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      data['id'] = snapshot.key; // Add the key as the event ID
+      return Event.fromMap(data);
+    } catch (e) {
+      throw Exception('Failed to get event: $e');
+    }
   }
 
   // Stream all events
@@ -154,7 +163,7 @@ class EventService extends BaseService {
   Event _fromMap(Map<String, dynamic> map) {
     return Event(
       status: EventStatusType.registrationOpen,
-      
+
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int),
       userId: map['userId'] as String,
@@ -162,16 +171,14 @@ class EventService extends BaseService {
       name: map['name'] as String,
       startDate: DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int),
       endDate: DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int),
-      
+
       description: map['description'] as String,
       totalRacers: map['totalRacers'] as int,
       totalSponsors: map['totalSponsors'] as int,
-      
 
       type: map['type'] as String,
       location: map['location'] as String,
       totalPrizeMoney: map['totalPrizeMoney'] as double,
-      
     );
   }
 }

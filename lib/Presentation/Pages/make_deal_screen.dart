@@ -14,6 +14,7 @@ import 'package:racecar_tracker/Services/storage_service.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MakeDealScreen extends StatefulWidget {
   final Sponsor sponsor;
@@ -141,81 +142,84 @@ class _MakeDealScreenState extends State<MakeDealScreen> {
     });
   }
 
-  Future<void> _submitDeal() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedRacer == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a racer')));
-      return;
-    }
-    if (_selectedEvent == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select an event')));
-      return;
-    }
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() &&
+        _selectedRacer != null &&
+        _selectedEvent != null &&
+        _startDate != null &&
+        _endDate != null) {
+      setState(() {
+        _isLoading = true;
+      });
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+      try {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId == null) {
+          throw Exception('No user logged in');
+        }
 
-    try {
-      final userId = UserService().getCurrentUserId();
-      if (userId == null) throw Exception('User not logged in');
-
-      // Upload branding images first
-      List<String> brandingImageUrls = [];
-      if (_brandingImages.isNotEmpty) {
-        brandingImageUrls = await _storageService.uploadFiles(
-          _brandingImages,
-          'deals/branding',
+        // Create the deal
+        final dealId = await _dealService.createDeal(
+          userId: userId, // Add the required userId parameter
+          sponsorId: widget.sponsor.id,
+          racerId: _selectedRacer!.id,
+          eventId: _selectedEvent!.id,
+          sponsorInitials: widget.sponsor.initials,
+          racerInitials: _selectedRacer!.initials,
+          title: _titleController.text.trim(),
+          raceType: _raceTypeController.text.trim(),
+          dealValue: double.parse(
+            _dealValueController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+          ),
+          commissionPercentage: double.parse(
+            _commissionController.text.replaceAll('%', ''),
+          ),
+          advertisingPositions: _selectedParts.toList(),
+          startDate: _startDate!,
+          endDate: _endDate!,
+          renewalReminder: _renewalReminderController.text.trim(),
+          status: DealStatusType.pending,
+          brandingImages: _brandingImages,
+          context: context, // Add context parameter
         );
-      }
 
-      // Create the deal
-      final dealId = await _dealService.createDeal(
-        sponsorId: widget.sponsor.id,
-        racerId: _selectedRacer!.id,
-        eventId: _selectedEvent!.id,
-        sponsorInitials: widget.sponsor.initials,
-        racerInitials: _selectedRacer!.initials,
-        title: _titleController.text.trim(),
-        raceType: _raceTypeController.text.trim(),
-        dealValue: double.parse(
-          _dealValueController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-        ),
-        commissionPercentage: double.parse(
-          _commissionController.text.replaceAll('%', ''),
-        ),
-        advertisingPositions: _selectedParts.toList(),
-        startDate: _startDate,
-        endDate: _endDate,
-        renewalReminder: _renewalReminderController.text.trim(),
-        status: DealStatusType.pending,
-        brandingImages: _brandingImages,
-      );
+        if (!mounted) return;
 
-      if (mounted) {
+        // Create DealItem for the return value
+        final deal = DealItem(
+          id: dealId,
+          sponsorId: widget.sponsor.id,
+          racerId: _selectedRacer!.id,
+          eventId: _selectedEvent!.id,
+          title: _titleController.text.trim(),
+          raceType: _raceTypeController.text.trim(),
+          dealValue: _dealValueController.text,
+          commission: '${_commissionController.text}%',
+          renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
+          parts: _selectedParts.toList(),
+          status: DealStatusType.pending,
+          sponsorInitials: widget.sponsor.initials,
+          racerInitials: _selectedRacer!.initials,
+        );
+
+        Navigator.pop(context, deal);
+      } catch (e) {
+        print('Error creating deal: $e');
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deal created successfully')),
+          SnackBar(
+            content: Text('Error creating deal: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
-        Navigator.pop(context, dealId);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error creating deal: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -305,85 +309,83 @@ class _MakeDealScreenState extends State<MakeDealScreen> {
               ),
               const SizedBox(height: 20),
 
-                  // Add Racer Selection
-                  _buildDropdown<Racer>(
-                    "Select Racer",
-                    _selectedRacer,
-                    _availableRacers,
-                    (racer) => racer.name,
-                    (racer) {
-                      setState(() => _selectedRacer = racer);
-                    },
-                  ),
+              // Add Racer Selection
+              _buildDropdown<Racer>(
+                "Select Racer",
+                _selectedRacer,
+                _availableRacers,
+                (racer) => racer.name,
+                (racer) {
+                  setState(() => _selectedRacer = racer);
+                },
+              ),
 
-                  // Add Event Selection
-                  _buildDropdown<Event>(
-                    "Select Event",
-                    _selectedEvent,
-                    _availableEvents,
-                    (event) => event.name,
-                    (event) {
-                      setState(() => _selectedEvent = event);
-                    },
-                  ),
+              // Add Event Selection
+              _buildDropdown<Event>(
+                "Select Event",
+                _selectedEvent,
+                _availableEvents,
+                (event) => event.name,
+                (event) {
+                  setState(() => _selectedEvent = event);
+                },
+              ),
 
-                  // Form Fields
-                  _buildFormField(
-                    "Deal Title",
-                    _titleController,
-                    "Enter Deal Title",
-                    validator:
-                        (value) =>
-                            value?.isEmpty ?? true
-                                ? "Please enter deal title"
-                                : null,
-                  ),
-                  _buildFormField(
-                    "Race Type",
-                    _raceTypeController,
-                    "Enter Race Type",
-                    validator:
-                        (value) =>
-                            value?.isEmpty ?? true
-                                ? "Please enter race type"
-                                : null,
-                  ),
-                  _buildFormField(
-                    "Deal Value (USD)",
-                    _dealValueController,
-                    "Enter Amount",
-                    keyboardType: TextInputType.number,
-                    validator:
-                        (value) =>
-                            value?.isEmpty ?? true
-                                ? "Please enter amount"
-                                : null,
-                  ),
-                  _buildFormField(
-                    "Commission (%)",
-                    _commissionController,
-                    "Enter Commission Percentage",
-                    keyboardType: TextInputType.number,
-                    validator:
-                        (value) =>
-                            value?.isEmpty ?? true
-                                ? "Please enter commission"
-                                : null,
-                  ),
-                  _buildDatePicker("Start Date", true),
-                  _buildDatePicker("End Date", false),
-                  _buildFormField(
-                    "Renewal Reminder",
-                    _renewalReminderController,
-                    "Enter Renewal Reminder",
-                    validator:
-                        (value) =>
-                            value?.isEmpty ?? true
-                                ? "Please enter renewal reminder"
-                                : null,
-                  ),
-                  _buildPartsSelection(),
-                  _buildNotesField(),
+              // Form Fields
+              _buildFormField(
+                "Deal Title",
+                _titleController,
+                "Enter Deal Title",
+                validator:
+                    (value) =>
+                        value?.isEmpty ?? true
+                            ? "Please enter deal title"
+                            : null,
+              ),
+              _buildFormField(
+                "Race Type",
+                _raceTypeController,
+                "Enter Race Type",
+                validator:
+                    (value) =>
+                        value?.isEmpty ?? true
+                            ? "Please enter race type"
+                            : null,
+              ),
+              _buildFormField(
+                "Deal Value (USD)",
+                _dealValueController,
+                "Enter Amount",
+                keyboardType: TextInputType.number,
+                validator:
+                    (value) =>
+                        value?.isEmpty ?? true ? "Please enter amount" : null,
+              ),
+              _buildFormField(
+                "Commission (%)",
+                _commissionController,
+                "Enter Commission Percentage",
+                keyboardType: TextInputType.number,
+                validator:
+                    (value) =>
+                        value?.isEmpty ?? true
+                            ? "Please enter commission"
+                            : null,
+              ),
+              _buildDatePicker("Start Date", true),
+              _buildDatePicker("End Date", false),
+              _buildFormField(
+                "Renewal Reminder",
+                _renewalReminderController,
+                "Enter Renewal Reminder",
+                validator:
+                    (value) =>
+                        value?.isEmpty ?? true
+                            ? "Please enter renewal reminder"
+                            : null,
+              ),
+              _buildPartsSelection(),
+              _buildNotesField(),
 
               // Submit Button
               Padding(
@@ -394,7 +396,7 @@ class _MakeDealScreenState extends State<MakeDealScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _submitDeal,
+                    onPressed: _submitForm,
                     child: const Text(
                       "Create Deal",
                       style: TextStyle(

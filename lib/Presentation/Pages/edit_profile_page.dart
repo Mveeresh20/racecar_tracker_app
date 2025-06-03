@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Services/image_picker_util.dart';
-import 'package:racecar_tracker/Utils/Constants/image_path.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -15,7 +13,6 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  late final EditProfileProvider _provider;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
   File? _imageFile;
@@ -23,20 +20,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    _provider = EditProfileProvider();
     _loadUserProfile();
-  }
-
-  Future<void> _initializeData() async {
-    await _provider.fetchUserProfileDetails();
-  }
-
-  @override
-  void dispose() {
-    _provider.dispose();
-    super.dispose();
-    _nameController.dispose();
-    _emailController.dispose();
   }
 
   Future<void> _loadUserProfile() async {
@@ -127,140 +111,55 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Center(
                   child: Stack(
                     children: [
-                      Center(
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          // Align the edit icon at the bottom-right
-                          children: [
-                            // Profile Image (centered)
-                            InkWell(
-                              onTap: () {
-                                ImagePickerUtil().showImageSourceSelection(
-                                  context,
-                                  (responseBody) async {
-                                    print("Upload Success: $responseBody");
-                                    await _provider.updateUserProfile(
-                                      responseBody,
-                                      context,
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              width: 3,
+                              color: Colors.black.withOpacity(0.2),
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: Consumer<EditProfileProvider>(
+                              builder: (context, provider, child) {
+                                final imageUrl = provider.getProfileImageUrl();
+                                return Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  height: 80,
+                                  width: 80,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.network(
+                                      Images.profile,
+                                      fit: BoxFit.cover,
+                                      height: 80,
+                                      width: 80,
                                     );
-                                    // setState(() {
-                                    //   _provider.profilePicture = responseBody;
-                                    // });
-                                  },
-                                  (error) {
-                                    print("Upload Failed: $error");
                                   },
                                 );
                               },
-                              child: Container(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Align(
-                                      alignment: const AlignmentDirectional(
-                                        0.0,
-                                        0.0,
-                                      ),
-                                      child: Container(
-                                        width: 127.0,
-                                        height: 127.0,
-                                        decoration:
-                                            (_provider.profilePicture != null &&
-                                                    _provider
-                                                        .profilePicture!
-                                                        .isNotEmpty)
-                                                ? BoxDecoration(
-                                                  image: DecorationImage(
-                                                    fit: BoxFit.cover,
-                                                    image: CachedNetworkImageProvider(
-                                                      ImagePickerUtil()
-                                                          .getUrlForUserUploadedImage(
-                                                            _provider
-                                                                .profilePicture!,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        150.0,
-                                                      ),
-                                                )
-                                                : BoxDecoration(
-                                                  image: const DecorationImage(
-                                                    fit: BoxFit.cover,
-                                                    image: AssetImage(
-                                                      ImagePath.profile,
-                                                    ),
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        59.0,
-                                                      ),
-                                                ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ),
-                            // Edit Icon
-                            Positioned(
-                              bottom: 0, // Distance from the bottom
-                              right: 0,
-                              child: Container(
-                                width: 36.0,
-                                height: 36.0,
-                                decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  borderRadius: BorderRadius.circular(99),
-                                  border: Border.all(
-                                    color: Colors.white, // Border color
-                                  ),
-                                ),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    ImagePickerUtil().showImageSourceSelection(
-                                      context,
-                                      (responseBody) async {
-                                        print("Upload Success: $responseBody");
-                                        await _provider.updateUserProfile(
-                                          responseBody,
-                                          context,
-                                        );
-                                      },
-                                      (error) {
-                                        print("Upload Failed: $error");
-                                      },
-                                    );
-                                  }, // Open image picker when clicked
-                                  child: Icon(
-                                    Icons.edit,
-                                    size: 24,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                      // Positioned(
-                      //   right: 0,
-                      //   bottom: 0,
-                      //   child: Container(
-                      //     padding: const EdgeInsets.all(8),
-                      //     decoration: const BoxDecoration(
-                      //       color: Color(0xFFFFCC29),
-                      //       shape: BoxShape.circle,
-                      //     ),
-                      //     child: const Icon(
-                      //       Icons.edit,
-                      //       color: Colors.black,
-                      //       size: 16,
-                      //     ),
-                      //   ),
-                      // ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFFCC29),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Colors.black,
+                            size: 16,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -397,5 +296,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
   }
 }

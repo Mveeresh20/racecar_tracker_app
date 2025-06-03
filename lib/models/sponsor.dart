@@ -47,101 +47,43 @@ class Sponsor {
     this.commission,
   });
 
-  factory Sponsor.fromMap(Map<String, dynamic> map) {
-    try {
-      // Handle numeric fields
-      final activeDeals =
-          (map['activeDeals'] is num)
-              ? (map['activeDeals'] as num).toInt()
-              : int.tryParse(map['activeDeals']?.toString() ?? '0') ?? 0;
-
-      final totalDeals =
-          (map['totalDeals'] is num)
-              ? (map['totalDeals'] as num).toInt()
-              : int.tryParse(map['totalDeals']?.toString() ?? '0') ?? 0;
-
-      // Handle dates
-      final createdAt =
-          (map['createdAt'] is num)
-              ? DateTime.fromMillisecondsSinceEpoch(
-                (map['createdAt'] as num).toInt(),
-              )
-              : DateTime.now();
-
-      final updatedAt =
-          (map['updatedAt'] is num)
-              ? DateTime.fromMillisecondsSinceEpoch(
-                (map['updatedAt'] as num).toInt(),
-              )
-              : DateTime.now();
-
-      final endDate =
-          (map['endDate'] is num)
-              ? DateTime.fromMillisecondsSinceEpoch(
-                (map['endDate'] as num).toInt(),
-              )
-              : DateTime.now().add(const Duration(days: 365));
-
-      // Handle parts list
-      List<String> parts = [];
-      if (map['parts'] is List) {
-        parts = List<String>.from(map['parts']);
-      } else if (map['parts'] is String) {
-        parts = [map['parts']];
-      }
-
-      // Handle status
-      final statusStr = map['status']?.toString() ?? 'SponsorStatus.active';
-      final status = SponsorStatus.values.firstWhere(
-        (e) => e.toString() == statusStr,
+  factory Sponsor.fromMap(Map<dynamic, dynamic> map) {
+    return Sponsor(
+      id: map['id']?.toString() ?? '',
+      userId: map['userId']?.toString() ?? '',
+      initials: map['initials']?.toString() ?? '',
+      name: map['name']?.toString() ?? '',
+      email: map['email']?.toString() ?? '',
+      parts:
+          (map['parts'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          [],
+      activeDeals: (map['activeDeals'] as num?)?.toInt() ?? 0,
+      endDate: DateTime.fromMillisecondsSinceEpoch(
+        (map['endDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+      status: SponsorStatus.values.firstWhere(
+        (e) => e.toString() == map['status']?.toString(),
         orElse: () => SponsorStatus.active,
-      );
-
-      // Handle commission
-      String commission = '0%';
-      if (map['commission'] != null) {
-        commission = map['commission'].toString();
-        if (!commission.contains('%')) {
-          commission = '$commission%';
-        }
-      }
-
-      // Handle sponsorship amount
-      String sponsorshipAmount = '0';
-      if (map['sponsorshipAmount'] != null) {
-        if (map['sponsorshipAmount'] is num) {
-          sponsorshipAmount = (map['sponsorshipAmount'] as num).toString();
-        } else {
-          sponsorshipAmount = map['sponsorshipAmount'].toString();
-        }
-      }
-
-      return Sponsor(
-        id: map['id']?.toString() ?? '',
-        userId: map['userId']?.toString() ?? '',
-        name: map['name']?.toString() ?? '',
-        email: map['email']?.toString() ?? '',
-        contactNumber: map['contactNumber']?.toString() ?? '',
-        contactPerson: map['contactPerson']?.toString() ?? '',
-        industryType: map['industryType']?.toString() ?? '',
-        logoUrl: map['logoUrl']?.toString() ?? '',
-        parts: parts,
-        activeDeals: activeDeals,
-        totalDeals: totalDeals,
-        commission: commission,
-        status: status,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        endDate: endDate,
-        notes: map['notes']?.toString() ?? '',
-        sponsorshipAmount: sponsorshipAmount,
-        initials: map['initials']?.toString() ?? '',
-      );
-    } catch (e) {
-      print('Error creating Sponsor from map: $e');
-      print('Map data: $map');
-      rethrow;
-    }
+      ),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (map['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (map['updatedAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+      contactNumber: map['contactNumber']?.toString(),
+      contactPerson: map['contactPerson']?.toString(),
+      industryType: map['industryType']?.toString(),
+      logoUrl: map['logoUrl']?.toString(),
+      notes: map['notes']?.toString(),
+      sponsorshipAmount: map['sponsorshipAmount']?.toString(),
+      lastDealAmount: map['lastDealAmount']?.toString(),
+      totalDeals: (map['totalDeals'] as num?)?.toInt() ?? 0,
+      commission: map['commission']?.toString(),
+    );
   }
 
   Map<String, dynamic> toMap() {

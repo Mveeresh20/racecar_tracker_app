@@ -18,6 +18,7 @@ import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
@@ -32,6 +33,9 @@ class _DealsScreenState extends State<DealsScreen> {
   List<DealItem> _filteredDeals = [];
   bool _isLoading = true;
   String? _error;
+  final _racerService = RacerService();
+  final _eventService = EventService();
+  final _sponsorService = SponsorService();
 
   @override
   void initState() {
@@ -52,25 +56,36 @@ class _DealsScreenState extends State<DealsScreen> {
       _error = null;
     });
 
-    _dealService.streamDeals().listen(
-      (deals) {
-        if (mounted) {
-          setState(() {
-            _filteredDeals = deals;
-            _isLoading = false;
-          });
-          _filterDeals();
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          setState(() {
-            _error = error.toString();
-            _isLoading = false;
-          });
-        }
-      },
-    );
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      setState(() {
+        _error = 'No user logged in';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    _dealService
+        .streamDeals(userId)
+        .listen(
+          (deals) {
+            if (mounted) {
+              setState(() {
+                _filteredDeals = deals;
+                _isLoading = false;
+              });
+              _filterDeals();
+            }
+          },
+          onError: (error) {
+            if (mounted) {
+              setState(() {
+                _error = error.toString();
+                _isLoading = false;
+              });
+            }
+          },
+        );
   }
 
   @override
@@ -102,46 +117,46 @@ class _DealsScreenState extends State<DealsScreen> {
   }
 
   Future<void> _navigateToAddDealScreen() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      final racerService = RacerService();
-      final eventService = EventService();
-      final sponsorService = SponsorService();
-      final userService = UserService();
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      final userId = await userService.getCurrentUserId();
+      final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) {
-        throw Exception('User not logged in');
+        throw Exception('No user logged in');
       }
 
-      // Get all data first
-      final racersFuture = racerService.getRacersStream(userId).first;
-      final eventsFuture = eventService.getEvents().first;
-      final sponsorsFuture = sponsorService.getSponsorsStream(userId).first;
+      print('Starting navigation to AddNewDealScreen');
+      print('Fetching data for user: $userId');
 
-      // Wait for all data to load
-      final results = await Future.wait([
-        racersFuture,
-        eventsFuture,
-        sponsorsFuture,
-      ]);
+      // Load all required data first using streams
+      final racers = await _racerService.getRacersStream(userId).first;
+      print('Loaded ${racers.length} racers');
+
+      final events = await _eventService.getUserEvents(userId).first;
+      print('Loaded ${events.length} events');
+
+      final sponsors = await _sponsorService.getSponsorsStream(userId).first;
+      print('Loaded ${sponsors.length} sponsors');
 
       if (!mounted) return;
 
-      final racers = results[0] as List<Racer>;
-      final events = results[1] as List<Event>;
-      final sponsors = results[2] as List<Sponsor>;
-
-      if (racers.isEmpty || events.isEmpty || sponsors.isEmpty) {
-        throw Exception(
-          'No data available. Please add racers, events, and sponsors first.',
-        );
+      // Check if we have all required data
+      if (racers.isEmpty) {
+        throw Exception('No racers available. Please add a racer first.');
+      }
+      if (events.isEmpty) {
+        throw Exception('No events available. Please add an event first.');
+      }
+      if (sponsors.isEmpty) {
+        throw Exception('No sponsors available. Please add a sponsor first.');
       }
 
-      final newDeal = await Navigator.push(
+      // Navigate to AddNewDealScreen
+      final newDeal = await Navigator.push<DealItem>(
         context,
         MaterialPageRoute(
           builder:
@@ -153,17 +168,22 @@ class _DealsScreenState extends State<DealsScreen> {
         ),
       );
 
-      if (newDeal != null && newDeal is DealItem) {
+      if (!mounted) return;
+
+      if (newDeal != null) {
+        print('Deal created successfully');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Deal created successfully')),
         );
       }
     } catch (e) {
+      print('Error in _navigateToAddDealScreen: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -176,8 +196,28 @@ class _DealsScreenState extends State<DealsScreen> {
     }
   }
 
-  DealDetailItem? Function(String) _fetchDealDetailItemById(String id) {
-    return (String id) => null;
+  Future<DealDetailItem?> Function(String) _fetchDealDetailItemById(String id) {
+    return (String id) async {
+      try {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId == null) {
+          print('No user logged in when trying to fetch deal detail');
+          return null;
+        }
+
+        // Get the deal detail from Firebase
+        final dealDetail = await _dealService.getDeal(id);
+        if (dealDetail == null) {
+          print('No deal detail found for id: $id for user: $userId');
+          return null;
+        }
+
+        return dealDetail;
+      } catch (e) {
+        print('Error fetching deal detail: $e');
+        return null;
+      }
+    };
   }
 
   @override

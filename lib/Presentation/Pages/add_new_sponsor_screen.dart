@@ -83,18 +83,16 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         );
 
         // Generate initials from sponsor name
-        final initials = _sponsorNameController.text
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .map((word) => word[0].toUpperCase())
-            .join('');
+        final initials = Sponsor.generateInitials(
+          _sponsorNameController.text.trim(),
+        );
 
-        // Generate a unique ID for the sponsor
+        // Always generate a new UUID for the sponsor
         final sponsorId = const Uuid().v4();
 
         // Create new sponsor with validated data
         final newSponsor = Sponsor(
-          id: sponsorId,
+          id: sponsorId, // Always use the generated ID
           userId: userId,
           initials: initials,
           name: _sponsorNameController.text.trim(),
@@ -155,18 +153,16 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         );
 
         // Generate initials from sponsor name
-        final initials = _sponsorNameController.text
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .map((word) => word[0].toUpperCase())
-            .join('');
+        final initials = Sponsor.generateInitials(
+          _sponsorNameController.text.trim(),
+        );
 
-        // Generate a unique ID for the sponsor
+        // Always generate a new UUID for the sponsor
         final sponsorId = const Uuid().v4();
 
         // Create new sponsor with validated data
         final newSponsor = Sponsor(
-          id: sponsorId,
+          id: sponsorId, // Always use the generated ID
           userId: userId,
           initials: initials,
           name: _sponsorNameController.text.trim(),

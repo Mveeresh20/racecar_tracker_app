@@ -5,12 +5,29 @@ import 'package:racecar_tracker/Utils/Constants/images.dart'; // For track image
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
+import 'package:racecar_tracker/Services/racer_service.dart'; // Import RacerService
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:racecar_tracker/models/racer.dart'; // Import Racer model
+import 'package:racecar_tracker/Services/event_service.dart'; // Import EventService
 // Import the Event model
 
 class EventCardItem extends StatelessWidget {
   final Event event;
+  final _imagePicker = ImagePickerUtil(); // Instantiate ImagePickerUtil
 
-  const EventCardItem({Key? key, required this.event}) : super(key: key);
+  EventCardItem({Key? key, required this.event}) : super(key: key);
+
+  String _getTrackImage(String? trackName) {
+    switch (trackName?.toLowerCase()) {
+      case "longmilan track":
+        return Images.longmilanTrackLayout;
+      case "drift track":
+        return Images.driftTrackLayout;
+      default:
+        return Images.genericTrackLayout;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,26 +169,15 @@ class EventCardItem extends StatelessWidget {
                   const SizedBox(width: 12),
 
                   // Event Image
-                  if (event.imageUrl != null)
+                  if (event.trackName != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: event.imageUrl!,
+                      child: Image.network(
+                        _getTrackImage(event.trackName),
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        placeholder:
-                            (context, url) => Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey.shade700,
-                              child: const Icon(
-                                Icons.image,
-                                color: Colors.white,
-                                size: 40,
-                              ),
-                            ),
-                        errorWidget:
+                        errorBuilder:
                             (context, url, error) => Container(
                               width: 80,
                               height: 80,
@@ -190,18 +196,18 @@ class EventCardItem extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Racers List
-              if (event.racerImageUrls != null &&
-                  event.racerImageUrls!.isNotEmpty)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Racers:",
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(width: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    "Racers:",
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  if (event.racerImageUrls != null &&
+                      event.racerImageUrls!.isNotEmpty)
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
@@ -212,9 +218,11 @@ class EventCardItem extends StatelessWidget {
                           );
                         },
                       ),
-                    ),
-                  ],
-                ),
+                    )
+                  else
+                    Expanded(child: SizedBox.shrink()),
+                ],
+              ),
 
               const SizedBox(height: 16),
 
@@ -238,7 +246,7 @@ class EventCardItem extends StatelessWidget {
                       ),
                       child: InkWell(
                         onTap: () {
-                          // Handle Assign Racers action
+                          _showAssignRacersBottomSheet(context, event.id);
                         },
                         child: Center(
                           child: Padding(
@@ -309,36 +317,51 @@ class EventCardItem extends StatelessWidget {
     }
 
     for (int i = 0; i < displayImageUrls.length; i++) {
+      final imagePath = displayImageUrls[i];
+      final imageUrl = _imagePicker.getUrlForUserUploadedImage(
+        imagePath,
+      ); // Get full S3 URL
+
       avatars.add(
         Positioned(
           left: i * (avatarSize - overlap),
           child: CircleAvatar(
             radius: avatarSize / 2,
             backgroundColor: Colors.white,
-            child: CircleAvatar(
-              radius: (avatarSize / 2) - 2,
-              backgroundColor: Colors.grey.shade600,
+            child: ClipOval(
               child: CachedNetworkImage(
-                imageUrl: displayImageUrls[i],
+                imageUrl: imageUrl, // Use the full S3 URL
+                width:
+                    avatarSize - 4, // Ensure image fills the inner CircleAvatar
+                height:
+                    avatarSize - 4, // Ensure image fills the inner CircleAvatar
                 fit: BoxFit.cover,
                 placeholder:
                     (context, url) => Container(
                       color: Colors.grey[300],
+                      width: avatarSize - 4,
+                      height: avatarSize - 4,
                       child: const Icon(
                         Icons.person,
                         size: 16,
                         color: Colors.grey,
                       ),
                     ),
-                errorWidget:
-                    (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.person,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
+                errorWidget: (context, url, error) {
+                  print(
+                    'Error loading racer image: $error for URL: $url',
+                  ); // Log error
+                  return Container(
+                    color: Colors.grey[300],
+                    width: avatarSize - 4,
+                    height: avatarSize - 4,
+                    child: const Icon(
+                      Icons.person,
+                      size: 16,
+                      color: Colors.grey,
                     ),
+                  );
+                },
               ),
             ),
           ),
@@ -379,5 +402,246 @@ class EventCardItem extends StatelessWidget {
       width: finalWidth,
       child: Stack(children: avatars),
     );
+  }
+
+  void _showAssignRacersBottomSheet(BuildContext context, String eventId) {
+    final racerService = RacerService(); // Instantiate RacerService
+    final userId =
+        FirebaseAuth.instance.currentUser?.uid; // Get current user ID
+
+    if (userId == null) {
+      // Handle case where user is not logged in
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 300, // Set fixed height from Figma
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ), // Adjust padding
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              // Add gradient background
+              colors: [Color(0xFF2D5586), Color(0xFF171E45)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomLeft,
+            ), // Dark background color
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(24.0),
+            ), // Adjust border radius
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+            ), // Add border
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select member', // Title from your screenshot
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder<List<Racer>>(
+                  stream: racerService.getRacersStream(
+                    userId,
+                  ), // Stream racers for the current user
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading racers: ${snapshot.error}',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'No racers available.',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      );
+                    }
+
+                    final racers = snapshot.data!;
+
+                    return ListView.builder(
+                      itemCount: racers.length,
+                      itemBuilder: (context, index) {
+                        final racer = racers[index];
+                        // Build list tile similar to your screenshot
+                        return Container(
+                          margin: const EdgeInsets.only(
+                            bottom: 12,
+                          ), // Spacing between items
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF13386B,
+                            ), // Item background color
+                            borderRadius: BorderRadius.circular(
+                              16,
+                            ), // Adjust border radius
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ), // Border
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              radius: 24, // Adjust size as needed
+                              backgroundColor: const Color(
+                                0xFF27518A,
+                              ), // Placeholder color
+                              child: Text(
+                                racer
+                                    .initials, // Assuming Racer model has initials
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ), // Adjust text style
+                              ),
+                            ),
+                            title: Text(
+                              racer.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ), // Adjust text style
+                            ),
+                            trailing: Radio<String>(
+                              value: racer.id, // Use racer ID as value
+                              groupValue: null, // Selection handled by onTap
+                              onChanged: (String? value) {
+                                // This won't be directly used due to onTap handling
+                              },
+                              activeColor: Color(
+                                0xFFA8E266,
+                              ), // Radio button color
+                            ),
+                            onTap: () {
+                              _assignRacerToEvent(
+                                context,
+                                eventId,
+                                racer.id,
+                              ); // Assign racer on tap
+                              Navigator.pop(context); // Close bottom sheet
+                            },
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ), // Adjust padding
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _assignRacerToEvent(
+    BuildContext context,
+    String eventId,
+    String racerId,
+  ) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User not logged in.')));
+        return;
+      }
+
+      final eventService = EventService();
+      final racerService = RacerService();
+
+      // Fetch the event and racer details
+      final event = await eventService.getEvent(userId, eventId);
+      final racer = await racerService.getRacer(userId, racerId);
+
+      if (event == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Event not found.')));
+        return;
+      }
+
+      if (racer == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Racer not found.')));
+        return;
+      }
+
+      // Add the racer's image URL to the event's racerImageUrls if not already present
+      final updatedRacerImageUrls = List<String>.from(
+        event.racerImageUrls ?? [],
+      );
+      if (racer.racerImageUrl != null &&
+          !updatedRacerImageUrls.contains(racer.racerImageUrl!)) {
+        updatedRacerImageUrls.add(racer.racerImageUrl!);
+
+        // Create an updated event object
+        final updatedEvent = event.copyWith(
+          racerImageUrls: updatedRacerImageUrls,
+        );
+
+        // Update the event in Firebase
+        await eventService.updateEvent(userId, updatedEvent);
+
+        // Optionally, update the currentRacers count
+        await eventService.updateCurrentRacers(event.id, 1);
+
+        if (!context.mounted) return; // Add mounted check
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Racer ${racer.name} assigned to event.')),
+        );
+      } else if (racer.racerImageUrl == null) {
+        if (!context.mounted) return; // Add mounted check
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Racer ${racer.name} does not have an image to assign.',
+            ),
+          ),
+        );
+      } else {
+        if (!context.mounted) return; // Add mounted check
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Racer ${racer.name} is already assigned to this event.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error assigning racer: $e');
+      if (!context.mounted) return; // Add mounted check
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error assigning racer: ${e.toString()}')),
+      );
+    }
   }
 }

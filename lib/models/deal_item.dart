@@ -76,7 +76,9 @@ class DealItem {
         sponsorId: map['sponsorId']?.toString() ?? '',
         racerId: map['racerId']?.toString() ?? '',
         eventId: map['eventId']?.toString() ?? '',
-        title: map['title']?.toString() ?? '',
+         title : map['title'] as String? ?? 'Untitled',
+
+        
         raceType: map['raceType']?.toString() ?? '',
         dealValue:
             (map['dealValue'] is num)
