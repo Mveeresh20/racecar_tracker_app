@@ -247,9 +247,12 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
               // Header with gradient background
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                ).copyWith(top: 64, bottom: 18),
+                padding: const EdgeInsets.only(
+                  top: 64,
+                  bottom: 18,
+                  left: 24,
+                  right: 24,
+                ),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF2D5586), Color(0xFF171E45)],
@@ -262,13 +265,11 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                   children: [
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_outlined,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          onPressed: () => Navigator.pop(context),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Icon(Icons.arrow_back_ios,color: Colors.white,size: 18,),
                         ),
                         const SizedBox(width: 16),
                         const Text(

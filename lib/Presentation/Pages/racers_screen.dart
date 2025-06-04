@@ -8,6 +8,7 @@ import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/racer_card_item.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
@@ -336,13 +337,51 @@ class _RacersScreenState extends State<RacersScreen> {
                     ),
                     const SizedBox(height: 16),
                     displayedRacers.isEmpty
-                        ? Center(
-                          child: Text(
-                            _searchController.text.isEmpty
-                                ? "No racers available."
-                                : "No racers found for '${_searchController.text}'.",
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.white70),
+                        ? Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Center(
+                            child:
+                                _searchController.text.isEmpty
+                                    ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Image.network(
+                                          Images.noRacer,
+                                          fit: BoxFit.contain,
+                                          height: 280,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          "🏎️ No Racers Added Yet!",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          Lorempsum.noRaceEventText,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    )
+                                    : Text(
+                                      "No racers found for '${_searchController.text}'.",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(color: Colors.white70),
+                                      textAlign: TextAlign.center,
+                                    ),
                           ),
                         )
                         : GridView.builder(

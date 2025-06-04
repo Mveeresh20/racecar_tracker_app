@@ -10,7 +10,7 @@ import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/Services/deal_service.dart';
 import 'package:racecar_tracker/Services/racer_service.dart';
 import 'package:racecar_tracker/Services/event_service.dart';
-import 'package:racecar_tracker/Services/storage_service.dart';
+
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +30,7 @@ class _MakeDealScreenState extends State<MakeDealScreen> {
   final _dealService = DealService();
   final _racerService = RacerService();
   final _eventService = EventService();
-  final _storageService = StorageService();
+  
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _raceTypeController = TextEditingController();

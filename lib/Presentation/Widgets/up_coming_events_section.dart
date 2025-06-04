@@ -3,6 +3,7 @@ import 'package:racecar_tracker/Presentation/Widgets/dash_board_section_card.dar
 import 'package:racecar_tracker/Presentation/Widgets/upcomming_events_content.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/event.dart';
 
@@ -53,6 +54,7 @@ class UpcomingEventsSection extends StatelessWidget {
               ],
             ),
           ),
+          SizedBox(height: 8,),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
@@ -67,18 +69,40 @@ class UpcomingEventsSection extends StatelessWidget {
               ),
             ),
           ),
+
+          
           SizedBox(
             height: 200,
             child:
                 events.isEmpty
                     ? Center(
-                      child: Text(
-                        "No Upcoming Events",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 16,
-                          fontFamily: "Montserrat",
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          
+                          
+                          Text(
+                            "🗓️ No Upcoming Race Events",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: "Montserrat",
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            Lorempsum.upCommingEvents,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: "Montserrat",
+                              fontWeight: FontWeight.w500
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     )
                     : ListView.builder(
@@ -97,6 +121,7 @@ class UpcomingEventsSection extends StatelessWidget {
                       },
                     ),
           ),
+          
           // The single "Go to Events" button below the horizontal list
           Padding(
             padding: const EdgeInsets.symmetric(

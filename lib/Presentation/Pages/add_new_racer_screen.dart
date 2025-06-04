@@ -54,25 +54,24 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
   }
 
   Future<void> _pickImage(bool isProfileImage) async {
-  ImagePickerUtil().showImageSourceSelection(
-    context,
-    (String imagePath) {
-      setState(() {
-        if (isProfileImage) {
-          _racerImageUrl = imagePath;
-        } else {
-          _vehicleImageUrl = imagePath;
-        }
-      });
-    },
-    (String error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading image: $error')),
-      );
-    },
-  );
-}
-
+    ImagePickerUtil().showImageSourceSelection(
+      context,
+      (String imagePath) {
+        setState(() {
+          if (isProfileImage) {
+            _racerImageUrl = imagePath;
+          } else {
+            _vehicleImageUrl = imagePath;
+          }
+        });
+      },
+      (String error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $error')),
+        );
+      },
+    );
+  }
 
   void _clearImage(bool isProfileImage) {
     setState(() {
@@ -156,74 +155,66 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
   }
 
   Widget _buildImagePicker(
-  String? imageUrl,
-  bool isProfileImage,
-  String label,
-) {
-  final imageUtil = ImagePickerUtil();
-  final imageResolvedUrl = imageUrl != null && imageUrl.isNotEmpty
-      ? imageUtil.getUrlForUserUploadedImage(imageUrl)
-      : null;
+    String? imageUrl,
+    bool isProfileImage,
+    String label,
+  ) {
+    final imageUtil = ImagePickerUtil();
+    final imageResolvedUrl =
+        imageUrl != null && imageUrl.isNotEmpty
+            ? imageUtil.getUrlForUserUploadedImage(imageUrl)
+            : null;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      ),
-      const SizedBox(height: 6),
-      GestureDetector(
-        onTap: () => _pickImage(isProfileImage),
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: const Color(0xFF13386B),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 2,
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () => _pickImage(isProfileImage),
+          child: Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: const Color(0xFF13386B),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child:
+                  imageResolvedUrl != null
+                      ? Image.network(
+                        imageResolvedUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                _buildPlaceholder(isProfileImage),
+                      )
+                      : _buildPlaceholder(isProfileImage),
             ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: imageResolvedUrl != null
-                ? Image.network(
-                    imageResolvedUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _buildPlaceholder(isProfileImage),
-                  )
-                : _buildPlaceholder(isProfileImage),
-          ),
         ),
-      ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 
   Widget _buildPlaceholder(bool isProfileImage) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isProfileImage ? Icons.person : Icons.directions_car,
-            color: Colors.white54,
-            size: 40,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isProfileImage ? 'Add Profile Photo' : 'Add Vehicle Photo',
-            style: TextStyle(color: Colors.white54),
-          ),
-        ],
+      child: Icon(
+        isProfileImage ? Icons.add : Icons.add,
+        color: Colors.white54,
+        size: 40,
       ),
     );
   }
@@ -247,231 +238,366 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
             : '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1A36),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // AppBar
-                      Row(
-                        children: [
-                          BackButton(color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            "Add New Racer",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 24),
-                      _label("Racer Name"),
-                      _input(_nameController, "Enter racer's name"),
-                      SizedBox(height: 12),
-                      _label("Car Model"),
-                      _input(_vehicleModelController, "Enter car model"),
-                      SizedBox(height: 12),
-                      _label("Team Name"),
-                      _input(_teamNameController, "Enter team name"),
-                      SizedBox(height: 12),
-                      _label("Contact Number"),
-                      _input(
-                        _contactNumberController,
-                        "Enter contact number",
-                        keyboardType: TextInputType.phone,
-                      ),
-                      SizedBox(height: 12),
-                      _label("Vehicle Number"),
-                      _input(_vehicleNumberController, "Enter vehicle number"),
-                      SizedBox(height: 18),
-                     Row(
-  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  children: [
-    // Racer Image Picker
-    Expanded(
-      child: _buildImagePicker(_racerImageUrl, true, "Racer Image"),
-    ),
-    const SizedBox(width: 16),
-    // Vehicle Image Picker
-    Expanded(
-      child: _buildImagePicker(_vehicleImageUrl, false, "Vehicle Image"),
-    ),
-  ],
-),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Form(
+              key: _formKey,
 
-                      SizedBox(height: 18),
-                      _label("Assign to Event"),
-                      if (isLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else if (error != null)
-                        Text(
-                          'Error loading events: $error',
-                          style: const TextStyle(color: Colors.red),
-                        )
-                      else if (events.isEmpty)
-                        const Text(
-                          'No events available. Please create an event first.',
-                          style: TextStyle(color: Colors.white70),
-                        )
-                      else
-                        DropdownButtonFormField<Event>(
-                          value: _selectedEvent,
-                          items:
-                              events
-                                  .map(
-                                    (event) => DropdownMenuItem(
-                                      value: event,
-                                      child: Text(
-                                        event.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged:
-                              (val) => setState(() => _selectedEvent = val),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFF13386B),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            hintText: "Select Event...",
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                            ),
-                          ),
-                          dropdownColor: const Color(0xFF13386B),
-                          validator:
-                              (value) =>
-                                  value == null
-                                      ? 'Please select an event'
-                                      : null,
-                        ),
-                      SizedBox(height: 18),
-                      _label("Deal Validity Dates"),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _datePickerBox(
-                              context,
-                              _startDate,
-                              "Start Date",
-                              () => _pickDate(true),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: _datePickerBox(
-                              context,
-                              _endDate,
-                              "End Date",
-                              () => _pickDate(false),
-                            ),
-                          ),
-                        ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(
+                      top: 64,
+                      bottom: 18,
+                      left: 24,
+                      right: 24,
+                    ),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF2D5586), Color(0xFF171E45)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _createRacer,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFCC29),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(60),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                            size: 18,
                           ),
-                          child:
-                              _isLoading
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.black,
+                        ),
+                        SizedBox(width: 16),
+                        Text(
+                          'Add New Racer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // AppBar
+                  SizedBox(height: 18),
+
+                  _label("Racer Name"),
+                  SizedBox(height: 8),
+                  _input(_nameController, "Enter racer's name"),
+                  SizedBox(height: 14),
+
+                  _label("Car Model"),
+                  SizedBox(height: 8),
+                  _input(_vehicleModelController, "Enter car model"),
+                  SizedBox(height: 14),
+
+                  _label("Team Name"),
+                  SizedBox(height: 8),
+                  _input(_teamNameController, "Enter team name"),
+                  SizedBox(height: 14),
+
+                  _label("Contact Number"),
+                  SizedBox(height: 8),
+                  _input(
+                    _contactNumberController,
+                    "Enter contact number",
+                    keyboardType: TextInputType.phone,
+                  ),
+                  SizedBox(height: 14),
+
+                  _label("Vehicle Number"),
+                  SizedBox(height: 8),
+                  _input(_vehicleNumberController, "Enter vehicle number"),
+                  SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Racer Image Picker
+                        Expanded(
+                          child: _buildImagePicker(
+                            _racerImageUrl,
+                            true,
+                            "Upload Racer Image",
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Vehicle Image Picker
+                        Expanded(
+                          child: _buildImagePicker(
+                            _vehicleImageUrl,
+                            false,
+                            "Upload Vehicle Image",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 14),
+                  _label("Assign to Event"),
+                  SizedBox(height: 8),
+
+                  if (isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (error != null)
+                    Text(
+                      'Error loading events: $error',
+                      style: const TextStyle(color: Colors.red),
+                    )
+                  else if (events.isEmpty)
+                    const Text(
+                      'No events available. Please create an event first.',
+                      style: TextStyle(color: Colors.white70),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: DropdownButtonFormField<Event>(
+                        value: _selectedEvent,
+                        items:
+                            events
+                                .map(
+                                  (event) => DropdownMenuItem(
+                                    value: event,
+                                    child: Text(
+                                      event.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
                                       ),
-                                    ),
-                                  )
-                                  : const Text(
-                                    "+ Add Racer",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
                                     ),
                                   ),
+                                )
+                                .toList(),
+                        onChanged:
+                            (val) => setState(() => _selectedEvent = val),
+                        decoration: InputDecoration(
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: const Color(0xFF13386B),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red),
+                          ),
+
+                          hintText: "Select Event...",
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                          ),
                         ),
+                        dropdownColor: const Color(0xFF13386B),
+                        validator:
+                            (value) =>
+                                value == null ? 'Please select an event' : null,
                       ),
-                    ],
+                    ),
+                  SizedBox(height: 18),
+                  _label("Deal Validity Dates"),
+                  SizedBox(height: 8),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                    
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _datePickerBox(
+                                context,
+                                _startDate,
+                                "mm/dd/yyyy",
+                                () => _pickDate(true),
+                              ),
+                              SizedBox(height: 4,),
+                              _label("Start Date"),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8,),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _datePickerBox(
+                                context,
+                                _endDate,
+                                "mm/dd/yyyy",
+                                () => _pickDate(false),
+                              ),
+                              SizedBox(height: 4,),
+                              _label("End Date"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  
+                  const SizedBox(height: 40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _createRacer,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFCC29),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(60),
+                          ),
+                        ),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black,
+                                    ),
+                                  ),
+                                )
+                                : const Text(
+                                  "+  Add Racer",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 80),
+                ],
               ),
             ),
-            if (_isLoading)
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-          ],
-        ),
+          ),
+
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
-    child: Text(
-      text,
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        fontSize: 15,
+  Widget _label(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _input(
     TextEditingController controller,
     String hint, {
     TextInputType keyboardType = TextInputType.text,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFF13386B),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.white),
+        validator:
+            (value) => (value == null || value.isEmpty) ? "Required" : null,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFF13386B),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 8,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
       ),
-      validator:
-          (value) => (value == null || value.isEmpty) ? "Required" : null,
     );
   }
+
+  // Widget _input(
+  //   TextEditingController controller,
+  //   String hint, {
+  //   TextInputType keyboardType = TextInputType.text,
+  // }) {
+  //   return TextFormField(
+  //     controller: controller,
+  //     keyboardType: keyboardType,
+  //     style: TextStyle(color: Colors.white),
+  //     decoration: InputDecoration(
+  //       filled: true,
+  //       fillColor: const Color(0xFF13386B),
+  //       border: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(8),
+  //         borderSide: BorderSide.none,
+  //       ),
+  //       hintText: hint,
+  //       hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+  //     ),
+  //     validator:
+  //         (value) => (value == null || value.isEmpty) ? "Required" : null,
+  //   );
+  // }
 
   Widget _datePickerBox(
     BuildContext context,

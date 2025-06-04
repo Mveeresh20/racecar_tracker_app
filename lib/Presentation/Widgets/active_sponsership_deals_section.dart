@@ -3,6 +3,7 @@ import 'package:racecar_tracker/Presentation/Widgets/dash_board_section_card.dar
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsorship_deals_content.dart'; // Ensure correct import
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // Ensure correct import
 import 'package:racecar_tracker/Utils/Constants/images.dart'; // Ensure correct import for image asset
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/models/deal_item.dart'; // Ensure correct import
 
 class ActiveSponsorshipDealsSection extends StatelessWidget {
@@ -77,13 +78,33 @@ class ActiveSponsorshipDealsSection extends StatelessWidget {
             child:
                 deals.isEmpty
                     ? Center(
-                      child: Text(
-                        "No Active Sponsorship Deals",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 16,
-                          fontFamily: "Montserrat",
-                        ),
+                      child:  Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          
+                          
+                          Text(
+                            "🗓️ No Active Sponsorship Deals",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: "Montserrat",
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            Lorempsum.activeSponsorShipDeals,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: "Montserrat",
+                              fontWeight: FontWeight.w500
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     )
                     : ListView.builder(

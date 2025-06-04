@@ -624,26 +624,43 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
               ),
               SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: _buildDatePicker(
-                      context,
-                      _startDate,
-                      "Start Date",
-                      (ctx) => _pickDate(ctx, true),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel("Start Date"),
+                         SizedBox(height: 4,),
+                        
+                        _buildDatePicker(
+                          context,
+                          _startDate,
+                          "mm/dd/yyyy",
+                          (ctx) => _pickDate(ctx, true),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(width: 8),
                   Expanded(
-                    child: _buildDatePicker(
-                      context,
-                      _endDate,
-                      "End Date",
-                      (ctx) => _pickDate(ctx, false),
-                    ),
-                  ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel("End Date"),
+                      SizedBox(height: 4,),
+                      _buildDatePicker(
+                        context,
+                        _endDate,
+                        "mm/dd/yyyy",
+                        (ctx) => _pickDate(ctx, false),
+                      )
+                    
+                    
+                    ],),
+                  )
+
                 ],
               ),
+              
               SizedBox(height: 16),
               _buildLabel("Renewal Reminder"),
               SizedBox(height: 8),

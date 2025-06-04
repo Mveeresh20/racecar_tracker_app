@@ -7,6 +7,7 @@ import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Services/sponsor_provider.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:provider/provider.dart';
@@ -221,11 +222,12 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
                                     ),
-                                    child: Icon(
-                                      Icons.business,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
+                                    child: Image.network(
+                                    Images.sponser1,
+                                    height: 24,
+                                    width: 24,
+                                    fit: BoxFit.cover,
+                                  ),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
@@ -392,12 +394,41 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
               Expanded(
                 child:
                     displayedSponsors.isEmpty
-                        ? Center(
-                          child: Text(
-                            'No sponsors available',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
+                        ? Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                                        
+                              children: [
+                                Image.network(
+                                  Images.noSponsor,
+                                  fit: BoxFit.contain,
+                                  height: 280,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  "💼 No Sponsors Added Yet!",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 12),
+                                        
+                                Text(
+                                  Lorempsum.noSponsorText,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
                         )

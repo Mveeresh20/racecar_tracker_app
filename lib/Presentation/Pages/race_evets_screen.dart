@@ -7,6 +7,7 @@ import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Services/event_provider.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
@@ -353,13 +354,42 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
               Expanded(
                 child:
                     displayedEvents.isEmpty
-                        ? Center(
-                          child: Text(
-                            'No race events available',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
+                        ? Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                          
+                                children: [
+                                  Image.network(
+                                    Images.noRaceEvent,
+                                    fit: BoxFit.contain,
+                                    height: 280,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "🏁No Race Events Yet!",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: 12),
+                                          
+                                  Text(
+                                    Lorempsum.noRaceEventText,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              )
                           ),
                         )
                         : ListView.builder(

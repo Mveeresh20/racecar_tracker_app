@@ -22,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _passwordVisible = false;
+
   void _handleSignIn() async {
     if (_formKey.currentState?.validate() ?? false) {
       final user = await _authService.signIn(
@@ -32,10 +33,9 @@ class _LoginPageState extends State<LoginPage> {
       if (user != null) {
         print("User signed in: ${user.email}");
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+
+        // Use named route navigation
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -88,8 +88,8 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 12), 
-                   
+                    SizedBox(height: 12),
+
                     Text(
                       'Login to access your account',
                       style: GoogleFonts.montserrat(
@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 12),
-            
+
                     Container(
                       decoration: BoxDecoration(
                         boxShadow: [
@@ -110,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                         borderRadius: UI.borderRadius24,
-            
+
                         color: Color(0xFF13386B),
                         border: Border.all(
                           color: Colors.white.withAlpha(100),
@@ -123,7 +123,9 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Text(
                                 "Email",
                                 style: TextStyle(
@@ -134,27 +136,29 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 8), 
-                           
+                            SizedBox(height: 8),
+
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 filled: true,
-            
+
                                 fillColor: Color(0xFF3B537D),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 10,
                                 ),
                                 labelText: 'Enter your email..',
-                                labelStyle: const TextStyle(color: Colors.white),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
                                 hintText: 'Email',
                                 hintStyle: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                 ),
-            
+
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
                                     color: Colors.white,
@@ -168,11 +172,15 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
@@ -189,9 +197,11 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
                             SizedBox(height: 10),
-            
+
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Text(
                                 "Password",
                                 style: TextStyle(
@@ -206,7 +216,8 @@ class _LoginPageState extends State<LoginPage> {
                             // Password Text Field
                             TextFormField(
                               controller: _passwordController,
-                              obscureText: !_passwordVisible, // Toggle visibility
+                              obscureText:
+                                  !_passwordVisible, // Toggle visibility
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 filled: true,
@@ -216,12 +227,14 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 10,
                                 ),
                                 labelText: 'Enter your password..',
-                                labelStyle: const TextStyle(color: Colors.white),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
                                 hintText: 'Password',
                                 hintStyle: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                 ),
-            
+
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _passwordVisible
@@ -248,11 +261,15 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
@@ -264,7 +281,7 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
                             SizedBox(height: 20),
-            
+
                             InkWell(
                               onTap: () {
                                 if (_formKey.currentState!.validate()) {
@@ -275,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
                                   _handleSignIn();
                                 }
                               },
-            
+
                               child: OnboardingNextButton(
                                 text: "SIGN IN",
                                 icon: Icons.play_arrow,
@@ -283,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             SizedBox(height: 20),
                             OrDivider(), // 4% spacing
-            
+
                             SizedBox(height: 20), // 3% spacing
                             // or Si Icon(icon, size: 16, color: Colors.black),sign in with
                             InkWell(
@@ -312,7 +329,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 90),
-            
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

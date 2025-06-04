@@ -25,6 +25,7 @@ import 'package:racecar_tracker/Presentation/Widgets/up_coming_events_section.da
 import 'package:racecar_tracker/Presentation/Widgets/upcomming_events_content.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
 import 'package:racecar_tracker/models/commission_detail.dart';
 import 'package:racecar_tracker/models/deal.dart';
 import 'package:racecar_tracker/models/event.dart';
@@ -45,6 +46,8 @@ import 'package:racecar_tracker/Services/racer_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async'; // Import for StreamSubscription
 import 'package:racecar_tracker/models/sponsor.dart'; // Import Sponsor model
+import 'package:flutter/services.dart'; // Import for SystemNavigator
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart'; // Import the AddNewEventScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -250,19 +253,175 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
   int commissionAmount = 100000;
+  void showExitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 270,
+                height: 122.5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E2730),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Title and subtitle
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 18,
+                        left: 16,
+                        right: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 238,
+                            child: Text(
+                              "Exit App",
+                              style: const TextStyle(
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w600,
+                                fontSize: 17,
+                                height: 22 / 17,
+                                letterSpacing: -0.41,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          SizedBox(
+                            width: 238,
+                            child: Text(
+                              "Are you sure you want to exit app?",
+                              style: const TextStyle(
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w400,
+                                fontSize: 13,
+                                height: 18 / 13,
+                                letterSpacing: -0.08,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Buttons
+                    Row(
+                      children: [
+                        // Not Now
+                        SizedBox(
+                          width: 134.75,
+                          height: 44,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 11,
+                                horizontal: 8,
+                              ),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(14),
+                                ),
+                              ),
+                              foregroundColor: const Color(0xFF007AFF),
+                              backgroundColor: Colors.transparent,
+                              textStyle: const TextStyle(
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w400,
+                                fontSize: 17,
+                                letterSpacing: -0.41,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text("Not Now"),
+                          ),
+                        ),
+                        // Yes
+                        SizedBox(
+                          width: 134.75,
+                          height: 44,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 11,
+                                horizontal: 8,
+                              ),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                  bottomRight: Radius.circular(14),
+                                ),
+                              ),
+                              foregroundColor: const Color(0xFFF23943),
+                              backgroundColor: Colors.transparent,
+                              textStyle: const TextStyle(
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w400,
+                                fontSize: 17,
+                                letterSpacing: -0.41,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              SystemNavigator.pop(); // This will exit the app
+                            },
+                            child: const Text("Yes"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Color(0xFF13386B),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentIndex != 0) {
+          // If not on the Home tab, switch to Home tab
+          setState(() {
+            _currentIndex = 0;
+          });
+          return false; // Prevent default pop behavior
+        } else {
+          // If already on the Home tab, show exit dialog
+          showExitDialog(context);
+          return false;
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: _screens),
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              color: const Color(0xFF13386B),
+            ),
+            child: _buildBottomNavBar(),
           ),
-          child: _buildBottomNavBar(),
         ),
       ),
     );
@@ -1003,13 +1162,18 @@ class _HomeContentState extends State<HomeContent> {
                 title: "Pending Renewals/Expired Deals",
                 imagurl: Images.totalDealsCrackedImg,
                 innerContent: PendingDealsContent(deals: _pendingDeals),
-                onGoToPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => DealsScreen()),
-                  );
-                },
-                buttonText: "Go to Deals",
+                onGoToPressed:
+                    _pendingDeals.isNotEmpty
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DealsScreen(),
+                            ),
+                          );
+                        }
+                        : null,
+                buttonText: _pendingDeals.isNotEmpty ? "Go to Deals" : null,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1018,28 +1182,89 @@ class _HomeContentState extends State<HomeContent> {
                     borderRadius: BorderRadius.circular(16),
                     color: Color(0xFF0F2A55),
                   ),
-                  child: UpcomingEventsSection(
-                    events: _upcomingEvents,
-                    onGoToEventsPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RaceEvetsScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                  child: // Conditionally show Upcoming Events Section or Add Event button
+                      _upcomingEvents.isNotEmpty
+                          ? UpcomingEventsSection(
+                            events: _upcomingEvents,
+                            onGoToEventsPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RaceEvetsScreen(),
+                                ),
+                              );
+                            },
+                          )
+                          : DashboardSectionCard(
+                            title: "Upcoming Events", // Use a similar title
+                            imagurl:
+                                Images
+                                    .upcommingEventsImg, // Use an existing image asset
+                            innerContent:
+                                Container(), // Add required innerContent
+                            onGoToPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddNewEventScreen(),
+                                ),
+                              );
+                            },
+                            buttonText:
+                                "Add New Recent Event", // The new button text
+                          ),
                 ),
               ),
-              ActiveSponsorshipDealsSection(
-                deals: _activeSponsorshipDeals,
-                onGoToDealsPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => DealsScreen()),
-                  );
-                },
-              ),
+              // Conditionally show Active Sponsorship Deals Section or a message
+              _activeSponsorshipDeals.isNotEmpty
+                  ? ActiveSponsorshipDealsSection(
+                    deals: _activeSponsorshipDeals,
+                    onGoToDealsPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => DealsScreen()),
+                      );
+                    },
+                  )
+                  : DashboardSectionCard(
+                    title: "Active Sponsorship Deals", // Use a similar title
+                    imagurl:
+                        Images
+                            .totalSponsersImg, // Use an existing image asset
+                    innerContent: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
+                        child:Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "🗓️ No Active Sponsorship Deals",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontFamily: "Montserrat",
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    Lorempsum.activeSponsorShipDeals,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: "Montserrat",
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              )
+                      ),
+                    ), // Message for no active deals
+                    // No onGoToPressed or buttonText when empty
+                  ),
               const SizedBox(height: 20),
             ],
           ),
