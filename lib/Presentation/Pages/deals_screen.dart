@@ -283,7 +283,11 @@ class _DealsScreenState extends State<DealsScreen> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                   ),
-                                  child: Icon(Icons.home,size: 24,color: Colors.white,),
+                                  child: Icon(
+                                    Icons.home,
+                                    size: 24,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 const Text(
@@ -441,47 +445,45 @@ class _DealsScreenState extends State<DealsScreen> {
               )
             else if (displayedDeals.isEmpty)
               Center(
-                child: _searchController.text.isEmpty
-    ? Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.network(
-            Images.noDeal,
-            fit: BoxFit.contain,
-            height: 280,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "🤝 No Deals Created Yet!",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            Lorempsum.noDealText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      )
-    : Text(
-        "No racers found for '${_searchController.text}'.",
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(color: Colors.white70),
-        textAlign: TextAlign.center,
-      ),
-
+                child:
+                    _searchController.text.isEmpty
+                        ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.network(
+                              Images.noDeal,
+                              fit: BoxFit.contain,
+                              height: 280,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "🤝 No Deals Created Yet!",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              Lorempsum.noDealText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        )
+                        : Text(
+                          "No racers found for '${_searchController.text}'.",
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                        ),
               )
             else
               ListView.builder(

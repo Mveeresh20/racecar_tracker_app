@@ -427,16 +427,7 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
           SizedBox(height: 16),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Color(0xFF13386B),
-          ),
-          child: _buildBottomNavBar(),
-        ),
-      ),
+      
     );
   }
 

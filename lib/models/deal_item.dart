@@ -71,40 +71,70 @@ class DealItem {
   // Factory method to create from map
   factory DealItem.fromMap(Map<String, dynamic> map) {
     try {
-      return DealItem(
-        id: map['id']?.toString() ?? '',
-        sponsorId: map['sponsorId']?.toString() ?? '',
-        racerId: map['racerId']?.toString() ?? '',
-        eventId: map['eventId']?.toString() ?? '',
-         title : map['title'] as String? ?? 'Untitled',
+      // Ensure map is not null and is actually a Map
+      if (map == null) {
+        print('Error: Map is null in DealItem.fromMap');
+        throw Exception('Invalid data: Map is null');
+      }
 
-        
-        raceType: map['raceType']?.toString() ?? '',
-        dealValue:
-            (map['dealValue'] is num)
-                ? map['dealValue'].toString()
-                : (map['dealValue']?.toString() ?? '0'),
+      // Helper function to safely get string values
+      String safeString(dynamic value, [String defaultValue = '']) {
+        if (value == null) return defaultValue;
+        return value.toString();
+      }
+
+      // Helper function to safely get list values
+      List<String> safeList(dynamic value) {
+        if (value == null) return [];
+        if (value is List) {
+          return value.map((e) => e.toString()).toList();
+        }
+        if (value is String) {
+          return [value];
+        }
+        return [];
+      }
+
+      // Helper function to safely parse numeric values
+      String safeNumeric(dynamic value, [String defaultValue = '0']) {
+        if (value == null) return defaultValue;
+        if (value is num) return value.toString();
+        if (value is String) {
+          // Try to parse the string as a number
+          final numericValue = double.tryParse(
+            value.replaceAll(RegExp(r'[^0-9.]'), ''),
+          );
+          return numericValue?.toString() ?? defaultValue;
+        }
+        return defaultValue;
+      }
+
+      return DealItem(
+        id: safeString(map['id']),
+        sponsorId: safeString(map['sponsorId']),
+        racerId: safeString(map['racerId']),
+        eventId: safeString(map['eventId']),
+        title: safeString(map['title'], 'Untitled'),
+        raceType: safeString(map['raceType']),
+        dealValue: safeNumeric(map['dealValue']),
         commission:
             map['commissionPercentage'] != null
-                ? '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%'
+                ? '${safeNumeric(map['commissionPercentage'])}%'
                 : '0%',
         renewalDate:
             map['endDate'] != null
                 ? DateTime.fromMillisecondsSinceEpoch(
-                  map['endDate'] as int,
+                  int.tryParse(map['endDate'].toString()) ??
+                      DateTime.now().millisecondsSinceEpoch,
                 ).toString()
                 : DateTime.now().toString(),
-        parts:
-            (map['advertisingPositions'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
+        parts: safeList(map['advertisingPositions']),
         status: DealStatusType.values.firstWhere(
-          (e) => e.toString() == map['status']?.toString(),
+          (e) => e.toString() == safeString(map['status']),
           orElse: () => DealStatusType.pending,
         ),
-        sponsorInitials: map['sponsorInitials']?.toString() ?? '',
-        racerInitials: map['racerInitials']?.toString() ?? '',
+        sponsorInitials: safeString(map['sponsorInitials']),
+        racerInitials: safeString(map['racerInitials']),
       );
     } catch (e) {
       print('Error creating DealItem from map: $e');

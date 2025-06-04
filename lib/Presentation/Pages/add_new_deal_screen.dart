@@ -7,7 +7,7 @@ import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
-import 'package:racecar_tracker/models/deal_detail_item.dart';
+
 import 'package:racecar_tracker/Services/deal_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,14 +16,12 @@ class AddNewDealScreen extends StatefulWidget {
   final List<Sponsor> sponsors;
   final List<Racer> racers;
   final List<Event> events;
-  final DealDetailItem? existingDeal;
 
   const AddNewDealScreen({
     Key? key,
     required this.sponsors,
     required this.racers,
     required this.events,
-    this.existingDeal,
   }) : super(key: key);
 
   @override
@@ -71,85 +69,6 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
 
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeForm();
-  }
-
-  void _initializeForm() {
-    if (widget.existingDeal != null) {
-      // Pre-fill form with existing deal data
-      final deal = widget.existingDeal!;
-
-      try {
-        // Find and set the sponsor, racer, and event
-        _selectedSponsor = widget.sponsors.firstWhere(
-          (s) => s.id == deal.sponsorId,
-          orElse: () {
-            if (widget.sponsors.isEmpty) {
-              throw Exception('No sponsors available');
-            }
-            print(
-              'Warning: Sponsor ${deal.sponsorId} not found in list, using first available sponsor',
-            );
-            return widget.sponsors.first;
-          },
-        );
-
-        _selectedRacer = widget.racers.firstWhere(
-          (r) => r.id == deal.racerId,
-          orElse: () {
-            if (widget.racers.isEmpty) {
-              throw Exception('No racers available');
-            }
-            print(
-              'Warning: Racer ${deal.racerId} not found in list, using first available racer',
-            );
-            return widget.racers.first;
-          },
-        );
-
-        _selectedEvent = widget.events.firstWhere(
-          (e) => e.id == deal.eventId,
-          orElse: () {
-            if (widget.events.isEmpty) {
-              throw Exception('No events available');
-            }
-            print(
-              'Warning: Event ${deal.eventId} not found in list, using first available event',
-            );
-            return widget.events.first;
-          },
-        );
-
-        // Set other form fields
-        _dealAmountController.text = deal.dealValue.toString();
-        _commissionController.text = deal.commissionPercentage.toString();
-        _earnController.text = deal.commissionAmount.toString();
-        _startDate = deal.startDate;
-        _endDate = deal.endDate;
-        _renewalReminder = deal.renewalReminder;
-        _paymentStatus = deal.status;
-        _selectedBranding = Set.from(deal.parts);
-
-        // Note: Branding images will be handled separately as they are URLs
-        // and need to be downloaded if needed
-      } catch (e) {
-        print('Error initializing form: $e');
-        // Show error message to user
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error loading deal data: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
   Future<void> _pickDate(BuildContext context, bool isStart) async {
     final picked = await showDatePicker(
       context: context,
@@ -180,118 +99,192 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate() &&
-        _selectedSponsor != null &&
-        _selectedRacer != null &&
-        _selectedEvent != null &&
-        _startDate != null &&
-        _endDate != null) {
+    print('Submit form started'); // Debug print
+
+    if (!_formKey.currentState!.validate()) {
+      print('Form validation failed'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all required fields correctly'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedSponsor == null) {
+      print('No sponsor selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a sponsor'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedRacer == null) {
+      print('No racer selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a racer'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedEvent == null) {
+      print('No event selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an event'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_startDate == null) {
+      print('No start date selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a start date'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_endDate == null) {
+      print('No end date selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an end date'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_endDate!.isBefore(_startDate!)) {
+      print('End date is before start date'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('End date cannot be before start date'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedBranding.isEmpty) {
+      print('No branding locations selected'); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one branding location'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Getting current user'); // Debug print
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+
+      print('Generating initials'); // Debug print
+      // Generate initials from names
+      final sponsorInitials = _selectedSponsor!.name
+          .split(' ')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase())
+          .join('');
+
+      final racerInitials = _selectedRacer!.name
+          .split(' ')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase())
+          .join('');
+
+      print('Parsing deal value and commission'); // Debug print
+      // Parse deal value and commission
+      final dealValue =
+          double.tryParse(
+            _dealAmountController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+          ) ??
+          0.0;
+
+      final commissionPercentage =
+          double.tryParse(
+            _commissionController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+          ) ??
+          0.0;
+
+      print('Creating deal with service'); // Debug print
+      final dealId = await _dealService.createDeal(
+        userId: userId,
+        sponsorId: _selectedSponsor!.id,
+        racerId: _selectedRacer!.id,
+        eventId: _selectedEvent!.id,
+        sponsorInitials: sponsorInitials,
+        racerInitials: racerInitials,
+        title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+        raceType: _selectedEvent!.type,
+        dealValue: dealValue,
+        commissionPercentage: commissionPercentage,
+        advertisingPositions: _selectedBranding.toList(),
+        startDate: _startDate!,
+        endDate: _endDate!,
+        renewalReminder: _renewalReminder ?? "2 Days Before",
+        status: _paymentStatus,
+        brandingImages: _brandingImages,
+        context: context,
+      );
+
+      print('Deal created with ID: $dealId'); // Debug print
+
+      final deal = DealItem(
+        id: dealId,
+        sponsorId: _selectedSponsor!.id,
+        racerId: _selectedRacer!.id,
+        eventId: _selectedEvent!.id,
+        title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+        raceType: _selectedEvent!.type,
+        dealValue: '\$${dealValue.toStringAsFixed(2)}',
+        commission: '${commissionPercentage.toStringAsFixed(1)}%',
+        renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
+        parts: _selectedBranding.toList(),
+        status: _paymentStatus,
+        sponsorInitials: sponsorInitials,
+        racerInitials: racerInitials,
+      );
+
+      print('Navigating back with deal'); // Debug print
+      if (!mounted) return;
+      Navigator.pop(context, deal);
+    } catch (e) {
+      print('Error creating deal: $e'); // Debug print
+      if (!mounted) return;
+
       setState(() {
-        _isLoading = true;
+        _isLoading = false;
       });
 
-      try {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId == null) {
-          throw Exception('No user logged in');
-        }
-
-        // Generate initials from names
-        final sponsorInitials = _selectedSponsor!.name
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .map((word) => word[0].toUpperCase())
-            .join('');
-
-        final racerInitials = _selectedRacer!.name
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .map((word) => word[0].toUpperCase())
-            .join('');
-
-        // Parse deal value and commission
-        final dealValue =
-            double.tryParse(
-              _dealAmountController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-            ) ??
-            0.0;
-        final commissionPercentage =
-            double.tryParse(
-              _commissionController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-            ) ??
-            0.0;
-
-        if (widget.existingDeal != null) {
-          // Update existing deal
-          await _dealService.updateDeal(
-            widget.existingDeal!.id,
-            userId: userId,
-            sponsorId: _selectedSponsor!.id,
-            racerId: _selectedRacer!.id,
-            eventId: _selectedEvent!.id,
-            sponsorInitials: sponsorInitials,
-            racerInitials: racerInitials,
-            title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-            raceType: _selectedEvent!.type,
-            dealValue: dealValue,
-            commissionPercentage: commissionPercentage,
-            advertisingPositions: _selectedBranding.toList(),
-            startDate: _startDate!,
-            endDate: _endDate!,
-            renewalReminder: _renewalReminder ?? "2 Days Before",
-            status: _paymentStatus,
-            brandingImages: _brandingImages,
-            context: context,
-          );
-        } else {
-          // Create new deal
-          await _dealService.createDeal(
-            userId: userId,
-            sponsorId: _selectedSponsor!.id,
-            racerId: _selectedRacer!.id,
-            eventId: _selectedEvent!.id,
-            sponsorInitials: sponsorInitials,
-            racerInitials: racerInitials,
-            title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-            raceType: _selectedEvent!.type,
-            dealValue: dealValue,
-            commissionPercentage: commissionPercentage,
-            advertisingPositions: _selectedBranding.toList(),
-            startDate: _startDate!,
-            endDate: _endDate!,
-            renewalReminder: _renewalReminder ?? "2 Days Before",
-            status: _paymentStatus,
-            brandingImages: _brandingImages,
-            context: context,
-          );
-        }
-
-        if (!mounted) return;
-
-        // Return true to indicate success
-        Navigator.pop(context, true);
-      } catch (e) {
-        print(
-          'Error ${widget.existingDeal != null ? "updating" : "creating"} deal: $e',
-        );
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error ${widget.existingDeal != null ? "updating" : "creating"} deal: ${e.toString()}',
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating deal: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -321,19 +314,15 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   children: [
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_outlined,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          onPressed: () => Navigator.pop(context),
+                        Icon(
+                          Icons.arrow_back_ios_new_outlined,
+                          color: Colors.white,
+                          size: 16,
                         ),
+
                         const SizedBox(width: 16),
                         Text(
-                          widget.existingDeal != null
-                              ? "Edit Deal"
-                              : "Make Deal",
+                          "Make Deal",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -867,7 +856,6 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        // optional: remove or customize if needed
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           alignLabelWithHint: true,
@@ -895,9 +883,25 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             borderSide: const BorderSide(color: Colors.red),
             borderRadius: BorderRadius.circular(8),
           ),
+          errorStyle: const TextStyle(color: Colors.red),
         ),
-        validator:
-            (value) => (value == null || value.isEmpty) ? "Required" : null,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'This field is required';
+          }
+          if (keyboardType == TextInputType.number) {
+            final number = double.tryParse(
+              value.replaceAll(RegExp(r'[^0-9.]'), ''),
+            );
+            if (number == null) {
+              return 'Please enter a valid number';
+            }
+            if (number <= 0) {
+              return 'Please enter a number greater than 0';
+            }
+          }
+          return null;
+        },
       ),
     );
   }

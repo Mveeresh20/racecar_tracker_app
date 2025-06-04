@@ -180,111 +180,11 @@ class DealCardItem extends StatelessWidget {
                       _showLogPaymentBottomSheet(context);
                     },
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF8B6AD2), Color(0xFF211E83)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.white),
-                      onPressed: () async {
-                        try {
-                          // Fetch the deal detail to get all necessary data
-                          final detail = await fetchDealDetail(deal.id);
-                          if (detail != null) {
-                            // Get current user ID
-                            final userId =
-                                FirebaseAuth.instance.currentUser?.uid;
-                            if (userId == null) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('User not logged in'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-
-                            // Load all required data
-                            final racerService = RacerService();
-                            final eventService = EventService();
-                            final sponsorService = SponsorService();
-
-                            // Load data using streams
-                            final racers =
-                                await racerService
-                                    .getRacersStream(userId)
-                                    .first;
-                            final events =
-                                await eventService.getUserEvents(userId).first;
-                            final sponsors =
-                                await sponsorService
-                                    .getSponsorsStream(userId)
-                                    .first;
-
-                            if (!context.mounted) return;
-
-                            // Navigate to AddNewDealScreen with existing deal data and loaded lists
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => AddNewDealScreen(
-                                      existingDeal: detail,
-                                      sponsors: sponsors,
-                                      racers: racers,
-                                      events: events,
-                                    ),
-                              ),
-                            );
-
-                            // If the deal was updated, refresh the deals list
-                            if (result == true) {
-                              // The deals list will automatically update through the stream
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Deal updated successfully'),
-                                  ),
-                                );
-                              }
-                            }
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Error loading deal details'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        } catch (e) {
-                          print('Error preparing edit screen: $e');
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error: ${e.toString()}'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    ),
-                  ),
+                  _buildActionButton(context, "", Icons.edit, () {
+                    // Edit button has no text
+                    // Handle Edit action
+                  }),
+                  
                 ],
               ),
             ],
