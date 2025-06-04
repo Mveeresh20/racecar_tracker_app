@@ -6,6 +6,10 @@ import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/sponsor.dart'; // Import the Sponsor model
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Services/user_service.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
 
 class SponsorCardItem extends StatelessWidget {
   final Sponsor sponsor;
@@ -146,8 +150,32 @@ class SponsorCardItem extends StatelessWidget {
                         // Handle Sync/Renew action
                       }),
                       const SizedBox(width: 8),
-                      _buildActionButton(Icons.edit, () {
-                        // Handle Edit action
+                      _buildActionButton(Icons.edit, () async {
+                        // Navigate to AddNewSponsorScreen with existing sponsor data
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => AddNewSponsorScreen(
+                                  provider: Provider.of<SponsorProvider>(
+                                    context,
+                                    listen: false,
+                                  ),
+                                  existingSponsor: sponsor,
+                                ),
+                          ),
+                        );
+
+                        // Refresh sponsors after returning if needed
+                        if (result != null) {
+                          final userId = UserService().getCurrentUserId();
+                          if (userId != null) {
+                            Provider.of<SponsorProvider>(
+                              context,
+                              listen: false,
+                            ).initUserSponsors(userId);
+                          }
+                        }
                       }),
                     ],
                   ),

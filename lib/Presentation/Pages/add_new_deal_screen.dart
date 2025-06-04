@@ -7,6 +7,7 @@ import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/Services/deal_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,12 +16,14 @@ class AddNewDealScreen extends StatefulWidget {
   final List<Sponsor> sponsors;
   final List<Racer> racers;
   final List<Event> events;
+  final DealDetailItem? existingDeal;
 
   const AddNewDealScreen({
     Key? key,
     required this.sponsors,
     required this.racers,
     required this.events,
+    this.existingDeal,
   }) : super(key: key);
 
   @override
@@ -67,6 +70,85 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   ];
 
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeForm();
+  }
+
+  void _initializeForm() {
+    if (widget.existingDeal != null) {
+      // Pre-fill form with existing deal data
+      final deal = widget.existingDeal!;
+
+      try {
+        // Find and set the sponsor, racer, and event
+        _selectedSponsor = widget.sponsors.firstWhere(
+          (s) => s.id == deal.sponsorId,
+          orElse: () {
+            if (widget.sponsors.isEmpty) {
+              throw Exception('No sponsors available');
+            }
+            print(
+              'Warning: Sponsor ${deal.sponsorId} not found in list, using first available sponsor',
+            );
+            return widget.sponsors.first;
+          },
+        );
+
+        _selectedRacer = widget.racers.firstWhere(
+          (r) => r.id == deal.racerId,
+          orElse: () {
+            if (widget.racers.isEmpty) {
+              throw Exception('No racers available');
+            }
+            print(
+              'Warning: Racer ${deal.racerId} not found in list, using first available racer',
+            );
+            return widget.racers.first;
+          },
+        );
+
+        _selectedEvent = widget.events.firstWhere(
+          (e) => e.id == deal.eventId,
+          orElse: () {
+            if (widget.events.isEmpty) {
+              throw Exception('No events available');
+            }
+            print(
+              'Warning: Event ${deal.eventId} not found in list, using first available event',
+            );
+            return widget.events.first;
+          },
+        );
+
+        // Set other form fields
+        _dealAmountController.text = deal.dealValue.toString();
+        _commissionController.text = deal.commissionPercentage.toString();
+        _earnController.text = deal.commissionAmount.toString();
+        _startDate = deal.startDate;
+        _endDate = deal.endDate;
+        _renewalReminder = deal.renewalReminder;
+        _paymentStatus = deal.status;
+        _selectedBranding = Set.from(deal.parts);
+
+        // Note: Branding images will be handled separately as they are URLs
+        // and need to be downloaded if needed
+      } catch (e) {
+        print('Error initializing form: $e');
+        // Show error message to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading deal data: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   Future<void> _pickDate(BuildContext context, bool isStart) async {
     final picked = await showDatePicker(
@@ -139,54 +221,66 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             ) ??
             0.0;
 
-        // Create the deal in Firebase
-        final dealId = await _dealService.createDeal(
-          userId: userId,
-          sponsorId: _selectedSponsor!.id,
-          racerId: _selectedRacer!.id,
-          eventId: _selectedEvent!.id,
-          sponsorInitials: sponsorInitials,
-          racerInitials: racerInitials,
-          title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-          raceType: _selectedEvent!.type,
-          dealValue: dealValue,
-          commissionPercentage: commissionPercentage,
-          advertisingPositions: _selectedBranding.toList(),
-          startDate: _startDate!,
-          endDate: _endDate!,
-          renewalReminder: _renewalReminder ?? "2 Days Before",
-          status: _paymentStatus,
-          brandingImages: _brandingImages,
-          context: context,
-        );
+        if (widget.existingDeal != null) {
+          // Update existing deal
+          await _dealService.updateDeal(
+            widget.existingDeal!.id,
+            userId: userId,
+            sponsorId: _selectedSponsor!.id,
+            racerId: _selectedRacer!.id,
+            eventId: _selectedEvent!.id,
+            sponsorInitials: sponsorInitials,
+            racerInitials: racerInitials,
+            title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+            raceType: _selectedEvent!.type,
+            dealValue: dealValue,
+            commissionPercentage: commissionPercentage,
+            advertisingPositions: _selectedBranding.toList(),
+            startDate: _startDate!,
+            endDate: _endDate!,
+            renewalReminder: _renewalReminder ?? "2 Days Before",
+            status: _paymentStatus,
+            brandingImages: _brandingImages,
+            context: context,
+          );
+        } else {
+          // Create new deal
+          await _dealService.createDeal(
+            userId: userId,
+            sponsorId: _selectedSponsor!.id,
+            racerId: _selectedRacer!.id,
+            eventId: _selectedEvent!.id,
+            sponsorInitials: sponsorInitials,
+            racerInitials: racerInitials,
+            title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
+            raceType: _selectedEvent!.type,
+            dealValue: dealValue,
+            commissionPercentage: commissionPercentage,
+            advertisingPositions: _selectedBranding.toList(),
+            startDate: _startDate!,
+            endDate: _endDate!,
+            renewalReminder: _renewalReminder ?? "2 Days Before",
+            status: _paymentStatus,
+            brandingImages: _brandingImages,
+            context: context,
+          );
+        }
 
         if (!mounted) return;
 
-        // Create DealItem for the return value
-        final deal = DealItem(
-          id: dealId,
-          sponsorId: _selectedSponsor!.id,
-          racerId: _selectedRacer!.id,
-          eventId: _selectedEvent!.id,
-          title: "${_selectedSponsor!.name} X ${_selectedRacer!.name}",
-          raceType: _selectedEvent!.type,
-          dealValue: '\$${dealValue.toStringAsFixed(2)}',
-          commission: '${commissionPercentage.toStringAsFixed(1)}%',
-          renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
-          parts: _selectedBranding.toList(),
-          status: _paymentStatus,
-          sponsorInitials: sponsorInitials,
-          racerInitials: racerInitials,
-        );
-
-        Navigator.pop(context, deal);
+        // Return true to indicate success
+        Navigator.pop(context, true);
       } catch (e) {
-        print('Error creating deal: $e');
+        print(
+          'Error ${widget.existingDeal != null ? "updating" : "creating"} deal: $e',
+        );
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating deal: ${e.toString()}'),
+            content: Text(
+              'Error ${widget.existingDeal != null ? "updating" : "creating"} deal: ${e.toString()}',
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -227,14 +321,19 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.arrow_back_ios_new_outlined,
-                          color: Colors.white,
-                          size: 16,
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_outlined,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          onPressed: () => Navigator.pop(context),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Text(
-                          "Make Deal",
+                          widget.existingDeal != null
+                              ? "Edit Deal"
+                              : "Make Deal",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -318,7 +417,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
               _buildLabel("Deal Terms & Commission"),
               SizedBox(height: 8),
               _buildLabel("Total Deal Amount"),
-              SizedBox(height: 8,),
+              SizedBox(height: 8),
 
               _buildTextField(
                 _dealAmountController,
@@ -631,8 +730,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildLabel("Start Date"),
-                         SizedBox(height: 4,),
-                        
+                        SizedBox(height: 4),
+
                         _buildDatePicker(
                           context,
                           _startDate,
@@ -643,24 +742,23 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel("End Date"),
-                      SizedBox(height: 4,),
-                      _buildDatePicker(
-                        context,
-                        _endDate,
-                        "mm/dd/yyyy",
-                        (ctx) => _pickDate(ctx, false),
-                      )
-                    
-                    
-                    ],),
-                  )
-
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel("End Date"),
+                        SizedBox(height: 4),
+                        _buildDatePicker(
+                          context,
+                          _endDate,
+                          "mm/dd/yyyy",
+                          (ctx) => _pickDate(ctx, false),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              
+
               SizedBox(height: 16),
               _buildLabel("Renewal Reminder"),
               SizedBox(height: 8),

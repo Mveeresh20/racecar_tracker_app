@@ -10,6 +10,9 @@ import 'package:racecar_tracker/Services/racer_service.dart'; // Import RacerSer
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:racecar_tracker/models/racer.dart'; // Import Racer model
 import 'package:racecar_tracker/Services/event_service.dart'; // Import EventService
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
 // Import the Event model
 
 class EventCardItem extends StatelessWidget {
@@ -280,8 +283,29 @@ class EventCardItem extends StatelessWidget {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.edit, color: Colors.white),
-                      onPressed: () {
-                        // Handle Edit action
+                      onPressed: () async {
+                        // Navigate to AddNewEventScreen with existing event
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    AddNewEventScreen(existingEvent: event),
+                          ),
+                        );
+
+                        // If the event was updated, refresh the events list
+                        if (result == true) {
+                          final userId = FirebaseAuth.instance.currentUser?.uid;
+                          if (userId != null) {
+                            // Get the EventProvider and refresh the events
+                            final eventProvider = Provider.of<EventProvider>(
+                              context,
+                              listen: false,
+                            );
+                            await eventProvider.initUserEvents(userId);
+                          }
+                        }
                       },
                     ),
                   ),

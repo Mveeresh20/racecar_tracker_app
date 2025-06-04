@@ -8,6 +8,10 @@ import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 
 class AddNewEventScreen extends StatefulWidget {
+  final Event? existingEvent;
+
+  const AddNewEventScreen({Key? key, this.existingEvent}) : super(key: key);
+
   @override
   _AddNewEventScreenState createState() => _AddNewEventScreenState();
 }
@@ -34,6 +38,24 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
     "Highland Raceway",
     "Snowy Peaks Course",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize form with existing event data if editing
+    if (widget.existingEvent != null) {
+      _eventNameController.text = widget.existingEvent!.name;
+      _locationController.text = widget.existingEvent!.location;
+      _trackNameController.text = widget.existingEvent!.trackName ?? '';
+      _maxRacersController.text = widget.existingEvent!.maxRacers.toString();
+      _selectedDate = widget.existingEvent!.startDate;
+      _startTime = TimeOfDay.fromDateTime(widget.existingEvent!.startDate);
+      _endTime = TimeOfDay.fromDateTime(widget.existingEvent!.endDate);
+      _registrationCloseDate = widget.existingEvent!.endDate;
+      _selectedRaceType = widget.existingEvent!.type;
+      _selectedTrack = widget.existingEvent!.trackName;
+    }
+  }
 
   @override
   void dispose() {
@@ -139,38 +161,47 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
         _endTime!.minute,
       );
 
-      // Create a unique ID (you might want to use Firebase's push ID in production)
-      final eventId = DateTime.now().millisecondsSinceEpoch.toString();
-
       final event = Event(
-        id: eventId,
+        id:
+            widget.existingEvent?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         userId: userId,
         name: _eventNameController.text,
         type: _selectedRaceType,
         location: _selectedTrack!,
         startDate: startDateTime,
         endDate: endDateTime,
-        status: EventStatusType.registrationOpen,
+        status:
+            widget.existingEvent?.status ?? EventStatusType.registrationOpen,
         description: "${_selectedRaceType} at ${_selectedTrack}",
         totalRacers: int.parse(_maxRacersController.text),
-        currentRacers: 0,
+        currentRacers: widget.existingEvent?.currentRacers ?? 0,
         maxRacers: int.parse(_maxRacersController.text),
-        totalSponsors: 0,
-        totalPrizeMoney: 0.0,
-        racerImageUrls: [],
-        createdAt: DateTime.now(),
+        totalSponsors: widget.existingEvent?.totalSponsors ?? 0,
+        totalPrizeMoney: widget.existingEvent?.totalPrizeMoney ?? 0.0,
+        racerImageUrls: widget.existingEvent?.racerImageUrls ?? [],
+        createdAt: widget.existingEvent?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
         trackName: _selectedTrack,
       );
 
-      await eventProvider.createEvent(userId, event);
+      if (widget.existingEvent != null) {
+        await eventProvider.updateEvent(userId, event);
+      } else {
+        await eventProvider.createEvent(userId, event);
+      }
+
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error creating event: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error ${widget.existingEvent != null ? "updating" : "creating"} event: $e',
+            ),
+          ),
+        );
       }
     } finally {
       _safeSetState(() => _isLoading = false);
@@ -192,56 +223,55 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
   }
 
   Widget _buildTextField(
-  TextEditingController controller,
-  String hint, {
-  TextInputType keyboardType = TextInputType.text,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    child: TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Required';
-        }
-        if (keyboardType == TextInputType.number &&
-            int.tryParse(value) == null) {
-          return 'Enter a valid number';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFF13386B),
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 8,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.red),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.red),
-          borderRadius: BorderRadius.circular(8),
+    TextEditingController controller,
+    String hint, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.white),
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Required';
+          }
+          if (keyboardType == TextInputType.number &&
+              int.tryParse(value) == null) {
+            return 'Enter a valid number';
+          }
+          return null;
+        },
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFF13386B),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 8,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   // Widget _buildTextField(
   //   TextEditingController controller,
@@ -314,43 +344,41 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
   // }
 
   Widget _buildDatePicker(
-  BuildContext context,
-  DateTime? value,
-  String hint,
-  VoidCallback onTap,
-) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    child: GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF13386B),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              value == null
-                  ? hint
-                  : DateFormat('MMM dd, yyyy').format(value),
-              style: TextStyle(
-                color: value == null
-                    ? Colors.white.withOpacity(0.6)
-                    : Colors.white,
+    BuildContext context,
+    DateTime? value,
+    String hint,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13386B),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value == null ? hint : DateFormat('MMM dd, yyyy').format(value),
+                style: TextStyle(
+                  color:
+                      value == null
+                          ? Colors.white.withOpacity(0.6)
+                          : Colors.white,
+                ),
               ),
-            ),
-            const Icon(Icons.calendar_today, color: Colors.white, size: 20),
-          ],
+              const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   // Widget _buildTimePicker(
   //   BuildContext context,
@@ -383,41 +411,41 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
   //   );
   // }
   Widget _buildTimePicker(
-  BuildContext context,
-  TimeOfDay? time,
-  String label,
-  VoidCallback onTap,
-) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    child: GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF13386B),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              time == null ? label : time.format(context),
-              style: TextStyle(
-                color: time == null
-                    ? Colors.white.withOpacity(0.6)
-                    : Colors.white,
+    BuildContext context,
+    TimeOfDay? time,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13386B),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                time == null ? label : time.format(context),
+                style: TextStyle(
+                  color:
+                      time == null
+                          ? Colors.white.withOpacity(0.6)
+                          : Colors.white,
+                ),
               ),
-            ),
-            const Icon(Icons.access_time, color: Colors.white),
-          ],
+              const Icon(Icons.access_time, color: Colors.white),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -447,21 +475,21 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                           ),
                         ),
                         child: Row(
-                          children:  [
+                          children: [
                             GestureDetector(
-                              onTap: (){
-                                  Navigator.pop(context);
-                              },
-                              child: Icon(
+                              onTap: () => Navigator.pop(context),
+                              child: const Icon(
                                 Icons.arrow_back_ios,
                                 color: Colors.white,
                                 size: 18,
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
                             Text(
-                              'Add New Event',
-                              style: TextStyle(
+                              widget.existingEvent != null
+                                  ? "Edit Event"
+                                  : "Add New Event",
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -548,7 +576,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                               vertical: 12,
                             ),
                             hintText: "Select race type...",
-                            
+
                             hintStyle: const TextStyle(color: Colors.white),
                           ),
                           dropdownColor: const Color(0xFF13386B),
@@ -607,130 +635,144 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                       ),
                       if (_selectedTrack != null) ...[
                         Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _buildLabel("Selected Track"),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel("Selected Track"),
 
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Stack for Track Name + Clear Button
-            Expanded(
-              child: Stack(
-                clipBehavior: Clip.none, children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Color(0xFF13386B),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        width: 1,
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    child: Text(
-                      "Track: $_selectedTrack",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                          ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Stack for Track Name + Clear Button
+                                  Expanded(
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFF13386B),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              width: 1,
+                                              color: Colors.white.withOpacity(
+                                                0.2,
+                                              ),
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 12,
+                                          ),
+                                          child: Text(
+                                            "Track: $_selectedTrack",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(color: Colors.white),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
 
-                  Positioned(
+                                        Positioned(
+                                          right: -2,
+                                          top: -2,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedTrack = null;
+                                              });
+                                            },
+                                            child: CircleAvatar(
+                                              radius: 10,
+                                              backgroundColor:
+                                                  Colors.red.shade300,
+                                              child: Icon(
+                                                Icons.close,
+                                                size: 14,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
 
-                    right: -2,
-                    top: -2,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedTrack = null;
-                        });
-                      },
-                      child: CircleAvatar(
-                        radius: 10,
-                        backgroundColor: Colors.red.shade300,
-                        child: Icon(
-                          Icons.close,
-                          size: 14,
-                          color: Colors.white,
+                                  const SizedBox(width: 10),
+
+                                  // View Map Button
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      print("View Map button tapped!");
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFFFFCC29),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "View Map",
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Color(0xFF13386B),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      height: 500,
+                                      width: double.infinity,
+                                      child: Image.network(
+                                        _getTrackImage(_selectedTrack),
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                                  color: Colors.grey.shade700,
+                                                  child: Icon(
+                                                    Icons.map,
+                                                    color: Colors.white,
+                                                    size: 40,
+                                                  ),
+                                                ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
-            // View Map Button
-            ElevatedButton(
-              onPressed: () {
-                print("View Map button tapped!");
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFFCC29),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              child: Text(
-                "View Map",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      const SizedBox(height: 10),
-
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Color(0xFF13386B),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 500,
-                width: double.infinity,
-                child: Image.network(
-                  _getTrackImage(_selectedTrack),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey.shade700,
-                    child: Icon(
-                      Icons.map,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ],
-  ),
-
-
-
-
-
 
                         // const SizedBox(height: 10),
                         // Padding(
@@ -772,9 +814,11 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                                 borderRadius: BorderRadius.circular(60),
                               ),
                             ),
-                            child: const Text(
-                              " +   Create Event",
-                              style: TextStyle(
+                            child: Text(
+                              widget.existingEvent != null
+                                  ? "Update Event"
+                                  : "+   Create Event",
+                              style: const TextStyle(
                                 fontSize: 16,
                                 color: Colors.black,
                                 fontWeight: FontWeight.w700,
@@ -979,8 +1023,8 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
 //           leading: IconButton(
 //             icon: const Icon(Icons.arrow_back),
 //             onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-  //           ),
-  //         ),
+//           ),
+//         ),
 //         body:
 //             _isLoading
 //                 ? const Center(child: CircularProgressIndicator())
@@ -1151,7 +1195,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
 //                     ),
 //                   ),
 //                 ),
-  //       ),
-  //     );
-  //   }
-  // }
+//       ),
+//     );
+//   }
+// }

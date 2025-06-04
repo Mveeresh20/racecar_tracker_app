@@ -11,9 +11,13 @@ import 'package:uuid/uuid.dart';
 
 class AddNewSponsorScreen extends StatefulWidget {
   final SponsorProvider provider;
+  final Sponsor? existingSponsor;
 
-  const AddNewSponsorScreen({Key? key, required this.provider})
-    : super(key: key);
+  const AddNewSponsorScreen({
+    Key? key,
+    required this.provider,
+    this.existingSponsor,
+  }) : super(key: key);
 
   @override
   _AddNewSponsorScreenState createState() => _AddNewSponsorScreenState();
@@ -49,6 +53,23 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize form with existing sponsor data if editing
+    if (widget.existingSponsor != null) {
+      _sponsorNameController.text = widget.existingSponsor!.name;
+      _contactPersonController.text =
+          widget.existingSponsor!.contactPerson ?? '';
+      _contactNumberController.text =
+          widget.existingSponsor!.contactNumber ?? '';
+      _industryTypeController.text = widget.existingSponsor!.industryType ?? '';
+      _sponsorshipAmountController.text =
+          widget.existingSponsor!.sponsorshipAmount ?? '';
+      _notesController.text = widget.existingSponsor!.notes ?? '';
+      _logoUploadController.text = widget.existingSponsor!.logoUrl ?? '';
+      _emailController.text = widget.existingSponsor!.email;
+      _selectedEndDate = widget.existingSponsor!.endDate;
+      _selectedParts = Set<String>.from(widget.existingSponsor!.parts);
+    }
+
     // Initialize user ID when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final sponsorProvider = Provider.of<SponsorProvider>(
@@ -87,12 +108,11 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           _sponsorNameController.text.trim(),
         );
 
-        // Always generate a new UUID for the sponsor
-        final sponsorId = const Uuid().v4();
-
-        // Create new sponsor with validated data
-        final newSponsor = Sponsor(
-          id: sponsorId, // Always use the generated ID
+        // Create sponsor with validated data
+        final sponsor = Sponsor(
+          id:
+              widget.existingSponsor?.id ??
+              const Uuid().v4(), // Use existing ID if editing
           userId: userId,
           initials: initials,
           name: _sponsorNameController.text.trim(),
@@ -102,32 +122,41 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           industryType: _industryTypeController.text.trim(),
           logoUrl: _logoUploadController.text.trim(),
           parts: _selectedParts.toList(),
-          activeDeals: 0,
+          activeDeals: widget.existingSponsor?.activeDeals ?? 0,
           endDate: _selectedEndDate,
-          status: SponsorStatus.active,
+          status: widget.existingSponsor?.status ?? SponsorStatus.active,
           notes: _notesController.text.trim(),
           sponsorshipAmount: _sponsorshipAmountController.text.trim(),
-          createdAt: DateTime.now(),
+          createdAt: widget.existingSponsor?.createdAt ?? DateTime.now(),
           updatedAt: DateTime.now(),
-          totalDeals: 0,
-          commission: "0%",
+          totalDeals: widget.existingSponsor?.totalDeals ?? 0,
+          commission: widget.existingSponsor?.commission ?? "0%",
+          lastDealAmount: widget.existingSponsor?.lastDealAmount,
         );
 
         // Save sponsor to database
-        await widget.provider.createSponsor(newSponsor);
+        if (widget.existingSponsor != null) {
+          await widget.provider.updateSponsor(sponsor);
+        } else {
+          await widget.provider.createSponsor(sponsor);
+        }
 
         // Hide loading indicator and return to sponsors screen
         if (mounted) {
           Navigator.pop(context); // Remove loading indicator
-          Navigator.pop(context, newSponsor); // Return to sponsors screen
+          Navigator.pop(context, sponsor); // Return to sponsors screen
         }
       } catch (e) {
         // Hide loading indicator and show error
         if (mounted) {
           Navigator.pop(context); // Remove loading indicator
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error creating sponsor: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error ${widget.existingSponsor != null ? "updating" : "creating"} sponsor: $e',
+              ),
+            ),
+          );
         }
       }
     }
@@ -266,15 +295,19 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Icon(Icons.arrow_back_ios,color: Colors.white,size: 18,),
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 16),
-                        const Text(
-                          "Add New Sponsor",
-                          style: TextStyle(
+                        Text(
+                          widget.existingSponsor != null
+                              ? "Edit Sponsor"
+                              : "Add New Sponsor",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -367,10 +400,16 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _submitForm,
-                    icon: const Icon(Icons.add, color: Colors.black, size: 16),
-                    label: const Text(
-                      "Add Sponsor",
-                      style: TextStyle(
+                    icon: Icon(
+                      widget.existingSponsor != null ? Icons.save : Icons.add,
+                      color: Colors.black,
+                      size: 16,
+                    ),
+                    label: Text(
+                      widget.existingSponsor != null
+                          ? "Update Sponsor"
+                          : "Add Sponsor",
+                      style: const TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
