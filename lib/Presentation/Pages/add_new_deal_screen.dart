@@ -317,6 +317,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
               // Deal Terms & Commission
               _buildLabel("Deal Terms & Commission"),
               SizedBox(height: 8),
+              _buildLabel("Total Deal Amount"),
+              SizedBox(height: 8,),
 
               _buildTextField(
                 _dealAmountController,

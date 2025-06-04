@@ -338,9 +338,9 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                             : null,
               ),
               _buildFormField(
-                "Logo Upload",
+                "Comapany name",
                 _logoUploadController,
-                "Upload logo of sponsor's company",
+                "Enter the name of Sponsr Comapny",
                 isOptional: true,
               ),
               _buildDatePicker(),
