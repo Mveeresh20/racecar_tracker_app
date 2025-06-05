@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Services/track_service.dart';
+import 'package:racecar_tracker/Utils/Constants/text.dart';
+import 'package:racecar_tracker/models/track.dart';
+import 'add_new_map_page.dart'; // Import AddNewMapPage
 
 class TrackMapScreen extends StatefulWidget {
   const TrackMapScreen({Key? key}) : super(key: key);
@@ -10,8 +15,11 @@ class TrackMapScreen extends StatefulWidget {
 }
 
 class _TrackMapScreenState extends State<TrackMapScreen> {
+  final TrackService _trackService = TrackService();
+  List<Track> _tracks = [];
+  bool _isLoading = true;
+  int _currentTrackIndex = 0; // Use index to track current map
   int _currentIndex = 1;
-  int _currentTrack = 0;
   final List<double> _zoomLevels = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5];
   double _zoom = 1.0;
   final TransformationController _transformationController =
@@ -32,9 +40,69 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
   ];
 
   @override
-  void dispose() {
-    _transformationController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadTracks();
+  }
+
+  Future<void> _loadTracks() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final fetchedTracks = await _trackService.fetchTracks();
+      setState(() {
+        _tracks = fetchedTracks;
+        _isLoading = false;
+        // Reset index if the list is empty or the current index is out of bounds
+        if (_tracks.isEmpty || _currentTrackIndex >= _tracks.length) {
+          _currentTrackIndex = 0;
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load tracks: ${e.toString()}')),
+        );
+        setState(() {
+          _isLoading = false;
+          _tracks = []; // Clear tracks on error
+          _currentTrackIndex = 0;
+        });
+      }
+    }
+  }
+
+  void _navigateToAddMap() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddNewMapPage()),
+    );
+    // Refresh tracks when returning from AddNewMapPage
+    _loadTracks();
+  }
+
+  void _nextTrack() {
+    if (_tracks.isNotEmpty) {
+      setState(() {
+        _currentTrackIndex = (_currentTrackIndex + 1) % _tracks.length;
+        // Reset zoom and pan when changing tracks
+        _transformationController.value = Matrix4.identity();
+        _zoom = 1.0;
+      });
+    }
+  }
+
+  void _previousTrack() {
+    if (_tracks.isNotEmpty) {
+      setState(() {
+        _currentTrackIndex =
+            (_currentTrackIndex - 1 + _tracks.length) % _tracks.length;
+        // Reset zoom and pan when changing tracks
+        _transformationController.value = Matrix4.identity();
+        _zoom = 1.0;
+      });
+    }
   }
 
   void _setZoom(double zoom) {
@@ -71,21 +139,14 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
     return closestIndex;
   }
 
-  // void _zoomIn() {
-  //   int idx = _zoomLevels.indexWhere((z) => z > _zoom);
-  //   if (idx != -1) _setZoom(_zoomLevels[idx]);
-  // }
-
-  // void _zoomOut() {
-  //   int idx = _zoomLevels.lastIndexWhere((z) => z < _zoom);
-  //   if (idx != -1) _setZoom(_zoomLevels[idx]);
-  // }
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final trackImage = _trackImages[_currentTrack];
-    final trackName = _trackNames[_currentTrack];
-
     return Scaffold(
       body: Column(
         children: [
@@ -125,7 +186,13 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
                 ).copyWith(top: 40),
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                     SizedBox(width: 40),
                     Expanded(
                       child: Row(
@@ -135,7 +202,7 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
                           Icon(Icons.flag, color: Colors.white, size: 24),
                           SizedBox(width: 4),
                           Text(
-                            "Maps",
+                            "Maps", // Keep "Maps" title
                             style: TextStyle(
                               color: Color(0xFFFFCC29),
                               fontSize: 18,
@@ -145,380 +212,376 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
                         ],
                       ),
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFFCC29),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(11),
-                        child: Icon(Icons.add, color: Colors.black),
+                    GestureDetector(
+                      onTap:
+                          _navigateToAddMap, // Link the add button to navigation
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFFCC29),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(11),
+                          child: Icon(Icons.add, color: Colors.black),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // Positioned(
-              //   left: 16,
-              //   top: 40,
-              //   child: Icon(Icons.arrow_back, color: Colors.white),
-              // ),
-              // Positioned(
-              //   left: 60,
-              //   top: 50,
-              //   child: Text(
-              //     "Maps",
-              //     style: TextStyle(
-              //       color: Color(0xFFFFCC29),
-              //       fontWeight: FontWeight.bold,
-              //       fontSize: 22,
-              //     ),
-              //   ),
-              // ),
-              // Positioned(
-              //   right: 16,
-              //   top: 40,
-              //   child: Icon(Icons.add, color: Colors.black),
-              // ),
             ],
           ),
           SizedBox(height: 16),
-          // Track name and arrows
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_left,
-                    color: Color(0xFFFBA710),
-                    size: 32,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _currentTrack =
-                          (_currentTrack - 1 + _trackImages.length) %
-                          _trackImages.length;
-                    });
-                  },
-                ),
 
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      width: 1,
-                      color: Colors.white.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.flag, color: Colors.white, size: 24),
-                        SizedBox(width: 16),
-                        Text(
-                          trackName,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          _isLoading
+              ? const Expanded(
+                child: Center(child: CircularProgressIndicator()),
+              )
+              : _tracks.isEmpty
+              ? Expanded(child: _buildNoMapsUI()) // Show no maps UI
+              : Expanded(
+                child: _buildTrackView(
+                  _tracks[_currentTrackIndex].imagePath,
+                  _tracks[_currentTrackIndex].trackName,
                 ),
+              ), // Show track view
+        ],
+      ),
+    );
+  }
 
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_right,
-                    color: Color(0xFFFBA710),
-                    size: 32,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _currentTrack = (_currentTrack + 1) % _trackImages.length;
-                    });
-                  },
-                ),
-              ],
+  Widget _buildNoMapsUI() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Image.network(
+                                          Images.noMap,
+                                          fit: BoxFit.contain,
+                                          height: 280,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          "🗺️ No Race Maps Added Yet",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          Lorempsum.noMapText,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+
+          
+          const SizedBox(height: 40),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFCC29),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(60),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+            ),
+            onPressed: _navigateToAddMap,
+            child: Text(
+              " + Add New Map",
+              style: GoogleFonts.montserrat(
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
             ),
           ),
-          // VIP/EDIT Button (optional, as in your screenshot)
-          // Padding(
-          //   padding: const EdgeInsets.only(left: 24, top: 8, bottom: 4),
-          //   child: Align(
-          //     alignment: Alignment.centerLeft,
-          //     child: ElevatedButton.icon(
-          //       onPressed: () {},
-          //       icon: Icon(Icons.edit, color: Colors.black),
-          //       label: Text("Edit", style: TextStyle(color: Colors.black)),
-          //       style: ElevatedButton.styleFrom(
-          //         backgroundColor: Color(0xFFFFCC29),
-          //         shape: RoundedRectangleBorder(
-          //           borderRadius: BorderRadius.circular(8),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          // Zoomable, pannable image
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Calculate the max size for the image area
-                double size =
-                    constraints.maxHeight < 400
-                        ? constraints.maxHeight * 0.8
-                        : 320;
-                return Center(
-                  child: Stack(
-                    alignment: Alignment.center,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackView(String trackImage, String trackName) {
+    return Column(
+      // Wrap the existing track display content in a Column
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_left,
+                  color:
+                      _tracks.length > 1
+                          ? const Color(0xFFFBA710)
+                          : Colors.white.withOpacity(
+                            0.5,
+                          ), // Dim arrows if only one track
+                  size: 32,
+                ),
+                onPressed:
+                    _tracks.length > 1
+                        ? _previousTrack
+                        : null, // Disable if only one track
+              ),
+
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    width: 1,
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Row(
                     children: [
-                      // The zoomable image
-                      Container(
-                        width: size,
-                        height: 390,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF13386B),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: InteractiveViewer(
-                            transformationController: _transformationController,
-                            minScale: 0.5,
-                            maxScale: 3.5,
-                            boundaryMargin: EdgeInsets.all(80),
-                            panEnabled: true,
-                            scaleEnabled: true,
-                            onInteractionEnd: (details) {
-                              setState(() {
-                                _zoom =
-                                    _transformationController.value
-                                        .getMaxScaleOnAxis();
-                              });
-                            },
-                            child:
-                                trackImage.startsWith('http')
-                                    ? Image.network(
-                                      height: 390,
-                                      trackImage,
-                                      fit: BoxFit.cover,
-                                    )
-                                    : Image.asset(
-                                      trackImage,
-                                      fit: BoxFit.contain,
-                                    ),
-                          ),
-                        ),
-                      ),
-                      // The vertical zoom chips
-                      Positioned(
-                        right: 0,
-                        top: 20,
-                        bottom: 20,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children:
-                                _zoomLevels
-                                    .map(
-                                      (z) => Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 4.0,
-                                        ),
-                                        child: ChoiceChip(
-                                          label: Text(
-                                            '${z}x',
-                                            style: TextStyle(
-                                              color:
-                                                  (_zoom - z).abs() < 0.01
-                                                      ? Colors.black
-                                                      : Colors.white,
-                                            ),
-                                          ),
-                                          selected: (_zoom - z).abs() < 0.01,
-                                          selectedColor: Color(0xFFFFCC29),
-                                          backgroundColor: Color(0xFF13386B),
-                                          onSelected: (_) => _setZoom(z),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
+                      Icon(Icons.flag, color: Colors.white, size: 24),
+                      SizedBox(width: 16),
+                      Text(
+                        trackName, // Use the passed trackName
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          // Zoom controls
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFFCC29),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.zoom_out, color: Colors.black),
-                        SizedBox(width: 4),
-                        Text(
-                          'Zoom',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(Icons.zoom_in, color: Colors.black),
-                      ],
-                    ),
-                  ),
                 ),
-                SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _zoomOut,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text('Min', style: TextStyle(color: Colors.white)),
-                    ),
-                    SizedBox(width: 8),
+              ),
 
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _zoomIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_right,
+                  color:
+                      _tracks.length > 1
+                          ? const Color(0xFFFBA710)
+                          : Colors.white.withOpacity(
+                            0.5,
+                          ), // Dim arrows if only one track
+                  size: 32,
+                ),
+                onPressed:
+                    _tracks.length > 1
+                        ? _nextTrack
+                        : null, // Disable if only one track
+              ),
+            ],
+          ),
+        ),
+        // VIP/EDIT Button (optional, as in your screenshot)
+        // Padding(
+        //   padding: const EdgeInsets.only(left: 24, top: 8, bottom: 4),
+        //   child: Align(
+        //     alignment: Alignment.centerLeft,
+        //     child: ElevatedButton.icon(
+        //       onPressed: () {},
+        //       icon: Icon(Icons.edit, color: Colors.black),
+        //       label: Text("Edit", style: TextStyle(color: Colors.black)),
+        //       style: ElevatedButton.styleFrom(
+        //         backgroundColor: Color(0xFFFFCC29),
+        //         shape: RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.circular(8),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // ),
+        // Zoomable, pannable image
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate the max size for the image area
+              double size =
+                  constraints.maxHeight < 400
+                      ? constraints.maxHeight * 0.8
+                      : 320;
+              return Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // The zoomable image
+                    Container(
+                      width: size,
+                      height: 390, // Keep the fixed height from original
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF13386B), // Match theme
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: InteractiveViewer(
+                          transformationController: _transformationController,
+                          minScale: 0.5,
+                          maxScale: 3.5,
+                          boundaryMargin: const EdgeInsets.all(80),
+                          panEnabled: true,
+                          scaleEnabled: true,
+                          onInteractionEnd: (details) {
+                            setState(() {
+                              _zoom =
+                                  _transformationController.value
+                                      .getMaxScaleOnAxis();
+                            });
+                          },
+                          child:
+                              trackImage
+                                      .isNotEmpty // Use the passed trackImage
+                                  ? Image.network(
+                                    trackImage,
+                                    height: 390, // Keep fixed height
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(
+                                              Icons.error,
+                                              size: 80,
+                                              color: Colors.redAccent,
+                                            ), // Error placeholder
+                                  )
+                                  : Container(), // Empty container if no image path
                         ),
                       ),
-                      child: Text('Max', style: TextStyle(color: Colors.white)),
+                    ),
+                    // The vertical zoom chips
+                    Positioned(
+                      right: 0,
+                      top: 20,
+                      bottom: 20,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children:
+                              _zoomLevels
+                                  .map(
+                                    (z) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4.0,
+                                      ),
+                                      child: ChoiceChip(
+                                        label: Text(
+                                          '${z}x',
+                                          style: TextStyle(
+                                            color:
+                                                (_zoom - z).abs() < 0.01
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                          ),
+                                        ),
+                                        selected: (_zoom - z).abs() < 0.01,
+                                        selectedColor: const Color(0xFFFFCC29),
+                                        backgroundColor: const Color(
+                                          0xFF13386B,
+                                        ),
+                                        onSelected: (_) => _setZoom(z),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
-          SizedBox(height: 16),
-        ],
-      ),
-      
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: Color(0xFF13386B),
-      ),
-
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          backgroundColor: Color(0xFF13386B),
-
-          type: BottomNavigationBarType.fixed,
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.home,
-                isSelected: _currentIndex == 0,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-                // Pass selected color
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.flag,
-                isSelected: _currentIndex == 1,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.headIcon,
-                isSelected: _currentIndex == 2,
-
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                imageUrl: Images.sponsorIcon,
-                isSelected: _currentIndex == 3,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: BottomIcons(
-                iconData: Icons.handshake,
-                isSelected: _currentIndex == 4,
-                defaultColor: Colors.grey,
-                selectedColor: Colors.green,
-                selectedBorderColor:
-                    _currentIndex == 4 ? Color(0xFF0E5BC5) : Color(0xFF134A97),
-                unselectedBorderColor: Color(0xFF134A97),
-              ),
-              label: '',
-            ),
-          ],
         ),
-      ),
+        // Zoom controls
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFCC29), // Match theme
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.zoom_out, color: Colors.black),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Zoom',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.zoom_in, color: Colors.black),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _zoomOut,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2D5586), // Match theme
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Min',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _zoomIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2D5586), // Match theme
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Max',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

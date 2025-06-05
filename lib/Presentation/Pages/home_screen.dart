@@ -11,6 +11,7 @@ import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/sponsors_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/track_map_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/track_maps_page.dart';
 
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsership_deals_section.dart';
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsorship_deals_content.dart';
@@ -1142,7 +1143,7 @@ class _HomeContentState extends State<HomeContent> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => TrackMapScreen(),
+                              builder: (context) => const TrackMapScreen(),
                             ),
                           );
                         },
@@ -1229,38 +1230,37 @@ class _HomeContentState extends State<HomeContent> {
                   : DashboardSectionCard(
                     title: "Active Sponsorship Deals", // Use a similar title
                     imagurl:
-                        Images
-                            .totalSponsersImg, // Use an existing image asset
+                        Images.totalSponsersImg, // Use an existing image asset
                     innerContent: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Center(
-                        child:Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "🗓️ No Active Sponsorship Deals",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: "Montserrat",
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    Lorempsum.activeSponsorShipDeals,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: "Montserrat",
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              )
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "🗓️ No Active Sponsorship Deals",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: "Montserrat",
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              Lorempsum.activeSponsorShipDeals,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontFamily: "Montserrat",
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ), // Message for no active deals
                     // No onGoToPressed or buttonText when empty

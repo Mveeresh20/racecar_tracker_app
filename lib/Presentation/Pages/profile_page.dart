@@ -63,58 +63,52 @@ class _ProfilePageState extends State<ProfilePage> {
           body: SingleChildScrollView(
             child: Column(
               children: [
+
                 Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24,
-                  ).copyWith(top: 64, bottom: 18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2D5586), Color(0xFF171E45)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: 24,
+              ).copyWith(top: 64, bottom: 18),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2D5586), Color(0xFF171E45)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFF13386B),
-
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 10,
-                              ),
-                              child: Icon(
-                                Icons.home,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Text(
-                            "Profile",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Icon(
+                          Icons.arrow_back_ios_new_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ),
-
-                      // Space before bottom border
+      
+                      const SizedBox(width: 16),
+                      Text(
+                        "Profile",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-
+      
+                  // Space before bottom border
+                ],
+              ),
+            ),
+                
                 SizedBox(height: 16),
 
                 Column(

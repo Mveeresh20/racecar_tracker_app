@@ -79,6 +79,8 @@ class Images {
       "https://ik.imagekit.io/sports123/Vector%20208%20(1).png?updatedAt=1749025540453";
   static const String noRacer =
       "https://ik.imagekit.io/sports123/Vector%20206.png?updatedAt=1749025619035";
+  static const String noMap =
+      "https://ik.imagekit.io/sports123/Vector%20206%20(1).png?updatedAt=1749098309965";
 
   // Add more as needed for other track names
 }

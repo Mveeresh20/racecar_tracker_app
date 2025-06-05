@@ -25,4 +25,6 @@ class Lorempsum {
       "Create your first event by selecting a track layout and assigning registered racers to compete.";
   static const String noRacer =
       "Start by adding racers to your roster to register them for upcoming race  events.";
+  static const String noMapText =
+      "Add your first racetrack layout or select from preset options to start building your event experience.";
 }

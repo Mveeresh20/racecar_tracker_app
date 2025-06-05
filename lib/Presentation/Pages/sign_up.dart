@@ -25,6 +25,7 @@ class _SignUpState extends State<SignUp> {
       final user = await _authService.signUp(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        name: _nameController.text.trim(),
       );
       print("Trying to sign up with: ${_emailController.text.trim()}");
       print("Password: ${_passwordController.text.trim()}");
@@ -49,9 +50,11 @@ class _SignUpState extends State<SignUp> {
   }
 
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmpasswordController = TextEditingController();
+
   bool _passwordVisible = false;
   String? _validateEmail(String? value) {
     const pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
@@ -77,10 +80,16 @@ class _SignUpState extends State<SignUp> {
     return null;
   }
 
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) return "Name is required";
+    return null;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -119,7 +128,7 @@ class _SignUpState extends State<SignUp> {
                     SizedBox(height: 12), // 1% spacing
                     // Login to access your account subtitle
                     Text(
-                      'Login to access your account',
+                      'Create to access your account',
                       style: GoogleFonts.montserrat(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -150,6 +159,72 @@ class _SignUpState extends State<SignUp> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                "Name",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: "Plus Jakarta Sans",
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+
+                            TextFormField(
+                              controller: _nameController,
+                              validator: _validateName,
+                              keyboardType: TextInputType.emailAddress,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                filled: true,
+
+                                fillColor: Color(0xFF3B537D),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                labelText: 'Enter your Name...',
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                                hintText: 'Name',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                ),
+
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 10),
+
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_map_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/login_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/on_boarding2.dart';
 
