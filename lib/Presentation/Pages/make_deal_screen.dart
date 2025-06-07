@@ -342,7 +342,7 @@ class _MakeDealScreenState extends State<MakeDealScreen> {
                             ? "Please enter deal title"
                             : null,
               ),
-              _buildFormField(
+            _buildFormField(
                 "Race Type",
                 _raceTypeController,
                 "Enter Race Type",

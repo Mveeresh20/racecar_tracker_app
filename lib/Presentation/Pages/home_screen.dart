@@ -450,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
           items: <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: BottomIcons(
-                iconData: Icons.home,
+                imageUrl: Images.navBarHome,
                 isSelected: _currentIndex == 0,
                 defaultColor: Colors.grey,
                 selectedColor: Colors.green,
@@ -463,7 +463,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             BottomNavigationBarItem(
               icon: BottomIcons(
-                iconData: Icons.flag,
+                imageUrl: Images.navBarImg,
+
                 isSelected: _currentIndex == 1,
                 defaultColor: Colors.grey,
                 selectedColor: Colors.green,
@@ -499,7 +500,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             BottomNavigationBarItem(
               icon: BottomIcons(
-                iconData: Icons.handshake,
+                imageUrl: Images.navBarDeal,
+
                 isSelected: _currentIndex == 4,
                 defaultColor: Colors.grey,
                 selectedColor: Colors.green,
@@ -933,11 +935,7 @@ class _HomeContentState extends State<HomeContent> {
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
                                     ),
-                                    child: Icon(
-                                      Icons.home,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
+                                    child: Image.network(Images.navBarHome)
                                   ),
                                   SizedBox(width: 10),
                                   Text(
@@ -974,8 +972,8 @@ class _HomeContentState extends State<HomeContent> {
                                       child: ClipOval(
                                         child: Image.network(
                                           provider.getProfileImageUrl(),
-                                          height: 24,
-                                          width: 24,
+                                          height: 30,
+                                          width: 30,
                                           fit: BoxFit.cover,
                                           errorBuilder: (
                                             context,
@@ -984,8 +982,8 @@ class _HomeContentState extends State<HomeContent> {
                                           ) {
                                             return Image.network(
                                               Images.profileImg,
-                                              height: 24,
-                                              width: 24,
+                                              height: 30,
+                                              width: 30,
                                               fit: BoxFit.cover,
                                             );
                                           },
@@ -1036,7 +1034,7 @@ class _HomeContentState extends State<HomeContent> {
                               Expanded(
                                 child: TotalTrackCards(
                                   imageurl: Images.totalSponsersImg,
-                                  text: "Toatal\nSponsers",
+                                  text: "Total\nSponsors",
                                   total: "$_totalSponsors",
                                   cardColor: Color(0xFF4B3B00),
                                   imgColor: Color(0xFFFFA203),
@@ -1118,7 +1116,7 @@ class _HomeContentState extends State<HomeContent> {
                     Expanded(
                       child: BuildActionCard(
                         imageUrl: Images.totalDealsCrackedImg,
-                        text: "New\n Deal",
+                        text: "New\nDeal",
                         onTap: () {
                           Navigator.push(
                             context,

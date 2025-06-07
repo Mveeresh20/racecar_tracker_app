@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:racecar_tracker/Presentation/Pages/login_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/on_boarding3.dart';
 
@@ -57,10 +58,7 @@ class _OnBoarding2State extends State<OnBoarding2> {
         children: [
           // Background Image
           Positioned.fill(
-            child: Image.network(
-              Images.onboarding2,
-              fit: BoxFit.cover,
-            ),
+            child: Image.network(Images.onboarding2, fit: BoxFit.cover),
           ),
 
           // Gradient Overlay
@@ -68,12 +66,12 @@ class _OnBoarding2State extends State<OnBoarding2> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                 
                   end: Alignment.bottomCenter,
                   colors: [
                     Color(0xFF2D5586).withOpacity(0.2),
                     Color(0xFF171E45).withOpacity(0.9),
                   ],
+                  stops: [0.0, 0.7],
                 ),
               ),
             ),
@@ -97,8 +95,7 @@ class _OnBoarding2State extends State<OnBoarding2> {
                       },
                       child: Text(
                         "Skip",
-                        style: TextStyle(
-                          fontFamily: "Nunito Sans",
+                        style: GoogleFonts.nunitoSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -108,9 +105,8 @@ class _OnBoarding2State extends State<OnBoarding2> {
                   ),
                 ),
 
-                SizedBox(height: 340,),
+                Spacer(flex: 12),
 
-                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Column(
@@ -119,32 +115,31 @@ class _OnBoarding2State extends State<OnBoarding2> {
                       Text(
                         Lorempsum.onboarding2Title,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: GoogleFonts.nunitoSans(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
-                          fontFamily: "Nunito Sans",
                         ),
                       ),
                       SizedBox(height: 12),
                       Text(
                         Lorempsum.onboarding2Description,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          fontFamily: "Nunito Sans",
                         ),
                       ),
                     ],
                   ),
                 ),
-                Spacer(),
+                Spacer(flex: 2,),
 
-               
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 62),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ).copyWith(bottom: 62),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -154,7 +149,9 @@ class _OnBoarding2State extends State<OnBoarding2> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => OnBoarding3()),
+                            MaterialPageRoute(
+                              builder: (context) => OnBoarding3(),
+                            ),
                           );
                         },
                         child: OnboardingNextButton(
@@ -164,7 +161,7 @@ class _OnBoarding2State extends State<OnBoarding2> {
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),

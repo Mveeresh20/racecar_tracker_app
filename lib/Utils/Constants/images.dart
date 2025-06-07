@@ -82,5 +82,12 @@ class Images {
   static const String noMap =
       "https://ik.imagekit.io/sports123/Vector%20206%20(1).png?updatedAt=1749098309965";
 
+  static const String navBarImg =
+      "https://ik.imagekit.io/sports123/Vector%20(1).png?updatedAt=1749274702988";
+  static const String navBarDeal =
+      "https://ik.imagekit.io/sports123/Vector%20(2).png?updatedAt=1749274898700";
+  static const navBarHome =
+      "https://ik.imagekit.io/sports123/Vector%20(3).png?updatedAt=1749275066141";
+
   // Add more as needed for other track names
 }

@@ -193,8 +193,8 @@ class _RacersScreenState extends State<RacersScreen> {
                                           child: Image.network(
                                             Images.helmet,
                                             color: Colors.white,
-                                            height: 24,
-                                            width: 24,
+                                            height: 30,
+                                            width: 30,
                                             fit: BoxFit.cover,
                                           ),
                                         ),
@@ -224,8 +224,8 @@ class _RacersScreenState extends State<RacersScreen> {
                                           builder: (context, provider, child) {
                                             return Image.network(
                                               provider.getProfileImageUrl(),
-                                              height: 24,
-                                              width: 24,
+                                              height: 30,
+                                              width: 30,
                                               fit: BoxFit.cover,
                                               errorBuilder: (
                                                 context,

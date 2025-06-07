@@ -514,6 +514,12 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                           onChanged:
                               (val) =>
                                   _safeSetState(() => _selectedTrack = val),
+                                  hint: Text(
+                            "Select Race track",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                          ),
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFF13386B),
@@ -524,7 +530,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                               horizontal: 12,
                               vertical: 12,
                             ),
-                            hintText: "Select race track...",
+                           
                             hintStyle: const TextStyle(color: Colors.white),
                           ),
                           dropdownColor: const Color(0xFF13386B),

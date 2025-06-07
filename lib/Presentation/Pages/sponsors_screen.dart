@@ -224,8 +224,8 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                                     ),
                                     child: Image.network(
                                     Images.sponser1,
-                                    height: 24,
-                                    width: 24,
+                                    height: 30,
+                                    width: 30,
                                     fit: BoxFit.cover,
                                   ),
                                   ),
@@ -265,8 +265,8 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                                         child: CachedNetworkImage(
                                           imageUrl:
                                               provider.getProfileImageUrl(),
-                                          height: 24,
-                                          width: 24,
+                                          height: 30,
+                                          width: 30,
                                           fit: BoxFit.cover,
                                           placeholder:
                                               (context, url) => Container(

@@ -186,11 +186,7 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
                                     ),
-                                    child: Icon(
-                                      Icons.flag,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
+                                    child: Image.network(Images.navBarImg),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
@@ -228,8 +224,8 @@ class _RaceEvetsScreenState extends State<RaceEvetsScreen> {
                                         child: CachedNetworkImage(
                                           imageUrl:
                                               provider.getProfileImageUrl(),
-                                          height: 24,
-                                          width: 24,
+                                          height: 30,
+                                          width: 30,
                                           fit: BoxFit.cover,
                                           placeholder:
                                               (context, url) => Container(

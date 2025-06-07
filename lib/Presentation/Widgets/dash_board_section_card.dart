@@ -78,7 +78,7 @@ class DashboardSectionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    "🗓️ No Expired Deals/ Pending Renewals ",
+                    "🗓️ No Upcoming Race Events",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -89,7 +89,7 @@ class DashboardSectionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    Lorempsum.pendingRenewals,
+                    Lorempsum.noNewRaceEvent,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,

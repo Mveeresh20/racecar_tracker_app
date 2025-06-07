@@ -17,6 +17,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  bool _isLoading = false;
+
   final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -25,22 +27,42 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleSignIn() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final user = await _authService.signIn(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      setState(() {
+        _isLoading = true;
+      });
 
-      if (user != null) {
-        print("User signed in: ${user.email}");
-        if (!mounted) return;
+      try {
+        final user = await _authService.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
 
-        // Use named route navigation
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-      } else {
         if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (user != null) {
+          print("User signed in: [38;5;2m");
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid credentials. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid credentials. Please try again.'),
+          SnackBar(
+            content: Text('An error occurred: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -173,16 +195,17 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -262,16 +285,17 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -282,27 +306,28 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             SizedBox(height: 20),
 
-                            InkWell(
-                              onTap: () {
-                                if (_formKey.currentState!.validate()) {
-                                  // Perform login action
-                                  print(
-                                    'Email: ${_emailController.text}, Password: ${_passwordController.text}',
-                                  );
-                                  _handleSignIn();
-                                }
-                              },
-
-                              child: OnboardingNextButton(
-                                text: "SIGN IN",
-                                icon: Icons.play_arrow,
-                              ),
-                            ),
+                            _isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : InkWell(
+                                  onTap: () {
+                                    if (_formKey.currentState!.validate()) {
+                                      _handleSignIn();
+                                    }
+                                  },
+                                  child: OnboardingNextButton(
+                                    text: "SIGN IN",
+                                    icon: Icons.play_arrow,
+                                  ),
+                                ),
                             SizedBox(height: 20),
-                            OrDivider(), // 4% spacing
+                            OrDivider(),
 
-                            SizedBox(height: 20), // 3% spacing
-                            // or Si Icon(icon, size: 16, color: Colors.black),sign in with
+                            SizedBox(height: 20),
+
                             InkWell(
                               onTap: () {
                                 _authService.signInWithApple();
@@ -314,27 +339,57 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             SizedBox(height: 20),
-                            InkWell(
-                              onTap: () {
-                                _authService.signInAnonymously(context);
-                              },
-                              child: SignInButton(
-                                text: "Continue as Guest",
-                                icon: Icons.play_arrow,
-                                iconFirst: false,
-                              ),
-                            ),
+                            _isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : InkWell(
+                                  onTap: () async {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    try {
+                                      await _authService.signInAnonymously(
+                                        context,
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "An error occurred: $e",
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    } finally {
+                                      if (mounted) {
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
+                                      }
+                                    }
+                                  },
+                                  child: SignInButton(
+                                    text: "Continue as Guest",
+                                    icon: Icons.play_arrow,
+                                    iconFirst: false,
+                                  ),
+                                ),
                           ],
                         ),
                       ),
                     ),
-                    SizedBox(height: 90),
+                    SizedBox(height: 17),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          "Don't have an account? ",
+                          "Already have an account? ",
                           style: TextStyle(
                             color: Colors.black,
                             fontFamily: "Montserrat",
@@ -346,11 +401,13 @@ class _LoginPageState extends State<LoginPage> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => SignUp()),
+                              MaterialPageRoute(
+                                builder: (context) => SignUp(),
+                              ),
                             );
                           },
                           child: const Text(
-                            'Sign up',
+                            'Sign in',
                             style: TextStyle(
                               fontSize: 16,
                               fontFamily: "Montserrat",
@@ -372,7 +429,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Custom Painter for the background
 class _BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

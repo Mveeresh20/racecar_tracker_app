@@ -283,10 +283,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                   ),
-                                  child: Icon(
-                                    Icons.home,
-                                    size: 24,
-                                    color: Colors.white,
+                                  child: Image.network(
+                                    Images.navBarHome
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -325,8 +323,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                     child: ClipOval(
                                       child: Image.network(
                                         provider.getProfileImageUrl(),
-                                        height: 24,
-                                        width: 24,
+                                        height: 30,
+                                        width: 30,
                                         fit: BoxFit.cover,
                                         errorBuilder: (
                                           context,
@@ -335,8 +333,8 @@ class _DealsScreenState extends State<DealsScreen> {
                                         ) {
                                           return Image.network(
                                             Images.profileImg,
-                                            height: 24,
-                                            width: 24,
+                                            height: 30,
+                                            width: 30,
                                             fit: BoxFit.cover,
                                           );
                                         },

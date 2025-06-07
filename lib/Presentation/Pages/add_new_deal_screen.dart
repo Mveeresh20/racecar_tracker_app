@@ -348,12 +348,21 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   items:
                       widget.sponsors
                           .map(
-                            (s) =>
-                                DropdownMenuItem(value: s, child: Text(s.name)),
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s.name,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           )
                           .toList(),
                   onChanged: (val) => setState(() => _selectedSponsor = val),
-                  decoration: _dropdownDecoration("Select sponsor..."),
+                  decoration: _dropdownDecoration(),
+                  hint: Text(
+                    "Select sponsor...",
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  ),
                   style: TextStyle(color: Colors.white),
                   dropdownColor: Color(0xFF13386B),
                   validator: (val) => val == null ? "Required" : null,
@@ -369,12 +378,21 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   items:
                       widget.racers
                           .map(
-                            (r) =>
-                                DropdownMenuItem(value: r, child: Text(r.name)),
+                            (r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(
+                                r.name,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           )
                           .toList(),
                   onChanged: (val) => setState(() => _selectedRacer = val),
-                  decoration: _dropdownDecoration("Select racer..."),
+                  decoration: _dropdownDecoration(),
+                  hint: Text(
+                    "Select Racer...",
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  ),
                   style: TextStyle(color: Colors.white),
                   dropdownColor: Color(0xFF13386B),
                   validator: (val) => val == null ? "Required" : null,
@@ -389,12 +407,21 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                   items:
                       widget.events
                           .map(
-                            (e) =>
-                                DropdownMenuItem(value: e, child: Text(e.name)),
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(
+                                e.name,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           )
                           .toList(),
                   onChanged: (val) => setState(() => _selectedEvent = val),
-                  decoration: _dropdownDecoration("Select event..."),
+                  decoration: _dropdownDecoration(),
+                  hint: Text(
+                    "Select Race Event...",
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  ),
                   style: TextStyle(color: Colors.white),
                   dropdownColor: Color(0xFF13386B),
                   validator: (val) => val == null ? "Required" : null,
@@ -403,14 +430,36 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
               SizedBox(height: 16),
 
               // Deal Terms & Commission
-              _buildLabel("Deal Terms & Commission"),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      "\$",
+                      style: TextStyle(color: Colors.white54, fontSize: 16),
+                    ),
+                    SizedBox(width: 4),
+
+                    Text(
+                      "Deal Terms & Commission",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               SizedBox(height: 8),
               _buildLabel("Total Deal Amount"),
               SizedBox(height: 8),
 
               _buildTextField(
                 _dealAmountController,
-                "Enter Amount",
+                "\$ Enter Amount",
                 keyboardType: TextInputType.number,
               ),
               SizedBox(height: 16),
@@ -426,7 +475,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                         _buildLabel("Your Commission"),
                         _buildTextField(
                           _commissionController,
-                          "Enter Commission",
+                          "\$ Enter Commission",
                         ),
                       ],
                     ),
@@ -437,8 +486,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildLabel("Your Earn"),
-                        _buildTextField(_earnController, "Your Earn"),
+                        _buildLabel("Your Earnings"),
+                        _buildTextField(_earnController, "\$ Your Earnings"),
                       ],
                     ),
                   ),
@@ -537,48 +586,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
               SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Wrap(
-                  alignment: WrapAlignment.start,
-                  spacing: 10.0,
-                  runSpacing: 10.0,
-                  children:
-                      _brandingLocations.map((part) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFF27518A),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Checkbox(
-                                  side: BorderSide(color: Colors.white),
-                                  value: _selectedBranding.contains(part),
-                                  onChanged: (bool? selected) {
-                                    setState(() {
-                                      if (selected == true) {
-                                        _selectedBranding.add(part);
-                                      } else {
-                                        _selectedBranding.remove(part);
-                                      }
-                                    });
-                                  },
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16),
-                                  child: Text(
-                                    part,
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                ),
+                child: Column(children: _buildBoxRows()),
               ),
 
               SizedBox(height: 16),
@@ -601,7 +609,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            "Upload required logo to advertise ...",
+                            "Upload logo to advertise ...",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -762,7 +770,11 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
                           )
                           .toList(),
                   onChanged: (val) => setState(() => _renewalReminder = val),
-                  decoration: _dropdownDecoration("Select renewal reminder..."),
+                  decoration: _dropdownDecoration(),
+                  hint: Text(
+                    "Select Renewal Reminder...",
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  ),
                   style: TextStyle(color: Colors.white),
                   dropdownColor: Color(0xFF13386B),
                   validator: (val) => val == null ? "Required" : null,
@@ -820,14 +832,75 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
       ),
     ),
   );
+  List<Widget> _buildBoxRows() {
+    List<Widget> rows = [];
 
-  InputDecoration _dropdownDecoration(String hint) => InputDecoration(
+    for (int i = 0; i < _brandingLocations.length; i += 2) {
+      final first = _brandingLocations[i];
+      final second =
+          (i + 1 < _brandingLocations.length)
+              ? _brandingLocations[i + 1]
+              : null;
+
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildBrandingBox(first),
+              second != null
+                  ? _buildBrandingBox(second)
+                  : SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                  ), // Placeholder for spacing
+            ],
+          ),
+        ),
+      );
+    }
+
+    return rows;
+  }
+
+  Widget _buildBrandingBox(String part) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFF27518A),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Checkbox(
+            side: BorderSide(color: Colors.white),
+            value: _selectedBranding.contains(part),
+            onChanged: (bool? selected) {
+              setState(() {
+                if (selected == true) {
+                  _selectedBranding.add(part);
+                } else {
+                  _selectedBranding.remove(part);
+                }
+              });
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Text(part, style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _dropdownDecoration() => InputDecoration(
     alignLabelWithHint: true,
     filled: true,
     fillColor: const Color(0xFF13386B),
     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-    hintText: hint,
-    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+
     enabledBorder: OutlineInputBorder(
       borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
       borderRadius: BorderRadius.circular(8),

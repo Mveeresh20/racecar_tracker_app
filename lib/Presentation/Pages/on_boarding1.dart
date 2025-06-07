@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_map_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/login_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/on_boarding2.dart';
@@ -81,11 +82,13 @@ class _OnBoarding1State extends State<OnBoarding1> {
       ),
     ),
 
+    SafeArea(child: 
+
     
     Column(
       children: [
         Padding(
-          padding: const EdgeInsets.only(right: 24, top: 60),
+          padding: const EdgeInsets.only(right: 24, top: 35),
           child: Align(
             alignment: Alignment.topRight,
             child: GestureDetector(
@@ -97,8 +100,8 @@ class _OnBoarding1State extends State<OnBoarding1> {
               },
               child: Text(
                 "Skip",
-                style: TextStyle(
-                  fontFamily: "Nunito Sans",
+                style: GoogleFonts.nunitoSans(
+                  
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -107,7 +110,7 @@ class _OnBoarding1State extends State<OnBoarding1> {
             ),
           ),
         ),
-        SizedBox(height: 82),
+        SizedBox(height: 36),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Column(
@@ -115,22 +118,22 @@ class _OnBoarding1State extends State<OnBoarding1> {
               Text(
                 Lorempsum.onboarding1Title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style:GoogleFonts.nunitoSans (
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  fontFamily: "Nunito Sans",
+                  
                 ),
               ),
               SizedBox(height: 12),
               Text(
                 Lorempsum.onboarding1Description,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
+                style:GoogleFonts.montserrat (
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
-                  fontFamily: "Nunito Sans",
+                  
                 ),
               ),
             ],
@@ -161,6 +164,7 @@ class _OnBoarding1State extends State<OnBoarding1> {
         ),
       ],
     ),
+    )
   ],
 ),
 

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
 import 'package:racecar_tracker/Services/racer_provider.dart';
@@ -95,10 +97,20 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
     );
     if (picked != null) {
       setState(() {
-        if (isStart)
+        if (isStart) {
           _startDate = picked;
-        else
-          _endDate = picked;
+          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+            _endDate = null;
+          }
+        } else {
+          if (_startDate != null && picked.isBefore(_startDate!)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('End Date must be after Start Date')),
+            );
+          } else {
+            _endDate = picked;
+          }
+        }
       });
     }
   }
@@ -115,6 +127,15 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
     if (_vehicleImageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload a vehicle image')),
+      );
+      return;
+    }
+
+    if (_startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('End Date must be after Start Date')),
       );
       return;
     }
@@ -356,9 +377,81 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                       style: const TextStyle(color: Colors.red),
                     )
                   else if (events.isEmpty)
-                    const Text(
-                      'No events available. Please create an event first.',
-                      style: TextStyle(color: Colors.white70),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Color(0xFF13386B),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Text(
+                                'No Race Events available. Create an event first.',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+
+                            SizedBox(height: 8),
+
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: kDefaultPadding,
+                                vertical: 8.0,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => AddNewEventScreen(),
+                                      ),
+                                    );
+                                    // Refresh events after returning
+                                    final userId =
+                                        UserService().getCurrentUserId();
+                                    if (userId != null) {
+                                      eventProvider.initUserEvents(userId);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.add,
+                                    color: Colors.black,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    "Add New Race Event",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color(0xFFFFCC29),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(60),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     )
                   else
                     Padding(
@@ -369,6 +462,7 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                             events
                                 .map(
                                   (event) => DropdownMenuItem(
+                                    
                                     value: event,
                                     child: Text(
                                       event.name,
@@ -376,11 +470,19 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                                         color: Colors.white,
                                       ),
                                     ),
+                                    
                                   ),
+                                  
                                 )
                                 .toList(),
                         onChanged:
                             (val) => setState(() => _selectedEvent = val),
+                            hint: Text(
+                            "Select an Event",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                          ),
                         decoration: InputDecoration(
                           labelStyle: TextStyle(color: Colors.white),
                           filled: true,
@@ -410,7 +512,7 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                             borderSide: const BorderSide(color: Colors.red),
                           ),
 
-                          hintText: "Select Event...",
+                          
                           hintStyle: TextStyle(
                             color: Colors.white.withOpacity(0.6),
                           ),
@@ -422,50 +524,50 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                       ),
                     ),
                   SizedBox(height: 18),
-                  _label("Deal Validity Dates"),
+                  _label("Deal Validity"),
                   SizedBox(height: 8),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
-                    
+
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _label("Start Date"),
+                              SizedBox(height: 8),
                               _datePickerBox(
                                 context,
                                 _startDate,
                                 "mm/dd/yyyy",
                                 () => _pickDate(true),
                               ),
-                              SizedBox(height: 4,),
-                              _label("Start Date"),
                             ],
                           ),
                         ),
-                        SizedBox(width: 8,),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _label("End Date"),
+                              SizedBox(height: 8),
                               _datePickerBox(
                                 context,
                                 _endDate,
                                 "mm/dd/yyyy",
                                 () => _pickDate(false),
                               ),
-                              SizedBox(height: 4,),
-                              _label("End Date"),
                             ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -613,7 +715,10 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
           fillColor: const Color(0xFF13386B),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(
+              color: Colors.white.withOpacity(0.2),
+              width: 1,
+            ),
           ),
           hintText: hint,
           hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),

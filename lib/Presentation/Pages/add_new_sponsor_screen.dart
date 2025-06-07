@@ -86,6 +86,12 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedEndDate.isBefore(DateTime.now())) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('End Date must be after today')));
+        return;
+      }
       final userId = widget.provider.currentUserId;
       if (userId == null) {
         ScaffoldMessenger.of(
@@ -164,6 +170,12 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
   Future<void> _submitAndMakeDeal() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedEndDate.isBefore(DateTime.now())) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('End Date must be after today')));
+        return;
+      }
       final userId = widget.provider.currentUserId;
       if (userId == null) {
         ScaffoldMessenger.of(
@@ -372,16 +384,16 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                             : null,
               ),
               _buildFormField(
-                "Comapany name",
+                "Logo Upload",
                 _logoUploadController,
-                "Enter the name of Sponsr Comapny",
+                "Upload Logo of Sponsor Company",
                 isOptional: true,
               ),
               _buildDatePicker(),
               _buildFormField(
                 "Expected Sponsorship Amount (USD)",
                 _sponsorshipAmountController,
-                "Enter Amount",
+                "\$ Enter Amount",
                 keyboardType: TextInputType.number,
                 validator:
                     (value) =>
@@ -580,61 +592,134 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            "Preferred Branding Locations:",
+            "Preferred Branding Locations",
             style: context.titleSmall?.copyWith(color: Colors.white),
           ),
         ),
+        SizedBox(height: 8,),
+
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 10.0,
-            runSpacing: 10.0,
-            children:
-                _availableParts.map((part) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF27518A),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.zero,
-                          child: Checkbox(
-                            side: const BorderSide(color: Colors.white),
-                            value: _selectedParts.contains(part),
-                            onChanged: (bool? selected) {
-                              setState(() {
-                                if (selected == true) {
-                                  _selectedParts.add(part);
-                                } else {
-                                  _selectedParts.remove(part);
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16),
-                          child: Text(
-                            part,
-                            style: context.labelLarge?.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-          ),
-        ),
-        const SizedBox(height: 16),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: Column(
+    children: _buildPartRows(),
+  ),
+),
+
+
+        
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 16),
+        //   child: Wrap(
+        //     spacing: 10.0,
+        //     runSpacing: 10.0,
+        //     children:
+        //         _availableParts.map((part) {
+        //           return Container(
+        //             decoration: BoxDecoration(
+        //               color: const Color(0xFF27518A),
+        //               borderRadius: BorderRadius.circular(8),
+        //             ),
+        //             child: Row(
+        //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //               mainAxisSize: MainAxisSize.min,
+        //               children: [
+        //                 Container(
+        //                   padding: EdgeInsets.zero,
+        //                   child: Checkbox(
+        //                     side: const BorderSide(color: Colors.white),
+        //                     value: _selectedParts.contains(part),
+        //                     onChanged: (bool? selected) {
+        //                       setState(() {
+        //                         if (selected == true) {
+        //                           _selectedParts.add(part);
+        //                         } else {
+        //                           _selectedParts.remove(part);
+        //                         }
+        //                       });
+        //                     },
+        //                   ),
+        //                 ),
+        //                 Padding(
+        //                   padding: const EdgeInsets.only(right: 16),
+        //                   child: Text(
+        //                     part,
+        //                     style: context.labelLarge?.copyWith(
+        //                       color: Colors.white,
+        //                     ),
+        //                   ),
+        //                 ),
+        //               ],
+        //             ),
+        //           );
+        //         }).toList(),
+        //   ),
+        // ),
+         SizedBox(height: 16),
       ],
     );
   }
+
+  Widget _buildPartBox(String part) {
+  return Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF27518A),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Checkbox(
+          side: const BorderSide(color: Colors.white),
+          value: _selectedParts.contains(part),
+          onChanged: (bool? selected) {
+            setState(() {
+              if (selected == true) {
+                _selectedParts.add(part);
+              } else {
+                _selectedParts.remove(part);
+              }
+            });
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Text(
+            part,
+            style: context.labelLarge?.copyWith(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+  List<Widget> _buildPartRows() {
+  List<Widget> rows = [];
+
+  for (int i = 0; i < _availableParts.length; i += 2) {
+    final String first = _availableParts[i];
+    final String? second = (i + 1 < _availableParts.length) ? _availableParts[i + 1] : null;
+
+    rows.add(
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildPartBox(first),
+            const SizedBox(width: 10),
+            second != null
+                ? _buildPartBox(second)
+                : SizedBox(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  return rows;
+}
+
 
   Widget _buildNotesField() {
     return Column(

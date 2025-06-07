@@ -17,31 +17,51 @@ class SignUp extends StatefulWidget {
 
 class _SignUpState extends State<SignUp> {
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   void _handleSignUp() async {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        _isLoading = true;
+      });
       print("Form is valid");
 
-      final user = await _authService.signUp(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        name: _nameController.text.trim(),
-      );
-      print("Trying to sign up with: ${_emailController.text.trim()}");
-      print("Password: ${_passwordController.text.trim()}");
-
-      if (user != null) {
-        print("User signed up: ${user.email}");
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+      try {
+        final user = await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+          name: _nameController.text.trim(),
         );
-      } else {
+        print("Trying to sign up with: ${_emailController.text.trim()}");
+        print("Password: ${_passwordController.text.trim()}");
+
         if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (user != null) {
+          print("User signed up: ${user.email}");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Sign-up failed. Please try again."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Sign-up failed. Please try again."),
+          SnackBar(
+            content: Text("An error occurred: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -70,7 +90,7 @@ class _SignUpState extends State<SignUp> {
     final regex = RegExp(pattern);
     if (value == null || value.isEmpty) return "Password is required";
     if (!regex.hasMatch(value)) {
-      return "Password must include uppercase, lowercase, number, and special character";
+      return "Password must be 8 characters length";
     }
     return null;
   }
@@ -188,7 +208,7 @@ class _SignUpState extends State<SignUp> {
                                   horizontal: 16,
                                   vertical: 10,
                                 ),
-                                labelText: 'Enter your Name...',
+                                labelText: 'Enter your Name..',
                                 labelStyle: const TextStyle(
                                   color: Colors.white,
                                 ),
@@ -211,16 +231,17 @@ class _SignUpState extends State<SignUp> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                             ),
                             SizedBox(height: 10),
@@ -277,16 +298,17 @@ class _SignUpState extends State<SignUp> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                             ),
                             SizedBox(height: 10),
@@ -356,16 +378,17 @@ class _SignUpState extends State<SignUp> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                             ),
                             SizedBox(height: 10),
@@ -401,7 +424,7 @@ class _SignUpState extends State<SignUp> {
                                 labelStyle: const TextStyle(
                                   color: Colors.white,
                                 ),
-                                hintText: 'Confiem Password',
+                                hintText: 'Confirm Password',
                                 hintStyle: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                 ),
@@ -433,32 +456,38 @@ class _SignUpState extends State<SignUp> {
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                    color: Colors.red,
+                                    color: Color(0xFFDAA520),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                errorStyle: TextStyle(color: Color(0xFFDAA520)),
                               ),
                             ),
                             SizedBox(height: 20),
 
-                            InkWell(
-                              onTap: () {
-                                if (_formKey.currentState!.validate()) {
-                                  _handleSignUp();
-                                }
-                              },
-
-                              child: OnboardingNextButton(
-                                text: "SIGN UP",
-                                icon: Icons.play_arrow,
-                              ),
-                            ),
+                            _isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : InkWell(
+                                  onTap: () {
+                                    if (_formKey.currentState!.validate()) {
+                                      _handleSignUp();
+                                    }
+                                  },
+                                  child: OnboardingNextButton(
+                                    text: "SIGN UP",
+                                    icon: Icons.play_arrow,
+                                  ),
+                                ),
                             SizedBox(height: 20),
                             OrDivider(),
 
@@ -475,16 +504,46 @@ class _SignUpState extends State<SignUp> {
                               ),
                             ),
                             SizedBox(height: 20),
-                            InkWell(
-                              onTap: () {
-                                _authService.signInAnonymously(context);
-                              },
-                              child: SignInButton(
-                                text: "Continue as Guest",
-                                icon: Icons.play_arrow,
-                                iconFirst: false,
-                              ),
-                            ),
+                            _isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : InkWell(
+                                  onTap: () async {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    try {
+                                      await _authService.signInAnonymously(
+                                        context,
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "An error occurred: $e",
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    } finally {
+                                      if (mounted) {
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
+                                      }
+                                    }
+                                  },
+                                  child: SignInButton(
+                                    text: "Continue as Guest",
+                                    icon: Icons.play_arrow,
+                                    iconFirst: false,
+                                  ),
+                                ),
                           ],
                         ),
                       ),
