@@ -70,22 +70,59 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   bool _isLoading = false;
 
   Future<void> _pickDate(BuildContext context, bool isStart) async {
+    final DateTime now = DateTime.now();
+    final DateTime firstDate = DateTime(2000); // Allow dates from year 2000
+    final DateTime lastDate = DateTime(2100); // Allow dates until year 2100
+
+    // For end date, if start date is selected, use it as the minimum date
+    final DateTime initialDate =
+        isStart ? (_startDate ?? now) : (_endDate ?? (_startDate ?? now));
+
+    final DateTime minDate = isStart ? firstDate : (_startDate ?? firstDate);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate:
-          isStart
-              ? (_startDate ?? DateTime.now())
-              : (_endDate ?? DateTime.now()),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
+      initialDate: initialDate,
+      firstDate: minDate,
+      lastDate: lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              // Body text color
+            ),
+            dialogBackgroundColor: const Color(
+              0xFF13386B,
+            ), // Dialog background color
+          ),
+          child: child!,
+        );
+      },
     );
-    if (picked != null)
+
+    if (picked != null) {
       setState(() {
-        if (isStart)
+        if (isStart) {
           _startDate = picked;
-        else
-          _endDate = picked;
+          // If end date is before new start date, reset it
+          if (_endDate != null && _endDate!.isBefore(picked)) {
+            _endDate = null;
+          }
+        } else {
+          // Only set end date if it's after start date
+          if (_startDate == null || picked.isAfter(_startDate!)) {
+            _endDate = picked;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('End date must be after start date'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       });
+    }
   }
 
   Future<void> _pickImages() async {

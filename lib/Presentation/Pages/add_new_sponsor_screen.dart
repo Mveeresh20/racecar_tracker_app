@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
+import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:intl/intl.dart';
@@ -40,6 +42,26 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
   DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 365));
   Set<String> _selectedParts = {};
 
+  String? _companyLogo;
+
+  Future<void> _pickImage(bool isProfileImage) async {
+    ImagePickerUtil().showImageSourceSelection(
+      context,
+      (String imagePath) {
+        setState(() {
+          // Store just the filename, the full URL will be constructed when displaying
+          _companyLogo = imagePath;
+          debugPrint('Logo path saved: $_companyLogo'); // Debug log
+        });
+      },
+      (String error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $error')),
+        );
+      },
+    );
+  }
+
   final List<String> _availableParts = [
     "Pit Banner",
     "Suit",
@@ -64,7 +86,8 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
       _sponsorshipAmountController.text =
           widget.existingSponsor!.sponsorshipAmount ?? '';
       _notesController.text = widget.existingSponsor!.notes ?? '';
-      _logoUploadController.text = widget.existingSponsor!.logoUrl ?? '';
+      _companyLogo = widget.existingSponsor!.logoUrl ?? '';
+      // _logoUploadController.text = widget.existingSponsor!.logoUrl ?? '';
       _emailController.text = widget.existingSponsor!.email;
       _selectedEndDate = widget.existingSponsor!.endDate;
       _selectedParts = Set<String>.from(widget.existingSponsor!.parts);
@@ -87,9 +110,9 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedEndDate.isBefore(DateTime.now())) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('End Date must be after today')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('End Date must be after today')),
+        );
         return;
       }
       final userId = widget.provider.currentUserId;
@@ -116,9 +139,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
         // Create sponsor with validated data
         final sponsor = Sponsor(
-          id:
-              widget.existingSponsor?.id ??
-              const Uuid().v4(), // Use existing ID if editing
+          id: widget.existingSponsor?.id ?? const Uuid().v4(),
           userId: userId,
           initials: initials,
           name: _sponsorNameController.text.trim(),
@@ -126,7 +147,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           contactPerson: _contactPersonController.text.trim(),
           contactNumber: _contactNumberController.text.trim(),
           industryType: _industryTypeController.text.trim(),
-          logoUrl: _logoUploadController.text.trim(),
+          logoUrl: _companyLogo, // This will be just the filename
           parts: _selectedParts.toList(),
           activeDeals: widget.existingSponsor?.activeDeals ?? 0,
           endDate: _selectedEndDate,
@@ -139,6 +160,10 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           commission: widget.existingSponsor?.commission ?? "0%",
           lastDealAmount: widget.existingSponsor?.lastDealAmount,
         );
+
+        debugPrint(
+          'Saving sponsor with logo URL: ${sponsor.logoUrl}',
+        ); // Debug log
 
         // Save sponsor to database
         if (widget.existingSponsor != null) {
@@ -211,7 +236,8 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           contactPerson: _contactPersonController.text.trim(),
           contactNumber: _contactNumberController.text.trim(),
           industryType: _industryTypeController.text.trim(),
-          logoUrl: _logoUploadController.text.trim(),
+          logoUrl: _companyLogo,
+
           parts: _selectedParts.toList(),
           activeDeals: 0,
           endDate: _selectedEndDate,
@@ -259,6 +285,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
     _notesController.dispose();
     _logoUploadController.dispose();
     _emailController.dispose();
+
     super.dispose();
   }
 
@@ -383,12 +410,17 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                             ? "Please enter industry type"
                             : null,
               ),
-              _buildFormField(
-                "Logo Upload",
-                _logoUploadController,
-                "Upload Logo of Sponsor Company",
-                isOptional: true,
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildImagePicker(_companyLogo, true, "Logo Upload"),
               ),
+              // _buildFormField(
+              //   "Logo Upload",
+              //   _logoUploadController,
+              //   "Upload Logo of Sponsor Company",
+              //   isOptional: true,
+              // ),
               _buildDatePicker(),
               _buildFormField(
                 "Expected Sponsorship Amount (USD)",
@@ -585,6 +617,196 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
     );
   }
 
+  Widget _buildImagePicker(
+    String? imageUrl,
+    bool isProfileImage,
+    String label,
+  ) {
+    final imageUtil = ImagePickerUtil();
+    final imageResolvedUrl =
+        imageUrl != null && imageUrl.isNotEmpty
+            ? imageUtil.getUrlForUserUploadedImage(imageUrl)
+            : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        /// Upload Box
+        GestureDetector(
+          onTap: () => _pickImage(isProfileImage),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFF13386B),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Upload logo of sponsors company...",
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Image.network(Images.logoImg),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        /// Show Uploaded Image with Cancel Icon
+        if (imageResolvedUrl != null)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  imageResolvedUrl,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: 200,
+                  alignment: Alignment.center,
+                  errorBuilder:
+                      (context, error, stackTrace) =>
+                          _buildPlaceholder(isProfileImage),
+                ),
+              ),
+              // Cancel button
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _companyLogo = null;
+                    });
+                  },
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black54,
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  //   Widget _buildImagePicker(
+  //     String? imageUrl,
+  //     bool isProfileImage,
+  //     String label,
+  //   ) {
+  //     final imageUtil = ImagePickerUtil();
+  //     final imageResolvedUrl =
+  //         imageUrl != null && imageUrl.isNotEmpty
+  //             ? imageUtil.getUrlForUserUploadedImage(imageUrl)
+  //             : null;
+
+  //     return Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             color: Colors.white,
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w500,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 6),
+  //         GestureDetector(
+  //           onTap: () => _pickImage(isProfileImage),
+  //           child: Container(
+  //             height: 100,
+  //             decoration: BoxDecoration(
+  //               color: const Color(0xFF13386B),
+  //               borderRadius: BorderRadius.circular(12),
+  //               border: Border.all(
+  //                 color: Colors.white.withOpacity(0.2),
+  //                 width: 2,
+  //               ),
+  //             ),
+  //             child:  ClipRRect(
+  //   borderRadius: BorderRadius.circular(10),
+  //   child: imageResolvedUrl != null
+  //       ? Image.network(
+  //           imageResolvedUrl,
+  //           fit: BoxFit.contain,
+  //           width: double.infinity,
+  //           height: 100,
+  //           alignment: Alignment.center,
+  //           errorBuilder: (context, error, stackTrace) =>
+  //               _buildPlaceholder(isProfileImage),
+  //         )
+  //       : _buildPlaceholder(isProfileImage),
+  // ),
+
+  //             // child: ClipRRect(
+  //             //   borderRadius: BorderRadius.circular(10),
+  //             //   child:
+  //             //       imageResolvedUrl != null
+  //             //           ? Image.network(
+  //             //             imageResolvedUrl,
+  //             //             fit: BoxFit.cover,
+  //             //             width: double.infinity,
+
+  //             //             errorBuilder:
+  //             //                 (context, error, stackTrace) =>
+  //             //                     _buildPlaceholder(isProfileImage),
+  //             //           )
+  //             //           : _buildPlaceholder(isProfileImage),
+  //             // ),
+  //           ),
+  //         ),
+  //       ],
+  //     );
+  //   }
+
+  Widget _buildPlaceholder(bool isProfileImage) {
+    return Center(
+      child: Icon(
+        isProfileImage ? Icons.add : Icons.add,
+        color: Colors.white54,
+        size: 40,
+      ),
+    );
+  }
+
   Widget _buildPartsSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -596,17 +818,13 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
             style: context.titleSmall?.copyWith(color: Colors.white),
           ),
         ),
-        SizedBox(height: 8,),
+        SizedBox(height: 8),
 
         Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16),
-  child: Column(
-    children: _buildPartRows(),
-  ),
-),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(children: _buildPartRows()),
+        ),
 
-
-        
         // Padding(
         //   padding: const EdgeInsets.symmetric(horizontal: 16),
         //   child: Wrap(
@@ -654,72 +872,70 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         //         }).toList(),
         //   ),
         // ),
-         SizedBox(height: 16),
+        SizedBox(height: 16),
       ],
     );
   }
 
   Widget _buildPartBox(String part) {
-  return Container(
-    decoration: BoxDecoration(
-      color: const Color(0xFF27518A),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Row(
-      
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Checkbox(
-          side: const BorderSide(color: Colors.white),
-          value: _selectedParts.contains(part),
-          onChanged: (bool? selected) {
-            setState(() {
-              if (selected == true) {
-                _selectedParts.add(part);
-              } else {
-                _selectedParts.remove(part);
-              }
-            });
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Text(
-            part,
-            style: context.labelLarge?.copyWith(color: Colors.white),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF27518A),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Checkbox(
+            side: const BorderSide(color: Colors.white),
+            value: _selectedParts.contains(part),
+            onChanged: (bool? selected) {
+              setState(() {
+                if (selected == true) {
+                  _selectedParts.add(part);
+                } else {
+                  _selectedParts.remove(part);
+                }
+              });
+            },
           ),
-        ),
-      ],
-    ),
-  );
-}
-  List<Widget> _buildPartRows() {
-  List<Widget> rows = [];
-
-  for (int i = 0; i < _availableParts.length; i += 2) {
-    final String first = _availableParts[i];
-    final String? second = (i + 1 < _availableParts.length) ? _availableParts[i + 1] : null;
-
-    rows.add(
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildPartBox(first),
-            const SizedBox(width: 10),
-            second != null
-                ? _buildPartBox(second)
-                : SizedBox(),
-          ],
-        ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Text(
+              part,
+              style: context.labelLarge?.copyWith(color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  return rows;
-}
+  List<Widget> _buildPartRows() {
+    List<Widget> rows = [];
 
+    for (int i = 0; i < _availableParts.length; i += 2) {
+      final String first = _availableParts[i];
+      final String? second =
+          (i + 1 < _availableParts.length) ? _availableParts[i + 1] : null;
+
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildPartBox(first),
+              const SizedBox(width: 10),
+              second != null ? _buildPartBox(second) : SizedBox(),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return rows;
+  }
 
   Widget _buildNotesField() {
     return Column(

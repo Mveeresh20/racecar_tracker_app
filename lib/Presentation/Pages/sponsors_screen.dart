@@ -13,6 +13,7 @@ import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:racecar_tracker/Services/deal_service.dart';
 
 class SponsorsScreen extends StatefulWidget {
   const SponsorsScreen({super.key});
@@ -25,6 +26,7 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isInitialized = false;
   String? _currentUserId;
+  final DealService _dealService = DealService();
 
   @override
   void initState() {
@@ -113,10 +115,25 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
   }
 
   // Function to get deal items for a sponsor
-  List<DealItem> _getDealItemsForSponsor(String sponsorName) {
-    // TODO: Implement actual deal items fetching from your service
-    // For now, return an empty list
-    return [];
+  Stream<List<DealItem>> _getDealItemsForSponsor(String sponsorName) {
+    final userId = UserService().getCurrentUserId();
+    if (userId == null) {
+      print('No user logged in when trying to get deals');
+      return Stream.value([]);
+    }
+
+    // Find the sponsor ID from the name
+    final sponsorProvider = Provider.of<SponsorProvider>(
+      context,
+      listen: false,
+    );
+    final sponsor = sponsorProvider.sponsors.firstWhere(
+      (s) => s.name == sponsorName,
+      orElse: () => throw Exception('No sponsor found with name: $sponsorName'),
+    );
+
+    // Return the stream of deals for this sponsor
+    return _dealService.streamDealsBySponsor(userId, sponsor.id);
   }
 
   @override
@@ -223,11 +240,11 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                                       horizontal: 8,
                                     ),
                                     child: Image.network(
-                                    Images.sponser1,
-                                    height: 30,
-                                    width: 30,
-                                    fit: BoxFit.cover,
-                                  ),
+                                      Images.sponser1,
+                                      height: 30,
+                                      width: 30,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
@@ -400,7 +417,7 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisAlignment: MainAxisAlignment.center,
-                                        
+
                               children: [
                                 Image.network(
                                   Images.noSponsor,
@@ -418,7 +435,7 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
                                   textAlign: TextAlign.center,
                                 ),
                                 SizedBox(height: 12),
-                                        
+
                                 Text(
                                   Lorempsum.noSponsorText,
                                   style: TextStyle(

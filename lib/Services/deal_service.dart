@@ -307,11 +307,25 @@ class DealService extends BaseService {
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
       if (data == null) return <DealItem>[];
 
-      return data.entries.map((entry) {
-        final map = Map<String, dynamic>.from(entry.value as Map);
-        map['id'] = entry.key;
-        return _fromMapSimple(map);
-      }).toList();
+      final deals =
+          data.entries.map((entry) {
+            final map = Map<String, dynamic>.from(entry.value as Map);
+            map['id'] = entry.key;
+            return _fromMapSimple(map);
+          }).toList();
+
+      // Sort deals by creation date in descending order (most recent first)
+      deals.sort((a, b) {
+        final aDate = DateTime.fromMillisecondsSinceEpoch(
+          (data[a.id] as Map)['createdAt'] as int,
+        );
+        final bDate = DateTime.fromMillisecondsSinceEpoch(
+          (data[b.id] as Map)['createdAt'] as int,
+        );
+        return bDate.compareTo(aDate);
+      });
+
+      return deals;
     });
   }
 

@@ -10,10 +10,12 @@ import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:racecar_tracker/Services/sponsor_provider.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
 
 class SponsorCardItem extends StatelessWidget {
   final Sponsor sponsor;
-  final List<DealItem> Function(String sponsorName) getDealItemsForSponsor;
+  final Stream<List<DealItem>> Function(String sponsorName)
+  getDealItemsForSponsor;
 
   const SponsorCardItem({
     Key? key,
@@ -39,7 +41,7 @@ class SponsorCardItem extends StatelessWidget {
               // Top Row: Initials, Name, Email
               Row(
                 children: [
-                  // Initials Circle
+                  // Logo or Initials Circle
                   Container(
                     width: 40,
                     height: 40,
@@ -52,14 +54,47 @@ class SponsorCardItem extends StatelessWidget {
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      sponsor.initials,
-                      style: const TextStyle(
-                        color: Color(0xFFFFCC29),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
+                    child:
+                        sponsor.logoUrl != null && sponsor.logoUrl!.isNotEmpty
+                            ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: ImagePickerUtil()
+                                    .getUrlForUserUploadedImage(
+                                      sponsor.logoUrl!,
+                                    ),
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (context, url) => const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFFFFCC29),
+                                            ),
+                                      ),
+                                    ),
+                                errorWidget:
+                                    (context, url, error) => Text(
+                                      sponsor.initials,
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFCC29),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                              ),
+                            )
+                            : Text(
+                              sponsor.initials,
+                              style: const TextStyle(
+                                color: Color(0xFFFFCC29),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
                   ),
                   const SizedBox(width: 7),
                   Column(
@@ -131,16 +166,39 @@ class SponsorCardItem extends StatelessWidget {
                     children: [
                       // Action Icons
                       _buildActionButton(Icons.remove_red_eye_outlined, () {
-                        final dealsForThisSponsor = getDealItemsForSponsor(
+                        // Get the stream of deals for this sponsor
+                        final dealsStream = getDealItemsForSponsor(
                           sponsor.name,
                         );
+
+                        // Navigate to detail screen with a StreamBuilder
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
-                                (context) => SponsorDetailScreen(
-                                  sponsor: sponsor,
-                                  sponsorDealItems: dealsForThisSponsor,
+                                (context) => StreamBuilder<List<DealItem>>(
+                                  stream: dealsStream,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasError) {
+                                      print(
+                                        'Error fetching deals: ${snapshot.error}',
+                                      );
+                                      return SponsorDetailScreen(
+                                        sponsor: sponsor,
+                                        sponsorDealItems: [],
+                                      );
+                                    }
+
+                                    final deals = snapshot.data ?? [];
+                                    final mostRecentDeal =
+                                        deals.isNotEmpty ? deals.first : null;
+
+                                    return SponsorDetailScreen(
+                                      sponsor: sponsor,
+                                      sponsorDealItems: deals,
+                                      dealItem: mostRecentDeal,
+                                    );
+                                  },
                                 ),
                           ),
                         );

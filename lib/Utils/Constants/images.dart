@@ -88,6 +88,8 @@ class Images {
       "https://ik.imagekit.io/sports123/Vector%20(2).png?updatedAt=1749274898700";
   static const navBarHome =
       "https://ik.imagekit.io/sports123/Vector%20(3).png?updatedAt=1749275066141";
+  static const logoImg =
+      "https://ik.imagekit.io/sports123/Vector%20(4).png?updatedAt=1749304293061";
 
   // Add more as needed for other track names
 }

@@ -7,16 +7,23 @@ import 'package:racecar_tracker/Utils/Constants/images.dart'; // For Images.prof
 import 'package:racecar_tracker/Utils/theme_extensions.dart'; // For context.bodyMedium etc.
 import 'package:racecar_tracker/models/sponsor.dart'; // Import Sponsor model
 import 'package:racecar_tracker/models/deal_item.dart'; // Import the new DealItem model
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
 
 class SponsorDetailScreen extends StatelessWidget {
   final Sponsor sponsor;
   final List<DealItem> sponsorDealItems;
+  final DealItem? dealItem;
+
   // List of deals specifically for this sponsor
 
   const SponsorDetailScreen({
     Key? key,
     required this.sponsor,
-    required this.sponsorDealItems, // Pass relevant deals
+    required this.sponsorDealItems,
+    this.dealItem,
+
+    // Pass relevant deals
   }) : super(key: key);
 
   // Helper widget to build the "Parts" chips for deal items
@@ -135,7 +142,7 @@ class SponsorDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sponsor Initials, Name, and Type
+                  // Sponsor Initials/Logo, Name, and Type
                   Row(
                     children: [
                       Container(
@@ -143,23 +150,55 @@ class SponsorDetailScreen extends StatelessWidget {
                         height: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          color: const Color(
-                            0xFF252D38,
-                          ), // Dark grey background
+                          color: const Color(0xFF252D38),
                           border: Border.all(
                             color: Colors.white.withOpacity(0.3),
                             width: 1,
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          sponsor.initials,
-                          style: const TextStyle(
-                            color: Color(0xFFFFCC29), // Yellow initials
-                            fontWeight: FontWeight.w700,
-                            fontSize: 32,
-                          ),
-                        ),
+                        child:
+                            sponsor.logoUrl != null &&
+                                    sponsor.logoUrl!.isNotEmpty
+                                ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: CachedNetworkImage(
+                                    imageUrl: ImagePickerUtil()
+                                        .getUrlForUserUploadedImage(
+                                          sponsor.logoUrl!,
+                                        ),
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    placeholder:
+                                        (context, url) => const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Color(0xFFFFCC29),
+                                                ),
+                                          ),
+                                        ),
+                                    errorWidget:
+                                        (context, url, error) => Text(
+                                          sponsor.initials,
+                                          style: const TextStyle(
+                                            color: Color(0xFFFFCC29),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 32,
+                                          ),
+                                        ),
+                                  ),
+                                )
+                                : Text(
+                                  sponsor.initials,
+                                  style: const TextStyle(
+                                    color: Color(0xFFFFCC29),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 32,
+                                  ),
+                                ),
                       ),
                       const SizedBox(width: 16),
                       Column(
@@ -197,7 +236,7 @@ class SponsorDetailScreen extends StatelessWidget {
                         colors: [Color(0xFF8B6AD2), Color(0xFF211E83)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                      ), // Dark blue/purple background
+                      ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -207,17 +246,17 @@ class SponsorDetailScreen extends StatelessWidget {
                           "Active Deals",
                           sponsor.activeDeals.toString(),
                           context,
-                        ), // Dynamic from sponsor model
+                        ),
                         _buildSummaryColumn(
                           "Total Deals",
-                          "12",
+                          sponsorDealItems.length.toString(),
                           context,
-                        ), // Placeholder as per screenshot
+                        ),
                         _buildSummaryColumn(
                           "Commission",
-                          "20%",
+                          dealItem?.commission ?? "N/A",
                           context,
-                        ), // Placeholder as per screenshot
+                        ),
                       ],
                     ),
                   ),
@@ -237,7 +276,8 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "John Maeve", // Hardcoded as per screenshot. Consider adding to Sponsor model.
+                            sponsor
+                                .name, // Hardcoded as per screenshot. Consider adding to Sponsor model.
                             style: context.titleMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -267,7 +307,7 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "GT 12000", // Hardcoded as per screenshot. Consider adding to Sponsor model.
+                            sponsor.contactNumber ?? "",
                             style: context.titleMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -280,7 +320,11 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "\$1,200,000", // Hardcoded as per screenshot. Consider adding to Sponsor model.
+                            dealItem != null
+                                ? dealItem!
+                                    .dealValue // Use deal value from the passed deal
+                                : sponsor.lastDealAmount ??
+                                    "No deals yet", // Fallback to sponsor's last deal amount or default text
                             style: context.titleMedium?.copyWith(
                               color: Colors.white,
                             ),

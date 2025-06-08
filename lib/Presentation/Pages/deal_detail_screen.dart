@@ -68,7 +68,7 @@ class DealDetailScreen extends StatelessWidget {
                           ),
                           SizedBox(width: 16),
                           Text(
-                            "Racer Detail",
+                            "Deal Detail",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
