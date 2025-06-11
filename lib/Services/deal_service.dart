@@ -205,12 +205,20 @@ class DealService extends BaseService {
     try {
       final userDealsRef = getUserDealsRef(userId);
 
-      final deal = await getById<DealDetailItem>(
-        userDealsRef,
-        id,
-        DealDetailItem.fromMap,
-      );
-      if (deal == null) throw Exception('Deal not found');
+      // Get the existing deal to check if it exists
+      final snapshot = await userDealsRef.child(id).get();
+      if (!snapshot.exists) {
+        throw Exception('Deal not found');
+      }
+
+      final existingData = snapshot.value;
+      if (existingData == null) {
+        throw Exception('Deal data is null');
+      }
+
+      // Convert to proper Map type
+      final existingDealMap = Map<String, dynamic>.from(existingData as Map);
+      final existingDeal = DealDetailItem.fromMap(existingDealMap);
 
       final updates = <String, dynamic>{};
 
@@ -229,7 +237,7 @@ class DealService extends BaseService {
               dealValue * (commissionPercentage / 100);
         } else {
           updates['commissionAmount'] =
-              dealValue * (deal.commissionPercentage / 100);
+              dealValue * (existingDeal.commissionPercentage / 100);
         }
       }
       if (commissionPercentage != null) {
@@ -239,7 +247,7 @@ class DealService extends BaseService {
               dealValue * (commissionPercentage / 100);
         } else {
           updates['commissionAmount'] =
-              deal.dealValue * (commissionPercentage / 100);
+              existingDeal.dealValue * (commissionPercentage / 100);
         }
       }
       if (advertisingPositions != null)
@@ -285,14 +293,17 @@ class DealService extends BaseService {
       }
 
       updates['updatedAt'] = ServerValue.timestamp;
-      await update(userDealsRef, id, updates);
+
+      // Use the proper update method with type-safe Map
+      await userDealsRef.child(id).update(updates);
 
       // Update sponsor's active deals count if needed
-      if (sponsorId != null && sponsorId != deal.sponsorId) {
-        await _updateSponsorDealCount(deal.sponsorId, -1);
+      if (sponsorId != null && sponsorId != existingDeal.sponsorId) {
+        await _updateSponsorDealCount(existingDeal.sponsorId, -1);
         await _updateSponsorDealCount(sponsorId, 1);
       }
     } catch (e) {
+      print('Error updating deal: $e');
       rethrow;
     }
   }
@@ -300,23 +311,41 @@ class DealService extends BaseService {
   // Delete deal
   Future<void> deleteDeal(String id) async {
     try {
-      final deal = await getById<DealDetailItem>(
-        dealsRef,
-        id,
-        DealDetailItem.fromMap,
-      );
-      if (deal == null) throw Exception('Deal not found');
-
-      // Delete associated branding images
-      if (deal.brandingImageUrls.isNotEmpty) {
-        await Future.wait(deal.brandingImageUrls.map((url) => deleteFile(url)));
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('No user logged in');
       }
 
-      await delete(dealsRef, id);
+      final userDealsRef = getUserDealsRef(userId);
+
+      // Get the existing deal to check if it exists and get sponsor info
+      final snapshot = await userDealsRef.child(id).get();
+      if (!snapshot.exists) {
+        throw Exception('Deal not found');
+      }
+
+      final existingData = snapshot.value;
+      if (existingData == null) {
+        throw Exception('Deal data is null');
+      }
+
+      // Convert to proper Map type
+      final existingDealMap = Map<String, dynamic>.from(existingData as Map);
+      final existingDeal = DealDetailItem.fromMap(existingDealMap);
+
+      // Delete associated branding images
+      if (existingDeal.brandingImageUrls.isNotEmpty) {
+        await Future.wait(
+          existingDeal.brandingImageUrls.map((url) => deleteFile(url)),
+        );
+      }
+
+      await userDealsRef.child(id).remove();
 
       // Update sponsor's active deals count
-      await _updateSponsorDealCount(deal.sponsorId, -1);
+      await _updateSponsorDealCount(existingDeal.sponsorId, -1);
     } catch (e) {
+      print('Error deleting deal: $e');
       rethrow;
     }
   }
@@ -329,18 +358,34 @@ class DealService extends BaseService {
       return null;
     }
     print('Fetching deal $id for user $userId');
-    final deal = await getById<DealDetailItem>(
-      getUserDealsRef(userId),
-      id,
-      DealDetailItem.fromMap,
-    );
-    if (deal == null) {
-      print('No deal found with ID $id');
-    } else {
+
+    try {
+      final userDealsRef = getUserDealsRef(userId);
+      final snapshot = await userDealsRef.child(id).get();
+
+      if (!snapshot.exists) {
+        print('No deal found with ID $id');
+        return null;
+      }
+
+      final data = snapshot.value;
+      if (data == null) {
+        print('Deal data is null for ID $id');
+        return null;
+      }
+
+      // Convert Map<dynamic, dynamic> to Map<String, dynamic>
+      final dealMap = Map<String, dynamic>.from(data as Map);
+      dealMap['id'] = id; // Add the ID to the map
+
+      final deal = DealDetailItem.fromMap(dealMap);
       print('Deal found with ${deal.brandingImageUrls.length} branding images');
       print('Branding image URLs: ${deal.brandingImageUrls}');
+      return deal;
+    } catch (e) {
+      print('Error getting deal $id: $e');
+      return null;
     }
-    return deal;
   }
 
   // Stream all deals for a user
@@ -698,11 +743,14 @@ class DealService extends BaseService {
       // Handle dealValue conversion safely
       String dealValue;
       if (map['dealValue'] is num) {
-        dealValue = (map['dealValue'] as num).toString();
+        dealValue = '\$${(map['dealValue'] as num).toStringAsFixed(2)}';
       } else if (map['dealValue'] is String) {
-        dealValue = map['dealValue'] as String;
+        final numericValue = double.tryParse(
+          map['dealValue'].replaceAll(RegExp(r'[^0-9.]'), ''),
+        );
+        dealValue = '\$${(numericValue ?? 0.0).toStringAsFixed(2)}';
       } else {
-        dealValue = '0';
+        dealValue = '\$0.00';
       }
 
       // Handle commissionPercentage conversion safely
@@ -711,7 +759,10 @@ class DealService extends BaseService {
         commission =
             '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%';
       } else if (map['commissionPercentage'] is String) {
-        commission = map['commissionPercentage'] as String;
+        final numericValue = double.tryParse(
+          map['commissionPercentage'].replaceAll(RegExp(r'[^0-9.]'), ''),
+        );
+        commission = '${(numericValue ?? 0.0).toStringAsFixed(1)}%';
       } else {
         commission = '0.0%';
       }
@@ -743,6 +794,8 @@ class DealService extends BaseService {
         ),
       );
     } catch (e) {
+      print('Error in _fromMapSimple: $e');
+      print('Map data: $map');
       // Return a default DealItem instead of crashing
       return DealItem(
         sponsorId: '',
@@ -753,7 +806,7 @@ class DealService extends BaseService {
         id: '',
         title: 'Error Loading Deal',
         raceType: '',
-        dealValue: '0',
+        dealValue: '\$0.00',
         commission: '0.0%',
         renewalDate: DateFormat('MMMM yyyy').format(DateTime.now()),
         parts: [],

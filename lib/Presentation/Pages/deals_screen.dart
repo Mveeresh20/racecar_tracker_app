@@ -116,6 +116,19 @@ class _DealsScreenState extends State<DealsScreen> {
     }
   }
 
+  // Add method to refresh deals
+  void _refreshDeals() {
+    print('Refreshing deals...');
+    _loadDeals();
+  }
+
+  // Add method to force refresh the stream
+  void _forceRefreshDeals() {
+    print('Force refreshing deals...');
+    _dealsSubscription?.cancel();
+    _loadDeals();
+  }
+
   Future<void> _navigateToAddDealScreen() async {
     if (!mounted) return;
 
@@ -505,9 +518,9 @@ class _DealsScreenState extends State<DealsScreen> {
                     return DealCardItem(
                       dealService: DealService(),
                       sponsorService: SponsorService(),
-
                       deal: deal,
                       fetchDealDetail: _fetchDealDetailItemById(deal.id),
+                      onDealUpdated: _forceRefreshDeals,
                     );
                   },
                 ),

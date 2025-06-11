@@ -90,10 +90,17 @@ class BaseService {
     try {
       final snapshot = await ref.child(id).get();
       if (snapshot.exists) {
-        return fromMap(Map<String, dynamic>.from(snapshot.value as Map));
+        final data = snapshot.value;
+        if (data is Map) {
+          // Convert Map<dynamic, dynamic> to Map<String, dynamic>
+          final typedMap = Map<String, dynamic>.from(data);
+          return fromMap(typedMap);
+        }
+        return null;
       }
       return null;
     } catch (e) {
+      print('Error in getById: $e');
       throw Exception('Failed to get record: $e');
     }
   }
@@ -115,21 +122,25 @@ class BaseService {
                   Map<String, dynamic> itemMap;
 
                   if (value is Map) {
+                    // Convert Map<dynamic, dynamic> to Map<String, dynamic>
                     itemMap = Map<String, dynamic>.from(value);
                   } else if (value is String) {
                     try {
                       final jsonMap = jsonDecode(value) as Map<String, dynamic>;
                       itemMap = Map<String, dynamic>.from(jsonMap);
                     } catch (parseError) {
+                      print('Error parsing string: $parseError');
                       return null;
                     }
                   } else {
+                    print('Unexpected value type: ${value.runtimeType}');
                     return null;
                   }
 
                   itemMap['id'] = entry.key;
                   return fromMap(itemMap);
                 } catch (e) {
+                  print('Error processing entry: $e');
                   return null;
                 }
               })
@@ -145,30 +156,38 @@ class BaseService {
                     Map<String, dynamic> itemMap;
 
                     if (value is Map) {
+                      // Convert Map<dynamic, dynamic> to Map<String, dynamic>
                       itemMap = Map<String, dynamic>.from(value);
                     } else if (value is String) {
                       final nestedJsonMap =
                           jsonDecode(value) as Map<String, dynamic>;
                       itemMap = Map<String, dynamic>.from(nestedJsonMap);
                     } else {
+                      print(
+                        'Unexpected nested value type: ${value.runtimeType}',
+                      );
                       return null;
                     }
 
                     itemMap['id'] = entry.key;
                     return fromMap(itemMap);
                   } catch (e) {
+                    print('Error processing nested entry: $e');
                     return null;
                   }
                 })
                 .whereType<T>()
                 .toList();
           } catch (parseError) {
+            print('Error parsing data string: $parseError');
             return <T>[];
           }
         } else {
+          print('Unexpected data type: ${data.runtimeType}');
           return <T>[];
         }
       } catch (e) {
+        print('Error in streamList: $e');
         return <T>[];
       }
     });

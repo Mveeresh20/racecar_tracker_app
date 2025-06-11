@@ -18,6 +18,7 @@ class DealCardItem extends StatelessWidget {
   final Future<DealDetailItem?> Function(String) fetchDealDetail;
   final SponsorService sponsorService;
   final DealService dealService;
+  final VoidCallback? onDealUpdated; // Add callback for refresh
 
   const DealCardItem({
     Key? key,
@@ -25,6 +26,7 @@ class DealCardItem extends StatelessWidget {
     required this.fetchDealDetail,
     required this.sponsorService,
     required this.dealService,
+    this.onDealUpdated, // Add callback parameter
   }) : super(key: key);
 
   @override
@@ -226,12 +228,19 @@ class DealCardItem extends StatelessWidget {
                           ),
                         );
 
+                        // If the deal was updated, refresh the deals list
                         if (updatedDeal != null && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Deal updated successfully'),
                             ),
                           );
+                          // Trigger refresh callback with a small delay to ensure Firebase update is processed
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (context.mounted) {
+                              onDealUpdated?.call();
+                            }
+                          });
                         }
                       } catch (e) {
                         if (context.mounted) {
@@ -442,6 +451,12 @@ class DealCardItem extends StatelessWidget {
                           ),
                         );
                         Navigator.pop(context); // Close the bottom sheet
+                        // Trigger refresh callback with a small delay
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (context.mounted) {
+                            onDealUpdated?.call();
+                          }
+                        });
                       }
                     } catch (e) {
                       print('Error logging payment for deal ${deal.id}: $e');

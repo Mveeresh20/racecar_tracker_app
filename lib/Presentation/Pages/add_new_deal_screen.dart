@@ -93,7 +93,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
       _dealAmountController.text =
           '\$${widget.existingDeal!.dealValue.toString()}';
       _commissionController.text =
-          '\$${widget.existingDeal!.commissionPercentage.toString()}';
+          '${widget.existingDeal!.commissionPercentage.toString()}';
       _earnController.text =
           '\$${widget.existingDeal!.commissionAmount.toString()}';
       _selectedBranding = Set<String>.from(widget.existingDeal!.parts);
