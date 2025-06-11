@@ -180,11 +180,80 @@ class DealCardItem extends StatelessWidget {
                       _showLogPaymentBottomSheet(context);
                     },
                   ),
-                  _buildActionButton(context, "", Icons.edit, () {
-                    // Edit button has no text
-                    // Handle Edit action
+                  _buildActionButton(context, "", Icons.edit, () async {
+                    // Get the deal detail to have all the data
+                    final detail = await fetchDealDetail(deal.id);
+                    if (!context.mounted) return;
+
+                    if (detail != null) {
+                      // Get required data for the edit screen
+                      final userId = UserService().getCurrentUserId();
+                      if (userId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No user logged in'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        // Load all required data
+                        final racers =
+                            await RacerService().getRacersStream(userId).first;
+                        final events =
+                            await EventService().getUserEvents(userId).first;
+                        final sponsors =
+                            await sponsorService
+                                .getSponsorsStream(userId)
+                                .first;
+
+                        if (!context.mounted) return;
+
+                        // Navigate to AddNewDealScreen with existing deal data
+                        final updatedDeal = await Navigator.push<DealItem>(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => AddNewDealScreen(
+                                  sponsors: sponsors,
+                                  racers: racers,
+                                  events: events,
+                                  existingDeal:
+                                      detail, // Pass the existing deal detail
+                                ),
+                          ),
+                        );
+
+                        if (updatedDeal != null && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Deal updated successfully'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error loading data: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Could not load deal details'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
                   }),
-                  
                 ],
               ),
             ],

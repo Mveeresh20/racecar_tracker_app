@@ -767,7 +767,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               SizedBox(
                                 width: 238,
                                 child: Text(
-                                  "are you sure you want to delete your account?",
+                                  "Are you sure you want to delete your account?",
                                   style: const TextStyle(
                                     fontFamily: "Roboto",
                                     fontWeight: FontWeight.w400,

@@ -1,7 +1,7 @@
 class Lorempsum {
   static const String onboarding1Title = "🏎️ Welcome to Race Car Track 🏁";
   static const String onboarding1Description =
-      "Your complete manual toolkit to manage tennis courts, events, and bookings.";
+      "Your complete manual toolkit to manage race tracks, events, and bookings.";
 
   static const String onboarding2Title = "📋 Fully Manual. Fully in Control.";
   static const String onboarding2Description =

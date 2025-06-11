@@ -39,10 +39,38 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
   final TextEditingController _logoUploadController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
-  DateTime _selectedEndDate = DateTime.now().add(const Duration(days: 365));
+  DateTime _selectedEndDate = DateTime.now();
+  bool _hasDateSelected = false;
   Set<String> _selectedParts = {};
 
   String? _companyLogo;
+
+  // Add currency formatter for sponsorship amount
+  String _formatCurrency(String value) {
+    if (value.isEmpty) return '';
+    // Remove any non-digit characters except decimal point
+    String cleanValue = value.replaceAll(RegExp(r'[^\d.]'), '');
+    if (cleanValue.isEmpty) return '';
+
+    // Ensure only one decimal point
+    List<String> parts = cleanValue.split('.');
+    if (parts.length > 2) {
+      cleanValue = parts[0] + '.' + parts.sublist(1).join('');
+    }
+
+    // Add dollar sign
+    return '\$$cleanValue';
+  }
+
+  void _onSponsorshipAmountChanged(String value) {
+    String formatted = _formatCurrency(value);
+    if (formatted != value) {
+      _sponsorshipAmountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
 
   Future<void> _pickImage(bool isProfileImage) async {
     ImagePickerUtil().showImageSourceSelection(
@@ -84,12 +112,17 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           widget.existingSponsor!.contactNumber ?? '';
       _industryTypeController.text = widget.existingSponsor!.industryType ?? '';
       _sponsorshipAmountController.text =
-          widget.existingSponsor!.sponsorshipAmount ?? '';
+          '\$${widget.existingSponsor!.sponsorshipAmount ?? ''}';
       _notesController.text = widget.existingSponsor!.notes ?? '';
       _companyLogo = widget.existingSponsor!.logoUrl ?? '';
       // _logoUploadController.text = widget.existingSponsor!.logoUrl ?? '';
       _emailController.text = widget.existingSponsor!.email;
-      _selectedEndDate = widget.existingSponsor!.endDate;
+      // Ensure end date is not in the past when editing
+      final existingEndDate = widget.existingSponsor!.endDate;
+      _selectedEndDate =
+          existingEndDate.isBefore(DateTime.now())
+              ? DateTime.now().add(const Duration(days: 365))
+              : existingEndDate;
       _selectedParts = Set<String>.from(widget.existingSponsor!.parts);
     }
 
@@ -109,12 +142,6 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedEndDate.isBefore(DateTime.now())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End Date must be after today')),
-        );
-        return;
-      }
       final userId = widget.provider.currentUserId;
       if (userId == null) {
         ScaffoldMessenger.of(
@@ -195,12 +222,6 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
 
   Future<void> _submitAndMakeDeal() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedEndDate.isBefore(DateTime.now())) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('End Date must be after today')));
-        return;
-      }
       final userId = widget.provider.currentUserId;
       if (userId == null) {
         ScaffoldMessenger.of(
@@ -293,12 +314,13 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedEndDate,
-      firstDate: DateTime.now(),
+      firstDate: DateTime(2020), // Allow dates from 2020 onwards
       lastDate: DateTime(2030),
     );
     if (picked != null && picked != _selectedEndDate) {
       setState(() {
         _selectedEndDate = picked;
+        _hasDateSelected = true;
       });
     }
   }
@@ -430,6 +452,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                 validator:
                     (value) =>
                         value?.isEmpty ?? true ? "Please enter amount" : null,
+                onChanged: _onSponsorshipAmountChanged,
               ),
               _buildPartsSelection(),
               _buildNotesField(),
@@ -517,6 +540,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     bool isOptional = false,
+    Function(String)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,6 +559,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
             controller: controller,
             validator: isOptional ? null : validator,
             keyboardType: keyboardType,
+            onChanged: onChanged,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               filled: true,
@@ -603,8 +628,15 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    DateFormat('dd/MM/yyyy').format(_selectedEndDate),
-                    style: const TextStyle(color: Colors.white),
+                    _hasDateSelected
+                        ? DateFormat('MM/dd/yyyy').format(_selectedEndDate)
+                        : 'mm/dd/yyyy',
+                    style: TextStyle(
+                      color:
+                          _hasDateSelected
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.6),
+                    ),
                   ),
                   const Icon(Icons.calendar_today, color: Colors.white),
                 ],
@@ -725,77 +757,6 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
       ],
     );
   }
-
-  //   Widget _buildImagePicker(
-  //     String? imageUrl,
-  //     bool isProfileImage,
-  //     String label,
-  //   ) {
-  //     final imageUtil = ImagePickerUtil();
-  //     final imageResolvedUrl =
-  //         imageUrl != null && imageUrl.isNotEmpty
-  //             ? imageUtil.getUrlForUserUploadedImage(imageUrl)
-  //             : null;
-
-  //     return Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           label,
-  //           style: TextStyle(
-  //             color: Colors.white,
-  //             fontSize: 14,
-  //             fontWeight: FontWeight.w500,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 6),
-  //         GestureDetector(
-  //           onTap: () => _pickImage(isProfileImage),
-  //           child: Container(
-  //             height: 100,
-  //             decoration: BoxDecoration(
-  //               color: const Color(0xFF13386B),
-  //               borderRadius: BorderRadius.circular(12),
-  //               border: Border.all(
-  //                 color: Colors.white.withOpacity(0.2),
-  //                 width: 2,
-  //               ),
-  //             ),
-  //             child:  ClipRRect(
-  //   borderRadius: BorderRadius.circular(10),
-  //   child: imageResolvedUrl != null
-  //       ? Image.network(
-  //           imageResolvedUrl,
-  //           fit: BoxFit.contain,
-  //           width: double.infinity,
-  //           height: 100,
-  //           alignment: Alignment.center,
-  //           errorBuilder: (context, error, stackTrace) =>
-  //               _buildPlaceholder(isProfileImage),
-  //         )
-  //       : _buildPlaceholder(isProfileImage),
-  // ),
-
-  //             // child: ClipRRect(
-  //             //   borderRadius: BorderRadius.circular(10),
-  //             //   child:
-  //             //       imageResolvedUrl != null
-  //             //           ? Image.network(
-  //             //             imageResolvedUrl,
-  //             //             fit: BoxFit.cover,
-  //             //             width: double.infinity,
-
-  //             //             errorBuilder:
-  //             //                 (context, error, stackTrace) =>
-  //             //                     _buildPlaceholder(isProfileImage),
-  //             //           )
-  //             //           : _buildPlaceholder(isProfileImage),
-  //             // ),
-  //           ),
-  //         ),
-  //       ],
-  //     );
-  //   }
 
   Widget _buildPlaceholder(bool isProfileImage) {
     return Center(

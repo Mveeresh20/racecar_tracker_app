@@ -210,7 +210,19 @@ class _RacersScreenState extends State<RacersScreen> {
                                         ),
                                       ],
                                     ),
-                                    Container(
+
+                                     Consumer<EditProfileProvider>(
+                                builder: (context, provider, child) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ProfilePage(),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
@@ -218,32 +230,40 @@ class _RacersScreenState extends State<RacersScreen> {
                                           color: Colors.white,
                                         ),
                                       ),
-                                      padding: const EdgeInsets.all(2),
+                                      padding: EdgeInsets.all(2),
                                       child: ClipOval(
-                                        child: Consumer<EditProfileProvider>(
-                                          builder: (context, provider, child) {
-                                            return Image.network(
+                                        child: CachedNetworkImage(
+                                          imageUrl:
                                               provider.getProfileImageUrl(),
-                                              height: 30,
-                                              width: 30,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) {
-                                                return Image.network(
-                                                  Images.profileImg,
-                                                  height: 24,
-                                                  width: 24,
-                                                  fit: BoxFit.cover,
-                                                );
-                                              },
-                                            );
-                                          },
+                                          height: 30,
+                                          width: 30,
+                                          fit: BoxFit.cover,
+                                          placeholder:
+                                              (context, url) => Container(
+                                                color: Colors.grey[300],
+                                                child: const Icon(
+                                                  Icons.person,
+                                                  size: 16,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                          errorWidget:
+                                              (context, url, error) =>
+                                                  Container(
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(
+                                                      Icons.person,
+                                                      size: 16,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
                                         ),
                                       ),
                                     ),
+                                  );
+                                },
+                              ),
+                                    
                                   ],
                                 ),
                               ),

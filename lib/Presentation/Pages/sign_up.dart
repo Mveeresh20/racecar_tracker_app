@@ -76,6 +76,8 @@ class _SignUpState extends State<SignUp> {
   final _confirmpasswordController = TextEditingController();
 
   bool _passwordVisible = false;
+  bool _confirmPasswordVisible = false;
+
   String? _validateEmail(String? value) {
     const pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     final regex = RegExp(pattern);
@@ -85,15 +87,15 @@ class _SignUpState extends State<SignUp> {
   }
 
   String? _validatePassword(String? value) {
-    const pattern =
-        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
-    final regex = RegExp(pattern);
-    if (value == null || value.isEmpty) return "Password is required";
-    if (!regex.hasMatch(value)) {
-      return "Password must be 8 characters length";
-    }
-    return null;
+  if (value == null || value.isEmpty) {
+    return "Password is required";
   }
+  if (value.length < 8) {
+    return "Password must be at least 8 characters long";
+  }
+  return null;
+}
+
 
   String? _validateConfirmPassword(String? value) {
     if (value != _passwordController.text) return "Passwords do not match";
@@ -411,7 +413,7 @@ class _SignUpState extends State<SignUp> {
                               validator: _validateConfirmPassword,
                               controller: _confirmpasswordController,
                               obscureText:
-                                  !_passwordVisible, // Toggle visibility
+                                  !_confirmPasswordVisible, // Toggle visibility
                               style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 filled: true,
@@ -431,14 +433,15 @@ class _SignUpState extends State<SignUp> {
 
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _passwordVisible
+                                    _confirmPasswordVisible
                                         ? Icons.visibility
                                         : Icons.visibility_off,
                                     color: Colors.white,
                                   ),
                                   onPressed: () {
                                     setState(() {
-                                      _passwordVisible = !_passwordVisible;
+                                      _confirmPasswordVisible =
+                                          !_confirmPasswordVisible;
                                     });
                                   },
                                 ),

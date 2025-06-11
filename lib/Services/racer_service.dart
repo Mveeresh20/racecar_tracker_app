@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/racer.dart';
@@ -92,16 +93,30 @@ class RacerService extends BaseService {
               data.entries
                   .map((entry) {
                     try {
-                      if (entry.value is String) {
+                      Map<String, dynamic> racerData;
+
+                      if (entry.value is Map) {
+                        racerData = Map<String, dynamic>.from(
+                          entry.value as Map,
+                        );
+                      } else if (entry.value is String) {
+                        try {
+                          final jsonMap =
+                              jsonDecode(entry.value as String)
+                                  as Map<String, dynamic>;
+                          racerData = Map<String, dynamic>.from(jsonMap);
+                        } catch (parseError) {
+                          print('Error parsing racer string: $parseError');
+                          print('String value: ${entry.value}');
+                          return null;
+                        }
+                      } else {
                         print(
-                          'Warning: Racer data is a string instead of a map: ${entry.value}',
+                          'Warning: Racer data is not a map or string: ${entry.value}',
                         );
                         return null;
                       }
 
-                      final racerData = Map<String, dynamic>.from(
-                        entry.value as Map,
-                      );
                       racerData['id'] =
                           entry.key; // Add the key as the racer ID
                       return Racer.fromMap(racerData);
@@ -124,16 +139,30 @@ class RacerService extends BaseService {
                   .entries
                   .map((entry) {
                     try {
-                      if (entry.value is String) {
+                      Map<String, dynamic> racerData;
+
+                      if (entry.value is Map) {
+                        racerData = Map<String, dynamic>.from(
+                          entry.value as Map,
+                        );
+                      } else if (entry.value is String) {
+                        try {
+                          final jsonMap =
+                              jsonDecode(entry.value as String)
+                                  as Map<String, dynamic>;
+                          racerData = Map<String, dynamic>.from(jsonMap);
+                        } catch (parseError) {
+                          print('Error parsing racer string: $parseError');
+                          print('String value: ${entry.value}');
+                          return null;
+                        }
+                      } else {
                         print(
-                          'Warning: Racer data is a string instead of a map: ${entry.value}',
+                          'Warning: Racer data is not a map or string: ${entry.value}',
                         );
                         return null;
                       }
 
-                      final racerData = Map<String, dynamic>.from(
-                        entry.value as Map,
-                      );
                       racerData['id'] =
                           entry.key.toString(); // Use index as ID if no key
                       return Racer.fromMap(racerData);

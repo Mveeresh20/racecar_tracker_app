@@ -317,6 +317,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:racecar_tracker/Presentation/Pages/racer_details_screen.dart';
 import 'package:racecar_tracker/Services/image_picker_util.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
@@ -403,7 +404,7 @@ class RacerCardItem extends StatelessWidget {
                 children: [
                   Text(
                     racer.name,
-                    style: const TextStyle(
+                    style:  GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -480,10 +481,10 @@ class RacerCardItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: context.labelMedium?.copyWith(color: Colors.white)),
+        Text(label, style: GoogleFonts.montserrat(fontSize: 12,color: Colors.white,fontWeight: FontWeight.w500)),
         Text(
           value,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+          style: GoogleFonts.montserrat(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
         ),
       ],
     );

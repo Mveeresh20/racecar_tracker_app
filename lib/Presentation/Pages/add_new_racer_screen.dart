@@ -524,11 +524,11 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                       ),
                     ),
                   SizedBox(height: 18),
-                  _label("Deal Validity"),
+                  _label("Deal Validity Dates"),
                   SizedBox(height: 8),
 
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
 
@@ -539,27 +539,33 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
                             children: [
                               _label("Start Date"),
                               SizedBox(height: 8),
-                              _datePickerBox(
-                                context,
-                                _startDate,
-                                "mm/dd/yyyy",
-                                () => _pickDate(true),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: _datePickerBox(
+                                  context,
+                                  _startDate,
+                                  "mm/dd/yyyy",
+                                  () => _pickDate(true),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(width: 8),
+                        
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _label("End Date"),
                               SizedBox(height: 8),
-                              _datePickerBox(
-                                context,
-                                _endDate,
-                                "mm/dd/yyyy",
-                                () => _pickDate(false),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(),
+                                child: _datePickerBox(
+                                  context,
+                                  _endDate,
+                                  "mm/dd/yyyy",
+                                  () => _pickDate(false),
+                                ),
                               ),
                             ],
                           ),

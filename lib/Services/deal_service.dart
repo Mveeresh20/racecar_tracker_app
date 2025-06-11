@@ -12,6 +12,11 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import '../models/sponsor.dart';
+import '../models/racer.dart';
+import '../models/event.dart';
+import '../Utils/Constants/app_constants.dart';
 
 class DealService extends BaseService {
   final ImagePickerUtil _imagePicker = ImagePickerUtil();
@@ -43,6 +48,21 @@ class DealService extends BaseService {
     required BuildContext context,
   }) async {
     try {
+      // Validate input data
+      if (userId.isEmpty) throw Exception('User ID is required');
+      if (sponsorId.isEmpty) throw Exception('Sponsor ID is required');
+      if (racerId.isEmpty) throw Exception('Racer ID is required');
+      if (eventId.isEmpty) throw Exception('Event ID is required');
+      if (title.isEmpty) throw Exception('Title is required');
+      if (raceType.isEmpty) throw Exception('Race type is required');
+      if (dealValue <= 0) throw Exception('Deal value must be greater than 0');
+      if (commissionPercentage < 0 || commissionPercentage > 100) {
+        throw Exception('Commission percentage must be between 0 and 100');
+      }
+      if (advertisingPositions.isEmpty) {
+        throw Exception('At least one advertising position is required');
+      }
+
       List<String>? brandingImageUrls;
 
       // Upload branding images if provided
@@ -50,7 +70,7 @@ class DealService extends BaseService {
         brandingImageUrls = await Future.wait(
           brandingImages.map((file) async {
             final timestamp = DateTime.now().millisecondsSinceEpoch;
-            final uniqueId = _uuid.v4(); // Generate a unique ID for each image
+            final uniqueId = _uuid.v4();
             final imagePath =
                 'branding_${timestamp}_$uniqueId${path.extension(file.path)}';
 
@@ -80,8 +100,8 @@ class DealService extends BaseService {
       // Calculate commission amount
       final commissionAmount = dealValue * (commissionPercentage / 100);
 
-      // Create deal data
-      final dealData = {
+      // Create deal data with explicit types
+      final Map<String, dynamic> dealData = {
         'userId': userId,
         'sponsorId': sponsorId,
         'racerId': racerId,
@@ -94,7 +114,7 @@ class DealService extends BaseService {
         'commissionPercentage': commissionPercentage,
         'commissionAmount': commissionAmount,
         'advertisingPositions': advertisingPositions,
-        'brandingImageUrls': brandingImageUrls,
+        'brandingImageUrls': brandingImageUrls ?? [],
         'startDate': startDate.millisecondsSinceEpoch,
         'endDate': endDate.millisecondsSinceEpoch,
         'renewalReminder': renewalReminder,
@@ -103,14 +123,61 @@ class DealService extends BaseService {
         'updatedAt': ServerValue.timestamp,
       };
 
-      final dealId = await create(getUserDealsRef(userId), dealData);
+      // Validate the data before saving
+      if (!_isValidDealData(dealData)) {
+        throw Exception('Invalid deal data format');
+      }
+
+      // Create the deal in Firestore
+      final dealRef = getUserDealsRef(userId).push();
+      await dealRef.set(dealData);
+      final dealId = dealRef.key;
+      if (dealId == null) {
+        throw Exception('Failed to create deal');
+      }
 
       // Update sponsor's active deals count
       await _updateSponsorDealCount(sponsorId, 1);
 
       return dealId;
     } catch (e) {
+      print('Error creating deal: $e');
       rethrow;
+    }
+  }
+
+  // Helper method to validate deal data
+  bool _isValidDealData(Map<String, dynamic> data) {
+    try {
+      // Check required fields - be more lenient
+      if (data['userId'] == null ||
+          data['sponsorId'] == null ||
+          data['racerId'] == null ||
+          data['eventId'] == null ||
+          data['title'] == null ||
+          data['raceType'] == null) {
+        return false;
+      }
+
+      // Validate numeric fields - be more lenient
+      if (data['dealValue'] == null || data['commissionPercentage'] == null) {
+        return false;
+      }
+
+      // Validate string fields - be more lenient
+      if (data['userId'] == null ||
+          data['sponsorId'] == null ||
+          data['racerId'] == null ||
+          data['eventId'] == null ||
+          data['title'] == null ||
+          data['raceType'] == null) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      print('Error validating deal data: $e');
+      return false;
     }
   }
 
@@ -283,20 +350,92 @@ class DealService extends BaseService {
 
   // Stream active deals for a user
   Stream<List<DealItem>> streamActiveDeals(String userId) {
-    return getUserDealsRef(userId)
-        .orderByChild('status')
-        .equalTo(DealStatusType.paid.toString())
-        .onValue
-        .map((event) {
-          final data = event.snapshot.value as Map<dynamic, dynamic>?;
-          if (data == null) return <DealItem>[];
+    return getUserDealsRef(
+      userId,
+    ).orderByChild('status').equalTo(DealStatusType.paid.toString()).onValue.map((
+      event,
+    ) {
+      final data = event.snapshot.value;
+      if (data == null) return <DealItem>[];
 
-          return data.entries.map((entry) {
-            final map = Map<String, dynamic>.from(entry.value as Map);
-            map['id'] = entry.key;
-            return _fromMapSimple(map);
-          }).toList();
-        });
+      try {
+        if (data is Map) {
+          return data.entries
+              .map((entry) {
+                try {
+                  final value = entry.value;
+                  Map<String, dynamic> dealMap;
+
+                  if (value is Map) {
+                    dealMap = Map<String, dynamic>.from(value);
+                  } else if (value is String) {
+                    try {
+                      final jsonMap = jsonDecode(value) as Map<String, dynamic>;
+                      dealMap = Map<String, dynamic>.from(jsonMap);
+                    } catch (parseError) {
+                      print('Error parsing active deal string: $parseError');
+                      return null;
+                    }
+                  } else {
+                    print(
+                      'Unexpected active deal value type: ${value.runtimeType}',
+                    );
+                    return null;
+                  }
+
+                  dealMap['id'] = entry.key;
+                  return _fromMapSimple(dealMap);
+                } catch (e) {
+                  print('Error processing active deal entry: $e');
+                  return null;
+                }
+              })
+              .whereType<DealItem>()
+              .toList();
+        } else if (data is String) {
+          try {
+            final jsonMap = jsonDecode(data) as Map<String, dynamic>;
+            return jsonMap.entries
+                .map((entry) {
+                  try {
+                    final value = entry.value;
+                    Map<String, dynamic> dealMap;
+
+                    if (value is Map) {
+                      dealMap = Map<String, dynamic>.from(value);
+                    } else if (value is String) {
+                      final nestedJsonMap =
+                          jsonDecode(value) as Map<String, dynamic>;
+                      dealMap = Map<String, dynamic>.from(nestedJsonMap);
+                    } else {
+                      print(
+                        'Unexpected nested active deal value type: ${value.runtimeType}',
+                      );
+                      return null;
+                    }
+
+                    dealMap['id'] = entry.key;
+                    return _fromMapSimple(dealMap);
+                  } catch (e) {
+                    print('Error processing nested active deal entry: $e');
+                    return null;
+                  }
+                })
+                .whereType<DealItem>()
+                .toList();
+          } catch (parseError) {
+            print('Error parsing active deals data string: $parseError');
+            return <DealItem>[];
+          }
+        } else {
+          print('Unexpected active deals data type: ${data.runtimeType}');
+          return <DealItem>[];
+        }
+      } catch (e) {
+        print('Error in streamActiveDeals: $e');
+        return <DealItem>[];
+      }
+    });
   }
 
   // Stream deals by sponsor for a user
@@ -304,29 +443,134 @@ class DealService extends BaseService {
     return getUserDealsRef(
       userId,
     ).orderByChild('sponsorId').equalTo(sponsorId).onValue.map((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      final data = event.snapshot.value;
       if (data == null) return <DealItem>[];
 
-      final deals =
-          data.entries.map((entry) {
-            final map = Map<String, dynamic>.from(entry.value as Map);
-            map['id'] = entry.key;
-            return _fromMapSimple(map);
-          }).toList();
+      List<DealItem> deals = [];
 
-      // Sort deals by creation date in descending order (most recent first)
-      deals.sort((a, b) {
-        final aDate = DateTime.fromMillisecondsSinceEpoch(
-          (data[a.id] as Map)['createdAt'] as int,
-        );
-        final bDate = DateTime.fromMillisecondsSinceEpoch(
-          (data[b.id] as Map)['createdAt'] as int,
-        );
-        return bDate.compareTo(aDate);
-      });
+      try {
+        if (data is Map) {
+          // Handle when data is a Map
+          deals =
+              data.entries
+                  .map((entry) {
+                    try {
+                      final value = entry.value;
+                      Map<String, dynamic> dealMap;
 
-      return deals;
+                      if (value is Map) {
+                        // Value is already a Map
+                        dealMap = Map<String, dynamic>.from(value);
+                      } else if (value is String) {
+                        // Value is a String, try to parse as JSON
+                        try {
+                          final jsonMap =
+                              jsonDecode(value) as Map<String, dynamic>;
+                          dealMap = Map<String, dynamic>.from(jsonMap);
+                        } catch (parseError) {
+                          print('Error parsing deal string: $parseError');
+                          print('String value: $value');
+                          return null;
+                        }
+                      } else {
+                        print('Unexpected value type: ${value.runtimeType}');
+                        return null;
+                      }
+
+                      dealMap['id'] = entry.key;
+                      return _fromMapSimple(dealMap);
+                    } catch (e) {
+                      print('Error processing deal entry: $e');
+                      print('Entry key: ${entry.key}');
+                      print('Entry value: ${entry.value}');
+                      return null;
+                    }
+                  })
+                  .whereType<DealItem>()
+                  .toList();
+        } else if (data is String) {
+          // Handle when entire data is a String
+          try {
+            final jsonMap = jsonDecode(data) as Map<String, dynamic>;
+            deals =
+                jsonMap.entries
+                    .map((entry) {
+                      try {
+                        final value = entry.value;
+                        Map<String, dynamic> dealMap;
+
+                        if (value is Map) {
+                          dealMap = Map<String, dynamic>.from(value);
+                        } else if (value is String) {
+                          final nestedJsonMap =
+                              jsonDecode(value) as Map<String, dynamic>;
+                          dealMap = Map<String, dynamic>.from(nestedJsonMap);
+                        } else {
+                          print(
+                            'Unexpected nested value type: ${value.runtimeType}',
+                          );
+                          return null;
+                        }
+
+                        dealMap['id'] = entry.key;
+                        return _fromMapSimple(dealMap);
+                      } catch (e) {
+                        print('Error processing nested deal entry: $e');
+                        return null;
+                      }
+                    })
+                    .whereType<DealItem>()
+                    .toList();
+          } catch (parseError) {
+            print('Error parsing deals data string: $parseError');
+            print('Data string: $data');
+            return <DealItem>[];
+          }
+        } else {
+          print('Unexpected data type: ${data.runtimeType}');
+          return <DealItem>[];
+        }
+
+        // Sort deals by creation date in descending order (most recent first)
+        deals.sort((a, b) {
+          try {
+            // Try to get creation date from the original data
+            final aCreatedAt = _getCreatedAtFromData(data, a.id);
+            final bCreatedAt = _getCreatedAtFromData(data, b.id);
+            return bCreatedAt.compareTo(aCreatedAt);
+          } catch (e) {
+            print('Error sorting deals: $e');
+            return 0;
+          }
+        });
+
+        return deals;
+      } catch (e) {
+        print('Error in streamDealsBySponsor: $e');
+        print('Data type: ${data.runtimeType}');
+        return <DealItem>[];
+      }
     });
+  }
+
+  // Helper method to extract createdAt from data
+  DateTime _getCreatedAtFromData(dynamic data, String dealId) {
+    try {
+      if (data is Map) {
+        final dealData = data[dealId];
+        if (dealData is Map) {
+          final createdAt = dealData['createdAt'];
+          if (createdAt is int) {
+            return DateTime.fromMillisecondsSinceEpoch(createdAt);
+          }
+        }
+      }
+      // Fallback to current time if we can't get the actual creation time
+      return DateTime.now();
+    } catch (e) {
+      print('Error getting createdAt for deal $dealId: $e');
+      return DateTime.now();
+    }
   }
 
   // Stream deals by racer for a user
@@ -334,45 +578,187 @@ class DealService extends BaseService {
     return getUserDealsRef(
       userId,
     ).orderByChild('racerId').equalTo(racerId).onValue.map((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      final data = event.snapshot.value;
       if (data == null) return <DealItem>[];
 
-      return data.entries.map((entry) {
-        final map = Map<String, dynamic>.from(entry.value as Map);
-        map['id'] = entry.key;
-        return _fromMapSimple(map);
-      }).toList();
+      try {
+        if (data is Map) {
+          return data.entries
+              .map((entry) {
+                try {
+                  final value = entry.value;
+                  Map<String, dynamic> dealMap;
+
+                  if (value is Map) {
+                    dealMap = Map<String, dynamic>.from(value);
+                  } else if (value is String) {
+                    try {
+                      final jsonMap = jsonDecode(value) as Map<String, dynamic>;
+                      dealMap = Map<String, dynamic>.from(jsonMap);
+                    } catch (parseError) {
+                      print('Error parsing racer deal string: $parseError');
+                      return null;
+                    }
+                  } else {
+                    print(
+                      'Unexpected racer deal value type: ${value.runtimeType}',
+                    );
+                    return null;
+                  }
+
+                  dealMap['id'] = entry.key;
+                  return _fromMapSimple(dealMap);
+                } catch (e) {
+                  print('Error processing racer deal entry: $e');
+                  return null;
+                }
+              })
+              .whereType<DealItem>()
+              .toList();
+        } else if (data is String) {
+          try {
+            final jsonMap = jsonDecode(data) as Map<String, dynamic>;
+            return jsonMap.entries
+                .map((entry) {
+                  try {
+                    final value = entry.value;
+                    Map<String, dynamic> dealMap;
+
+                    if (value is Map) {
+                      dealMap = Map<String, dynamic>.from(value);
+                    } else if (value is String) {
+                      final nestedJsonMap =
+                          jsonDecode(value) as Map<String, dynamic>;
+                      dealMap = Map<String, dynamic>.from(nestedJsonMap);
+                    } else {
+                      print(
+                        'Unexpected nested racer deal value type: ${value.runtimeType}',
+                      );
+                      return null;
+                    }
+
+                    dealMap['id'] = entry.key;
+                    return _fromMapSimple(dealMap);
+                  } catch (e) {
+                    print('Error processing nested racer deal entry: $e');
+                    return null;
+                  }
+                })
+                .whereType<DealItem>()
+                .toList();
+          } catch (parseError) {
+            print('Error parsing racer deals data string: $parseError');
+            return <DealItem>[];
+          }
+        } else {
+          print('Unexpected racer deals data type: ${data.runtimeType}');
+          return <DealItem>[];
+        }
+      } catch (e) {
+        print('Error in streamDealsByRacer: $e');
+        return <DealItem>[];
+      }
     });
   }
 
   // Helper method to update sponsor's active deals count
   Future<void> _updateSponsorDealCount(String sponsorId, int increment) async {
-    final sponsorRef = sponsorsRef.child(sponsorId);
-    final snapshot = await sponsorRef.child('activeDeals').get();
-    final currentCount = snapshot.value as int? ?? 0;
-    await sponsorRef.update({'activeDeals': currentCount + increment});
+    try {
+      final sponsorRef = sponsorsRef.child(sponsorId);
+      final snapshot = await sponsorRef.child('activeDeals').get();
+      final currentCount = snapshot.value as int? ?? 0;
+      await sponsorRef.update({'activeDeals': currentCount + increment});
+    } catch (e) {
+      // Don't crash if sponsor update fails
+      print('Warning: Failed to update sponsor deal count: $e');
+    }
   }
 
   // Helper method to convert Map to DealItem (simplified version)
   DealItem _fromMapSimple(Map<String, dynamic> map) {
-    final endDate = DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int);
-    return DealItem(
-      sponsorId: map['sponsorId'] as String,
-      racerId: map['racerId'] as String,
-      eventId: map['eventId'] as String,
-      sponsorInitials: map['sponsorInitials'] as String,
-      racerInitials: map['racerInitials'] as String,
-      id: map['id'] as String,
-      title: map['title'] as String,
-      raceType: map['raceType'] as String,
-      dealValue: (map['dealValue'] as num).toString(),
-      commission: '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%',
-      renewalDate: DateFormat('MMMM yyyy').format(endDate),
-      parts: List<String>.from(map['advertisingPositions'] as List),
-      status: DealStatusType.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => DealStatusType.pending,
-      ),
-    );
+    try {
+      // Handle endDate conversion safely
+      DateTime endDate;
+      if (map['endDate'] is int) {
+        endDate = DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int);
+      } else if (map['endDate'] is String) {
+        // Try to parse as milliseconds if it's a string
+        final endDateMs = int.tryParse(map['endDate'] as String);
+        if (endDateMs != null) {
+          endDate = DateTime.fromMillisecondsSinceEpoch(endDateMs);
+        } else {
+          // Fallback to current date
+          endDate = DateTime.now();
+        }
+      } else {
+        // Fallback to current date
+        endDate = DateTime.now();
+      }
+
+      // Handle dealValue conversion safely
+      String dealValue;
+      if (map['dealValue'] is num) {
+        dealValue = (map['dealValue'] as num).toString();
+      } else if (map['dealValue'] is String) {
+        dealValue = map['dealValue'] as String;
+      } else {
+        dealValue = '0';
+      }
+
+      // Handle commissionPercentage conversion safely
+      String commission;
+      if (map['commissionPercentage'] is num) {
+        commission =
+            '${(map['commissionPercentage'] as num).toStringAsFixed(1)}%';
+      } else if (map['commissionPercentage'] is String) {
+        commission = map['commissionPercentage'] as String;
+      } else {
+        commission = '0.0%';
+      }
+
+      // Handle advertisingPositions conversion safely
+      List<String> parts;
+      if (map['advertisingPositions'] is List) {
+        parts = List<String>.from(map['advertisingPositions'] as List);
+      } else {
+        parts = [];
+      }
+
+      return DealItem(
+        sponsorId: map['sponsorId']?.toString() ?? '',
+        racerId: map['racerId']?.toString() ?? '',
+        eventId: map['eventId']?.toString() ?? '',
+        sponsorInitials: map['sponsorInitials']?.toString() ?? '',
+        racerInitials: map['racerInitials']?.toString() ?? '',
+        id: map['id']?.toString() ?? '',
+        title: map['title']?.toString() ?? '',
+        raceType: map['raceType']?.toString() ?? '',
+        dealValue: dealValue,
+        commission: commission,
+        renewalDate: DateFormat('MMMM yyyy').format(endDate),
+        parts: parts,
+        status: DealStatusType.values.firstWhere(
+          (e) => e.toString() == map['status']?.toString(),
+          orElse: () => DealStatusType.pending,
+        ),
+      );
+    } catch (e) {
+      // Return a default DealItem instead of crashing
+      return DealItem(
+        sponsorId: '',
+        racerId: '',
+        eventId: '',
+        sponsorInitials: '',
+        racerInitials: '',
+        id: '',
+        title: 'Error Loading Deal',
+        raceType: '',
+        dealValue: '0',
+        commission: '0.0%',
+        renewalDate: DateFormat('MMMM yyyy').format(DateTime.now()),
+        parts: [],
+        status: DealStatusType.pending,
+      );
+    }
   }
 }

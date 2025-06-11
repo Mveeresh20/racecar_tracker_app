@@ -71,12 +71,6 @@ class DealItem {
   // Factory method to create from map
   factory DealItem.fromMap(Map<String, dynamic> map) {
     try {
-      // Ensure map is not null and is actually a Map
-      if (map == null) {
-        print('Error: Map is null in DealItem.fromMap');
-        throw Exception('Invalid data: Map is null');
-      }
-
       // Helper function to safely get string values
       String safeString(dynamic value, [String defaultValue = '']) {
         if (value == null) return defaultValue;
@@ -109,6 +103,29 @@ class DealItem {
         return defaultValue;
       }
 
+      // Helper function to safely parse date
+      String safeDate(dynamic value) {
+        if (value == null) return DateTime.now().toString();
+        if (value is int) {
+          return DateTime.fromMillisecondsSinceEpoch(value).toString();
+        }
+        if (value is String) {
+          try {
+            // Try parsing as milliseconds timestamp
+            final timestamp = int.tryParse(value);
+            if (timestamp != null) {
+              return DateTime.fromMillisecondsSinceEpoch(timestamp).toString();
+            }
+            // Try parsing as date string
+            return DateTime.parse(value).toString();
+          } catch (e) {
+            print('Error parsing date: $e');
+            return DateTime.now().toString();
+          }
+        }
+        return DateTime.now().toString();
+      }
+
       return DealItem(
         id: safeString(map['id']),
         sponsorId: safeString(map['sponsorId']),
@@ -121,13 +138,7 @@ class DealItem {
             map['commissionPercentage'] != null
                 ? '${safeNumeric(map['commissionPercentage'])}%'
                 : '0%',
-        renewalDate:
-            map['endDate'] != null
-                ? DateTime.fromMillisecondsSinceEpoch(
-                  int.tryParse(map['endDate'].toString()) ??
-                      DateTime.now().millisecondsSinceEpoch,
-                ).toString()
-                : DateTime.now().toString(),
+        renewalDate: safeDate(map['endDate']),
         parts: safeList(map['advertisingPositions']),
         status: DealStatusType.values.firstWhere(
           (e) => e.toString() == safeString(map['status']),

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
@@ -102,14 +103,74 @@ class BaseService {
     T Function(Map<String, dynamic>) fromMap,
   ) {
     return ref.onValue.map((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      final data = event.snapshot.value;
       if (data == null) return <T>[];
 
-      return data.entries.map((entry) {
-        final map = Map<String, dynamic>.from(entry.value as Map);
-        map['id'] = entry.key;
-        return fromMap(map);
-      }).toList();
+      try {
+        if (data is Map) {
+          return data.entries
+              .map((entry) {
+                try {
+                  final value = entry.value;
+                  Map<String, dynamic> itemMap;
+
+                  if (value is Map) {
+                    itemMap = Map<String, dynamic>.from(value);
+                  } else if (value is String) {
+                    try {
+                      final jsonMap = jsonDecode(value) as Map<String, dynamic>;
+                      itemMap = Map<String, dynamic>.from(jsonMap);
+                    } catch (parseError) {
+                      return null;
+                    }
+                  } else {
+                    return null;
+                  }
+
+                  itemMap['id'] = entry.key;
+                  return fromMap(itemMap);
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<T>()
+              .toList();
+        } else if (data is String) {
+          try {
+            final jsonMap = jsonDecode(data) as Map<String, dynamic>;
+            return jsonMap.entries
+                .map((entry) {
+                  try {
+                    final value = entry.value;
+                    Map<String, dynamic> itemMap;
+
+                    if (value is Map) {
+                      itemMap = Map<String, dynamic>.from(value);
+                    } else if (value is String) {
+                      final nestedJsonMap =
+                          jsonDecode(value) as Map<String, dynamic>;
+                      itemMap = Map<String, dynamic>.from(nestedJsonMap);
+                    } else {
+                      return null;
+                    }
+
+                    itemMap['id'] = entry.key;
+                    return fromMap(itemMap);
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .whereType<T>()
+                .toList();
+          } catch (parseError) {
+            return <T>[];
+          }
+        } else {
+          return <T>[];
+        }
+      } catch (e) {
+        return <T>[];
+      }
     });
   }
 }

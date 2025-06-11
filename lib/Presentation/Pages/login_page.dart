@@ -407,7 +407,7 @@ class _LoginPageState extends State<LoginPage> {
                             );
                           },
                           child: const Text(
-                            'Sign in',
+                            'Sign up',
                             style: TextStyle(
                               fontSize: 16,
                               fontFamily: "Montserrat",

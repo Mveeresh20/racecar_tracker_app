@@ -53,6 +53,13 @@ class _DealsScreenState extends State<DealsScreen> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Remove the _loadDeals() call as it interferes with stream updates
+    // The stream will automatically update when data changes
+  }
+
   void _loadDeals() {
     setState(() {
       _isLoading = true;
@@ -231,276 +238,281 @@ class _DealsScreenState extends State<DealsScreen> {
             }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF171E45),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(0),
-                bottomRight: Radius.circular(0),
-              ),
-              child: Stack(
-                children: [
-                  Image.network(
-                    Images.homeScreen,
-                    height: 240,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                  Container(
-                    height: 240,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2D5586), Color(0xFF171E45)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomLeft,
-                      ),
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ).copyWith(top: 50),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                  ),
-                                  child: Image.network(
-                                    Images.navBarHome
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                const Text(
-                                  "Deals",
-                                  style: TextStyle(
-                                    color: Color(0xFFFFCC29),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: "Montserrat",
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Consumer<EditProfileProvider>(
-                              builder: (context, provider, child) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => const ProfilePage(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        width: 3,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.all(2),
-                                    child: ClipOval(
-                                      child: Image.network(
-                                        provider.getProfileImageUrl(),
-                                        height: 30,
-                                        width: 30,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Image.network(
-                                            Images.profileImg,
-                                            height: 30,
-                                            width: 30,
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: kDefaultPadding,
-                        ),
-                        child: TextFormField(
-                          controller: _searchController,
-                          style: const TextStyle(color: Colors.black),
-                          decoration: InputDecoration(
-                            hintText: "Search Sponsors, Racers...",
-                            hintStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: Colors.black,
-                              size: 16,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(60),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10,
-                              horizontal: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: kDefaultPadding,
-                          vertical: 8.0,
-                        ),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            onPressed: _navigateToAddDealScreen,
-                            icon: const Icon(
-                              Icons.add,
-                              color: Colors.black,
-                              size: 16,
-                            ),
-                            label: const Text(
-                              "Make a New Deal",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFCC29),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(60),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (_error != null)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _loadDeals();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Header with background image
+              ClipRRect(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(0),
+                  bottomRight: Radius.circular(0),
+                ),
+                child: Stack(
                   children: [
-                    Text(
-                      'Error: $_error',
-                      style: const TextStyle(color: Colors.red),
+                    Image.network(
+                      Images.homeScreen,
+                      height: 240,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadDeals,
-                      child: const Text('Retry'),
+                    Container(
+                      height: 240,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF2D5586).withOpacity(0.4),
+                            Color(0xFF171E45).withOpacity(0.4),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomLeft,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ).copyWith(top: 50),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Image.network(Images.navBarHome),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    "Deals",
+                                    style: TextStyle(
+                                      color: Color(0xFFFFCC29),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: "Montserrat",
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Consumer<EditProfileProvider>(
+                                builder: (context, provider, child) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => const ProfilePage(),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          width: 3,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(2),
+                                      child: ClipOval(
+                                        child: Image.network(
+                                          provider.getProfileImageUrl(),
+                                          height: 30,
+                                          width: 30,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Image.network(
+                                              Images.profileImg,
+                                              height: 30,
+                                              width: 30,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kDefaultPadding,
+                          ),
+                          child: TextFormField(
+                            controller: _searchController,
+                            style: const TextStyle(color: Colors.black),
+                            decoration: InputDecoration(
+                              hintText: "Search Sponsors, Racers...",
+                              hintStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: Colors.black,
+                                size: 16,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(60),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kDefaultPadding,
+                            vertical: 8.0,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              onPressed: _navigateToAddDealScreen,
+                              icon: const Icon(
+                                Icons.add,
+                                color: Colors.black,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                "Make a New Deal",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFCC29),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(60),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              )
-            else if (displayedDeals.isEmpty)
-              Center(
-                child:
-                    _searchController.text.isEmpty
-                        ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.network(
-                              Images.noDeal,
-                              fit: BoxFit.contain,
-                              height: 280,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              "🤝 No Deals Created Yet!",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              Lorempsum.noDealText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        )
-                        : Text(
-                          "No racers found for '${_searchController.text}'.",
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.white70),
-                          textAlign: TextAlign.center,
-                        ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: displayedDeals.length,
-                itemBuilder: (context, index) {
-                  final deal = displayedDeals[index];
-                  return DealCardItem(
-                    dealService: DealService(),
-                    sponsorService: SponsorService(),
-
-                    deal: deal,
-                    fetchDealDetail: _fetchDealDetailItemById(deal.id),
-                  );
-                },
               ),
-          ],
+              const SizedBox(height: 20),
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (_error != null)
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Error: $_error',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadDeals,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (displayedDeals.isEmpty)
+                Center(
+                  child:
+                      _searchController.text.isEmpty
+                          ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.network(
+                                Images.noDeal,
+                                fit: BoxFit.contain,
+                                height: 280,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                "🤝 No Deals Created Yet!",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                Lorempsum.noDealText,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          )
+                          : Text(
+                            "No racers found for '${_searchController.text}'.",
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: displayedDeals.length,
+                  itemBuilder: (context, index) {
+                    final deal = displayedDeals[index];
+                    return DealCardItem(
+                      dealService: DealService(),
+                      sponsorService: SponsorService(),
+
+                      deal: deal,
+                      fetchDealDetail: _fetchDealDetailItemById(deal.id),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );

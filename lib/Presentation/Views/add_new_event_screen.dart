@@ -89,7 +89,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (picked != null) _safeSetState(() => _selectedDate = picked);
@@ -118,8 +118,8 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _registrationCloseDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: _selectedDate ?? DateTime(2100),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
     if (picked != null) _safeSetState(() => _registrationCloseDate = picked);
   }
@@ -514,7 +514,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                           onChanged:
                               (val) =>
                                   _safeSetState(() => _selectedTrack = val),
-                                  hint: Text(
+                          hint: Text(
                             "Select Race track",
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.6),
@@ -530,7 +530,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
                               horizontal: 12,
                               vertical: 12,
                             ),
-                           
+
                             hintStyle: const TextStyle(color: Colors.white),
                           ),
                           dropdownColor: const Color(0xFF13386B),

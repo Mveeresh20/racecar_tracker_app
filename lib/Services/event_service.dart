@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/event.dart';
@@ -19,14 +20,45 @@ class EventService extends BaseService {
     return getUserEventsRef(userId).onValue.map((event) {
       if (event.snapshot.value == null) return [];
 
-      final Map<dynamic, dynamic> data = event.snapshot.value as Map;
-      return data.entries.map((entry) {
-        final Map<String, dynamic> eventData = Map<String, dynamic>.from(
-          entry.value,
-        );
-        eventData['id'] = entry.key;
-        return Event.fromMap(eventData);
-      }).toList();
+      final data = event.snapshot.value;
+      if (data is Map) {
+        return data.entries
+            .map((entry) {
+              try {
+                Map<String, dynamic> eventData;
+
+                if (entry.value is Map) {
+                  eventData = Map<String, dynamic>.from(entry.value as Map);
+                } else if (entry.value is String) {
+                  try {
+                    final jsonMap =
+                        jsonDecode(entry.value as String)
+                            as Map<String, dynamic>;
+                    eventData = Map<String, dynamic>.from(jsonMap);
+                  } catch (parseError) {
+                    print('Error parsing event string: $parseError');
+                    return null;
+                  }
+                } else {
+                  print(
+                    'Warning: Event data is not a map or string: ${entry.value}',
+                  );
+                  return null;
+                }
+
+                eventData['id'] = entry.key;
+                return Event.fromMap(eventData);
+              } catch (e) {
+                print('Error processing event entry: $e');
+                return null;
+              }
+            })
+            .whereType<Event>()
+            .toList();
+      } else {
+        print('Unexpected event data type: ${data.runtimeType}');
+        return <Event>[];
+      }
     });
   }
 
@@ -35,14 +67,45 @@ class EventService extends BaseService {
     return eventsRef.onValue.map((event) {
       if (event.snapshot.value == null) return [];
 
-      final Map<dynamic, dynamic> data = event.snapshot.value as Map;
-      return data.entries.map((entry) {
-        final Map<String, dynamic> eventData = Map<String, dynamic>.from(
-          entry.value,
-        );
-        eventData['id'] = entry.key;
-        return Event.fromMap(eventData);
-      }).toList();
+      final data = event.snapshot.value;
+      if (data is Map) {
+        return data.entries
+            .map((entry) {
+              try {
+                Map<String, dynamic> eventData;
+
+                if (entry.value is Map) {
+                  eventData = Map<String, dynamic>.from(entry.value as Map);
+                } else if (entry.value is String) {
+                  try {
+                    final jsonMap =
+                        jsonDecode(entry.value as String)
+                            as Map<String, dynamic>;
+                    eventData = Map<String, dynamic>.from(jsonMap);
+                  } catch (parseError) {
+                    print('Error parsing event string: $parseError');
+                    return null;
+                  }
+                } else {
+                  print(
+                    'Warning: Event data is not a map or string: ${entry.value}',
+                  );
+                  return null;
+                }
+
+                eventData['id'] = entry.key;
+                return Event.fromMap(eventData);
+              } catch (e) {
+                print('Error processing event entry: $e');
+                return null;
+              }
+            })
+            .whereType<Event>()
+            .toList();
+      } else {
+        print('Unexpected event data type: ${data.runtimeType}');
+        return <Event>[];
+      }
     });
   }
 
@@ -86,33 +149,113 @@ class EventService extends BaseService {
         .startAt(now) // Show events that haven't ended yet
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map<dynamic, dynamic>?;
+          final data = event.snapshot.value;
           if (data == null) return <Event>[];
 
-          return data.entries.map((entry) {
-            final map = Map<String, dynamic>.from(entry.value as Map);
-            map['id'] = entry.key;
-            return _fromMap(map);
-          }).toList();
+          try {
+            if (data is Map) {
+              return data.entries
+                  .map((entry) {
+                    try {
+                      Map<String, dynamic> eventMap;
+
+                      if (entry.value is Map) {
+                        eventMap = Map<String, dynamic>.from(
+                          entry.value as Map,
+                        );
+                      } else if (entry.value is String) {
+                        try {
+                          final jsonMap =
+                              jsonDecode(entry.value as String)
+                                  as Map<String, dynamic>;
+                          eventMap = Map<String, dynamic>.from(jsonMap);
+                        } catch (parseError) {
+                          print(
+                            'Error parsing upcoming event string: $parseError',
+                          );
+                          return null;
+                        }
+                      } else {
+                        print(
+                          'Warning: Upcoming event data is not a map or string: ${entry.value}',
+                        );
+                        return null;
+                      }
+
+                      eventMap['id'] = entry.key;
+                      return _fromMap(eventMap);
+                    } catch (e) {
+                      print('Error processing upcoming event entry: $e');
+                      return null;
+                    }
+                  })
+                  .whereType<Event>()
+                  .toList();
+            } else {
+              print(
+                'Unexpected upcoming events data type: ${data.runtimeType}',
+              );
+              return <Event>[];
+            }
+          } catch (e) {
+            print('Error in streamUpcomingEvents: $e');
+            return <Event>[];
+          }
         });
   }
 
   // Stream events by status
   Stream<List<Event>> streamEventsByStatus(EventStatusType status) {
-    return eventsRef
-        .orderByChild('status')
-        .equalTo(status.toString())
-        .onValue
-        .map((event) {
-          final data = event.snapshot.value as Map<dynamic, dynamic>?;
-          if (data == null) return <Event>[];
+    return eventsRef.orderByChild('status').equalTo(status.toString()).onValue.map((
+      event,
+    ) {
+      final data = event.snapshot.value;
+      if (data == null) return <Event>[];
 
-          return data.entries.map((entry) {
-            final map = Map<String, dynamic>.from(entry.value as Map);
-            map['id'] = entry.key;
-            return _fromMap(map);
-          }).toList();
-        });
+      try {
+        if (data is Map) {
+          return data.entries
+              .map((entry) {
+                try {
+                  Map<String, dynamic> eventMap;
+
+                  if (entry.value is Map) {
+                    eventMap = Map<String, dynamic>.from(entry.value as Map);
+                  } else if (entry.value is String) {
+                    try {
+                      final jsonMap =
+                          jsonDecode(entry.value as String)
+                              as Map<String, dynamic>;
+                      eventMap = Map<String, dynamic>.from(jsonMap);
+                    } catch (parseError) {
+                      print('Error parsing status event string: $parseError');
+                      return null;
+                    }
+                  } else {
+                    print(
+                      'Warning: Status event data is not a map or string: ${entry.value}',
+                    );
+                    return null;
+                  }
+
+                  eventMap['id'] = entry.key;
+                  return _fromMap(eventMap);
+                } catch (e) {
+                  print('Error processing status event entry: $e');
+                  return null;
+                }
+              })
+              .whereType<Event>()
+              .toList();
+        } else {
+          print('Unexpected status events data type: ${data.runtimeType}');
+          return <Event>[];
+        }
+      } catch (e) {
+        print('Error in streamEventsByStatus: $e');
+        return <Event>[];
+      }
+    });
   }
 
   // Update event registration status

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:racecar_tracker/Services/base_service.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
@@ -158,14 +159,27 @@ class SponsorService extends BaseService {
 
             for (final entry in data.entries) {
               try {
-                if (entry.value is! Map) {
-                  print('Warning: Sponsor data is not a map: ${entry.value}');
+                Map<String, dynamic> sponsorData;
+
+                if (entry.value is Map) {
+                  sponsorData = Map<String, dynamic>.from(entry.value as Map);
+                } else if (entry.value is String) {
+                  try {
+                    final jsonMap =
+                        jsonDecode(entry.value as String)
+                            as Map<String, dynamic>;
+                    sponsorData = Map<String, dynamic>.from(jsonMap);
+                  } catch (parseError) {
+                    print('Error parsing sponsor string: $parseError');
+                    print('String value: ${entry.value}');
+                    continue;
+                  }
+                } else {
+                  print(
+                    'Warning: Sponsor data is not a map or string: ${entry.value}',
+                  );
                   continue;
                 }
-
-                final sponsorData = Map<String, dynamic>.from(
-                  entry.value as Map,
-                );
 
                 // Generate new ID if empty or null
                 if (entry.key.toString().isEmpty ||

@@ -681,17 +681,16 @@ class _HomeContentState extends State<HomeContent> {
         );
   }
 
-  // Helper function to update Commission Summary data
+  // Helper function to update commission summary
   void _updateCommissionSummary(
     String userId,
     List<DealItem>? deals,
     List<Sponsor>? sponsors,
-  ) async {
-    if (!mounted) return;
-
+  ) {
     try {
-      final currentMonth = DateTime.now().month;
-      final currentYear = DateTime.now().year;
+      final now = DateTime.now();
+      final currentMonth = now.month;
+      final currentYear = now.year;
 
       // Calculate This Month Earned
       final thisMonthEarned =
@@ -739,8 +738,7 @@ class _HomeContentState extends State<HomeContent> {
               .length ??
           0;
 
-      // Calculate Total Deals Running
-      final now = DateTime.now();
+      // Calculate Total Deals Running (deals that haven't expired yet)
       final totalDealsRunning =
           deals?.where((deal) {
             if (deal.renewalDate == null || deal.renewalDate.isEmpty)
@@ -796,27 +794,32 @@ class _HomeContentState extends State<HomeContent> {
     print('Total deals received: ${deals.length}');
 
     final now = DateTime.now();
+    // Set threshold to 30 days from now for pending deals
     final pendingOrExpiredThreshold = now.add(Duration(days: 30));
 
     // Filter deals based on their status and end date
     final List<Deal> pendingDealsList = [];
-    final List<DealItem> activeDealsList =
-        []; // Use DealItem for active deals list
+    final List<DealItem> activeDealsList = [];
 
     for (final deal in deals) {
       print(
         'Processing deal ID: ${deal.id}, Status: ${deal.status}, RenewalDate: ${deal.renewalDate}',
       );
 
-      // Check for pending deals
-      if (deal.status == DealStatusType.pending) {
-        try {
-          final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+      try {
+        // Parse the renewal date (format: "MMMM yyyy")
+        final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+
+        // For pending deals: show deals that are expiring within 30 days
+        if (deal.status == DealStatusType.pending) {
           print(
             'Parsed endDate for pending deal ${deal.id}: $endDate. Threshold: $pendingOrExpiredThreshold',
           );
+
+          // Check if deal is expiring within 30 days or already expired
           if (endDate.isBefore(pendingOrExpiredThreshold)) {
             print('Deal ${deal.id} is pending and expiring soon.');
+
             // Fetch full sponsor and racer details
             final sponsor = await _sponsorService.getSponsor(
               userId,
@@ -827,8 +830,8 @@ class _HomeContentState extends State<HomeContent> {
             if (sponsor != null && racer != null) {
               pendingDealsList.add(
                 Deal(
-                  name: sponsor.name, // Use full sponsor name
-                  client: racer.name, // Use full racer name
+                  name: sponsor.name,
+                  client: racer.name,
                   expiryDate: endDate,
                 ),
               );
@@ -839,29 +842,24 @@ class _HomeContentState extends State<HomeContent> {
               );
             }
           }
-        } catch (e) {
-          print(
-            'Error parsing date or fetching details for pending deal ${deal.id}: $e',
-          );
         }
-      }
 
-      // Check for active deals
-      if (deal.status == DealStatusType.paid) {
-        try {
-          final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+        // For paid deals: show deals that are still active (not expired)
+        if (deal.status == DealStatusType.paid) {
           print(
             'Parsed endDate for active deal ${deal.id}: $endDate. Current date: $now',
           );
+
+          // Check if deal is still active (end date is in the future)
           if (endDate.isAfter(now)) {
-            activeDealsList.add(deal); // Add the DealItem directly
+            activeDealsList.add(deal);
             print('Deal ${deal.id} is paid and active.');
           } else {
             print('Deal ${deal.id} is paid but expired.');
           }
-        } catch (e) {
-          print('Error parsing date for active deal ${deal.id}: $e');
         }
+      } catch (e) {
+        print('Error parsing date for deal ${deal.id}: $e');
       }
     }
 
@@ -935,7 +933,7 @@ class _HomeContentState extends State<HomeContent> {
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
                                     ),
-                                    child: Image.network(Images.navBarHome)
+                                    child: Image.network(Images.navBarHome),
                                   ),
                                   SizedBox(width: 10),
                                   Text(
