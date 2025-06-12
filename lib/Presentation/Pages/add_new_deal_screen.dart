@@ -106,14 +106,13 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
 
   Future<void> _pickDate(BuildContext context, bool isStart) async {
     final DateTime now = DateTime.now();
-    final DateTime firstDate = DateTime(2000); // Allow dates from year 2000
-    final DateTime lastDate = DateTime(2100); // Allow dates until year 2100
+    final DateTime lastDate = DateTime(2100);
 
-    // For end date, if start date is selected, use it as the minimum date
     final DateTime initialDate =
         isStart ? (_startDate ?? now) : (_endDate ?? (_startDate ?? now));
 
-    final DateTime minDate = isStart ? firstDate : (_startDate ?? firstDate);
+    final DateTime minDate =
+        isStart ? now : (_startDate?.isAfter(now) == true ? _startDate! : now);
 
     final picked = await showDatePicker(
       context: context,
@@ -123,12 +122,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              // Body text color
-            ),
-            dialogBackgroundColor: const Color(
-              0xFF13386B,
-            ), // Dialog background color
+            colorScheme: const ColorScheme.light(),
+            dialogBackgroundColor: const Color(0xFF13386B),
           ),
           child: child!,
         );
@@ -139,12 +134,10 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
       setState(() {
         if (isStart) {
           _startDate = picked;
-          // If end date is before new start date, reset it
           if (_endDate != null && _endDate!.isBefore(picked)) {
             _endDate = null;
           }
         } else {
-          // Only set end date if it's after start date
           if (_startDate == null || picked.isAfter(_startDate!)) {
             _endDate = picked;
           } else {
@@ -188,6 +181,24 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
         return;
       }
 
+      // Validate commission percentage early
+      final commissionPercentage =
+          double.tryParse(
+            _commissionController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+          ) ??
+          0.0;
+
+      if (commissionPercentage > 100.0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Commission percentage cannot be greater than 100%'),
+            backgroundColor: Colors.blueGrey,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
@@ -208,11 +219,8 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             ) ??
             0.0;
 
-        final commissionPercentage =
-            double.tryParse(
-              _commissionController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-            ) ??
-            0.0;
+        // Commission percentage already validated above
+        // final commissionPercentage = double.tryParse(...) - removed duplicate
 
         if (widget.existingDeal != null) {
           // Update existing deal

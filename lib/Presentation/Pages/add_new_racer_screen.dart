@@ -92,7 +92,7 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
           isStart
               ? (_startDate ?? DateTime.now())
               : (_endDate ?? DateTime.now()),
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null) {

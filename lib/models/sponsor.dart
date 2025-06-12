@@ -63,7 +63,9 @@ class Sponsor {
             DateTime.now().millisecondsSinceEpoch,
       ),
       status: SponsorStatus.values.firstWhere(
-        (e) => e.toString() == map['status']?.toString(),
+        (e) =>
+            e.toString().split('.').last ==
+            map['status']?.toString().split('.').last,
         orElse: () => SponsorStatus.active,
       ),
       createdAt: DateTime.fromMillisecondsSinceEpoch(

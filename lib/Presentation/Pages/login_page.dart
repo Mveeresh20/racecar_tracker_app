@@ -389,7 +389,7 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          "Already have an account? ",
+                          "Don’t have an account? ",
                           style: TextStyle(
                             color: Colors.black,
                             fontFamily: "Montserrat",
@@ -401,9 +401,7 @@ class _LoginPageState extends State<LoginPage> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => SignUp(),
-                              ),
+                              MaterialPageRoute(builder: (context) => SignUp()),
                             );
                           },
                           child: const Text(

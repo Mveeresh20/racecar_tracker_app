@@ -51,7 +51,9 @@ import 'package:flutter/services.dart'; // Import for SystemNavigator
 import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart'; // Import the AddNewEventScreen
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int? initialTabIndex;
+
+  const HomeScreen({super.key, this.initialTabIndex});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -72,6 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Set initial tab if provided
+    if (widget.initialTabIndex != null) {
+      _currentIndex = widget.initialTabIndex!;
+    }
     _initializeHomeData();
   }
 
@@ -534,6 +540,8 @@ class _HomeContentState extends State<HomeContent> {
   List<Deal> _pendingDeals = [];
   List<Event> _upcomingEvents = [];
   List<DealItem> _activeSponsorshipDeals = [];
+  List<DealItem> _allDeals = []; // Added to store all deals
+  List<Sponsor> _allSponsors = []; // Added to store all sponsors
 
   // Service instances
   final DealService _dealService = DealService();
@@ -609,9 +617,14 @@ class _HomeContentState extends State<HomeContent> {
                           }
                         }) ??
                         0.0);
+                _allDeals = deals ?? []; // Update _allDeals
               });
-              _updateCommissionSummary(userId, deals, null);
-              _updatePendingAndActiveDeals(userId, deals ?? []);
+              _updateCommissionSummary(
+                userId,
+                _allDeals,
+                _allSponsors,
+              ); // Use updated _allDeals and _allSponsors
+              _updatePendingAndActiveDeals(userId, _allDeals);
             }
           },
           onError: (error) {
@@ -642,9 +655,14 @@ class _HomeContentState extends State<HomeContent> {
           (sponsors) {
             if (mounted) {
               setState(() {
-                _totalSponsors = sponsors?.length ?? 0;
+                _totalSponsors = sponsors.length;
+                _allSponsors = sponsors; // Update _allSponsors
               });
-              _updateCommissionSummary(userId, null, sponsors);
+              _updateCommissionSummary(
+                userId,
+                _allDeals,
+                _allSponsors,
+              ); // Use updated _allDeals and _allSponsors
             }
           },
           onError: (error) {
@@ -652,8 +670,7 @@ class _HomeContentState extends State<HomeContent> {
             if (mounted) {
               setState(() {
                 _totalSponsors = 0;
-                // Update commission details to reflect no active sponsors
-                _updateCommissionSummary(userId, null, []);
+                _allSponsors = [];
               });
             }
           },
@@ -661,17 +678,17 @@ class _HomeContentState extends State<HomeContent> {
 
     // Stream upcoming events
     _upcomingEventsSubscription = _eventService
-        .streamUpcomingEvents(userId)
+        .getUserEvents(userId)
         .listen(
           (events) {
             if (mounted) {
               setState(() {
-                _upcomingEvents = events ?? [];
+                _upcomingEvents = events;
               });
             }
           },
           onError: (error) {
-            print('Error fetching upcoming events: $error');
+            print('Error fetching events: $error');
             if (mounted) {
               setState(() {
                 _upcomingEvents = [];
@@ -684,8 +701,8 @@ class _HomeContentState extends State<HomeContent> {
   // Helper function to update commission summary
   void _updateCommissionSummary(
     String userId,
-    List<DealItem>? deals,
-    List<Sponsor>? sponsors,
+    List<DealItem> deals,
+    List<Sponsor> sponsors,
   ) {
     try {
       final now = DateTime.now();
@@ -695,7 +712,7 @@ class _HomeContentState extends State<HomeContent> {
       // Calculate This Month Earned
       final thisMonthEarned =
           (deals
-                  ?.where((deal) {
+                  .where((deal) {
                     if (deal.renewalDate == null || deal.renewalDate.isEmpty)
                       return false;
                     try {
@@ -734,24 +751,24 @@ class _HomeContentState extends State<HomeContent> {
       // Calculate Total Sponsors Active
       final totalSponsorsActive =
           sponsors
-              ?.where((sponsor) => sponsor.status == SponsorStatus.active)
+              .where((sponsor) => sponsor.status == SponsorStatus.active)
               .length ??
           0;
 
       // Calculate Total Deals Running (deals that haven't expired yet)
       final totalDealsRunning =
-          deals?.where((deal) {
+          deals.where((deal) {
             if (deal.renewalDate == null || deal.renewalDate.isEmpty)
               return false;
             try {
               final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
-              return endDate.isAfter(now);
+              return endDate.isAfter(now) ||
+                  (endDate.month == now.month && endDate.year == now.year);
             } catch (e) {
               print('Error parsing date for deal ${deal.id}: $e');
               return false;
             }
-          }).length ??
-          0;
+          }).length;
 
       if (mounted) {
         setState(() {
@@ -802,23 +819,22 @@ class _HomeContentState extends State<HomeContent> {
     final List<DealItem> activeDealsList = [];
 
     for (final deal in deals) {
-      print(
-        'Processing deal ID: ${deal.id}, Status: ${deal.status}, RenewalDate: ${deal.renewalDate}',
-      );
+      print('--- Processing Deal ID: ${deal.id} ---');
+      print('Deal Status: ${deal.status}');
+      print('Deal RenewalDate (raw): ${deal.renewalDate}');
 
       try {
         // Parse the renewal date (format: "MMMM yyyy")
         final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+        print('Parsed endDate: $endDate');
 
         // For pending deals: show deals that are expiring within 30 days
         if (deal.status == DealStatusType.pending) {
-          print(
-            'Parsed endDate for pending deal ${deal.id}: $endDate. Threshold: $pendingOrExpiredThreshold',
-          );
-
-          // Check if deal is expiring within 30 days or already expired
+          print('Deal ${deal.id} is pending.');
           if (endDate.isBefore(pendingOrExpiredThreshold)) {
-            print('Deal ${deal.id} is pending and expiring soon.');
+            print(
+              'Deal ${deal.id} is pending and expiring soon (before $pendingOrExpiredThreshold).',
+            );
 
             // Fetch full sponsor and racer details
             final sponsor = await _sponsorService.getSponsor(
@@ -841,25 +857,26 @@ class _HomeContentState extends State<HomeContent> {
                 'Sponsor or Racer not found for pending deal ${deal.id}. Sponsor ID: ${deal.sponsorId}, Racer ID: ${deal.racerId}',
               );
             }
+          } else {
+            print('Deal ${deal.id} is pending but not expiring soon.');
           }
         }
 
-        // For paid deals: show deals that are still active (not expired)
-        if (deal.status == DealStatusType.paid) {
-          print(
-            'Parsed endDate for active deal ${deal.id}: $endDate. Current date: $now',
-          );
+        // For active deals: show ALL deals that are still active (not expired), regardless of payment status
+        print(
+          'Parsed endDate for deal ${deal.id}: $endDate. Current date: $now',
+        );
 
-          // Check if deal is still active (end date is in the future)
-          if (endDate.isAfter(now)) {
-            activeDealsList.add(deal);
-            print('Deal ${deal.id} is paid and active.');
-          } else {
-            print('Deal ${deal.id} is paid but expired.');
-          }
+        // Check if deal is still active (end date is in the future)
+        if (endDate.isAfter(now) ||
+            (endDate.month == now.month && endDate.year == now.year)) {
+          activeDealsList.add(deal);
+          print('Deal ${deal.id} is active (non-expired or current month).');
+        } else {
+          print('Deal ${deal.id} is expired.');
         }
       } catch (e) {
-        print('Error parsing date for deal ${deal.id}: $e');
+        print('Error parsing date or processing deal ${deal.id}: $e');
       }
     }
 
@@ -874,6 +891,175 @@ class _HomeContentState extends State<HomeContent> {
       });
       print('setState called with updated pending and active deals.');
     }
+  }
+
+  // Add method to show missing data dialog with action buttons
+  Future<void> _showMissingDataDialog({
+    required List<String> missingItems,
+    required String title,
+    required String message,
+  }) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF13386B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              ...missingItems.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFFFFCC29),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+            if (missingItems.contains('racers'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddNewRacerScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    // Refresh racers list if needed
+                    final userId = UserService().getCurrentUserId();
+                    if (userId != null) {
+                      await Provider.of<RacerProvider>(
+                        context,
+                        listen: false,
+                      ).initializeRacers(userId);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Racer',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('events'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddNewEventScreen(),
+                    ),
+                  );
+                  // Refresh events after returning
+                  final userId = UserService().getCurrentUserId();
+                  if (userId != null) {
+                    Provider.of<EventProvider>(
+                      context,
+                      listen: false,
+                    ).initUserEvents(userId);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Event',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('sponsors'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => AddNewSponsorScreen(
+                            provider: Provider.of<SponsorProvider>(
+                              context,
+                              listen: false,
+                            ),
+                          ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Sponsor',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1115,18 +1301,120 @@ class _HomeContentState extends State<HomeContent> {
                       child: BuildActionCard(
                         imageUrl: Images.totalDealsCrackedImg,
                         text: "New\nDeal",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => AddNewDealScreen(
-                                    sponsors: [],
-                                    racers: [],
-                                    events: [],
+                        onTap: () async {
+                          try {
+                            final userId = UserService().getCurrentUserId();
+                            if (userId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please log in to create a deal',
                                   ),
-                            ),
-                          );
+                                ),
+                              );
+                              return;
+                            }
+
+                            // Show loading indicator
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder:
+                                  (context) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                            );
+
+                            // Load all required data
+                            final racers =
+                                await _racerService
+                                    .getRacersStream(userId)
+                                    .first;
+                            final events =
+                                await _eventService.getUserEvents(userId).first;
+                            final sponsors =
+                                await _sponsorService
+                                    .getSponsorsStream(userId)
+                                    .first;
+
+                            // Hide loading indicator
+                            if (mounted) {
+                              Navigator.pop(
+                                context,
+                              ); // Remove loading indicator
+                            }
+
+                            // Check if we have all required data
+                            List<String> missingItems = [];
+                            if (racers.isEmpty) {
+                              missingItems.add('racers');
+                            }
+                            if (events.isEmpty) {
+                              missingItems.add('events');
+                            }
+                            if (sponsors.isEmpty) {
+                              missingItems.add('sponsors');
+                            }
+
+                            if (missingItems.isNotEmpty) {
+                              // Show missing data dialog with action buttons
+                              await _showMissingDataDialog(
+                                missingItems: missingItems,
+                                title: 'Missing Required Data',
+                                message:
+                                    'To create a deal, you need to have at least one racer, event, and sponsor. Please add the missing items:',
+                              );
+                              return; // Exit the function
+                            }
+
+                            // Navigate to AddNewDealScreen with data
+                            if (mounted) {
+                              final newDeal = await Navigator.push<DealItem>(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => AddNewDealScreen(
+                                        sponsors: sponsors,
+                                        racers: racers,
+                                        events: events,
+                                      ),
+                                ),
+                              );
+
+                              // Handle the returned deal
+                              if (mounted && newDeal != null) {
+                                // Navigate to deals tab in main HomeScreen
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/deals',
+                                  (route) => false,
+                                );
+
+                                // Show success message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Deal created successfully!'),
+                                    backgroundColor: Colors.green,
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            // Hide loading indicator if still showing
+                            if (mounted) {
+                              Navigator.pop(
+                                context,
+                              ); // Remove loading indicator if still showing
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          }
                         },
                       ),
                     ),

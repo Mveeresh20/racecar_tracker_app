@@ -583,7 +583,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           SizedBox(
                             width: 238,
                             child: Text(
-                              "are you sure you want to log out?",
+                              "Are you sure you want to log out?",
                               style: const TextStyle(
                                 fontFamily: "Roboto",
                                 fontWeight: FontWeight.w400,

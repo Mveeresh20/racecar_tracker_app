@@ -71,38 +71,6 @@ class DashboardSectionCard extends StatelessWidget {
 
             if (onGoToPressed != null && buttonText != null) ...[
               const SizedBox(height: 12),
-
-              // 👉 Informational Text - Not a button
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "🗓️ No Upcoming Race Events",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: "Montserrat",
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    Lorempsum.noNewRaceEvent,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: "Montserrat",
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
               // 👉 Action Button (only for navigation or actions)
               SizedBox(
                 width: double.infinity,

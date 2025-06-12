@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
 import 'package:racecar_tracker/Services/image_picker_util.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
@@ -10,6 +11,17 @@ import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:racecar_tracker/Presentation/Pages/make_deal_screen.dart';
 import 'package:uuid/uuid.dart';
+import 'package:racecar_tracker/Services/racer_service.dart';
+import 'package:racecar_tracker/Services/event_service.dart';
+import 'package:racecar_tracker/models/racer.dart';
+import 'package:racecar_tracker/models/event.dart';
+import 'package:racecar_tracker/Services/sponsor_service.dart';
+import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
+import 'package:racecar_tracker/models/deal_item.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:racecar_tracker/Services/racer_provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
 
 class AddNewSponsorScreen extends StatefulWidget {
   final SponsorProvider provider;
@@ -26,6 +38,14 @@ class AddNewSponsorScreen extends StatefulWidget {
 }
 
 class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
+  String? _validateEmail(String? value) {
+    const pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    final regex = RegExp(pattern);
+    if (value == null || value.isEmpty) return "Email is required";
+    if (!regex.hasMatch(value)) return "Enter a valid email address";
+    return null;
+  }
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _sponsorNameController = TextEditingController();
   final TextEditingController _contactPersonController =
@@ -274,15 +294,72 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         // Save sponsor to database
         await widget.provider.createSponsor(newSponsor);
 
+        // Fetch required data for AddNewDealScreen
+        final racerService = RacerService();
+        final eventService = EventService();
+        final sponsorService = SponsorService();
+
+        // Load all required data
+        final racers = await racerService.getRacersStream(userId).first;
+        final events = await eventService.getUserEvents(userId).first;
+        final sponsors = await sponsorService.getSponsorsStream(userId).first;
+
+        // Check if we have all required data
+        List<String> missingItems = [];
+        if (racers.isEmpty) {
+          missingItems.add('racers');
+        }
+        if (events.isEmpty) {
+          missingItems.add('events');
+        }
+        if (sponsors.isEmpty) {
+          missingItems.add('sponsors');
+        }
+
+        if (missingItems.isNotEmpty) {
+          // Show missing data dialog with action buttons
+          await _showMissingDataDialog(
+            missingItems: missingItems,
+            title: 'Missing Required Data',
+            message:
+                'To create a deal, you need to have at least one racer, event, and sponsor. Please add the missing items:',
+          );
+          return; // Exit the function
+        }
+
         // Hide loading indicator and navigate to make deal screen
         if (mounted) {
           Navigator.pop(context); // Remove loading indicator
-          Navigator.push(
+          final newDeal = await Navigator.push<DealItem>(
             context,
             MaterialPageRoute(
-              builder: (context) => MakeDealScreen(sponsor: newSponsor),
+              builder:
+                  (context) => AddNewDealScreen(
+                    sponsors: sponsors,
+                    racers: racers,
+                    events: events,
+                  ),
             ),
           );
+
+          // Handle the returned deal
+          if (mounted && newDeal != null) {
+            // Navigate to deals tab in main HomeScreen
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/deals',
+              (route) => false,
+            );
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sponsor and deal created successfully!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         }
       } catch (e) {
         // Hide loading indicator and show error
@@ -314,7 +391,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedEndDate,
-      firstDate: DateTime(2020), // Allow dates from 2020 onwards
+      firstDate: DateTime.now(), // Allow dates from 2020 onwards
       lastDate: DateTime(2030),
     );
     if (picked != null && picked != _selectedEndDate) {
@@ -323,6 +400,175 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
         _hasDateSelected = true;
       });
     }
+  }
+
+  // Add method to show missing data dialog with action buttons
+  Future<void> _showMissingDataDialog({
+    required List<String> missingItems,
+    required String title,
+    required String message,
+  }) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF13386B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              ...missingItems.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFFFFCC29),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+            if (missingItems.contains('racers'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddNewRacerScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    // Refresh racers list if needed
+                    final userId = UserService().getCurrentUserId();
+                    if (userId != null) {
+                      await Provider.of<RacerProvider>(
+                        context,
+                        listen: false,
+                      ).initializeRacers(userId);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Racer',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('events'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddNewEventScreen(),
+                    ),
+                  );
+                  // Refresh events after returning
+                  final userId = UserService().getCurrentUserId();
+                  if (userId != null) {
+                    Provider.of<EventProvider>(
+                      context,
+                      listen: false,
+                    ).initUserEvents(userId);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Event',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('sponsors'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => AddNewSponsorScreen(
+                            provider: Provider.of<SponsorProvider>(
+                              context,
+                              listen: false,
+                            ),
+                          ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Sponsor',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -418,9 +664,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
                 _emailController,
                 "Enter Email Address",
                 keyboardType: TextInputType.emailAddress,
-                validator:
-                    (value) =>
-                        value?.isEmpty ?? true ? "Please enter email" : null,
+                validator: _validateEmail,
               ),
               _buildFormField(
                 "Industry Type",

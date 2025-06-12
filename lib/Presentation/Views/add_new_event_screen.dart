@@ -89,7 +89,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null) _safeSetState(() => _selectedDate = picked);
@@ -118,7 +118,7 @@ class _AddNewEventScreenState extends State<AddNewEventScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _registrationCloseDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null) _safeSetState(() => _registrationCloseDate = picked);

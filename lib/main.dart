@@ -219,12 +219,19 @@ class MyApp extends StatelessWidget {
             '/': (context) => OnBoarding1(),
             '/login': (context) => LoginPage(),
             '/home': (context) => HomeScreen(),
+            '/deals': (context) => HomeScreen(initialTabIndex: 4),
           },
           onGenerateRoute: (settings) {
             // Handle any other routes
             if (settings.name == '/home') {
               return MaterialPageRoute(
                 builder: (context) => HomeScreen(),
+                settings: settings,
+              );
+            }
+            if (settings.name == '/deals') {
+              return MaterialPageRoute(
+                builder: (context) => HomeScreen(initialTabIndex: 4),
                 settings: settings,
               );
             }

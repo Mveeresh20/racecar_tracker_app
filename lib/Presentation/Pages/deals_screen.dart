@@ -21,6 +21,12 @@ import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async'; // Import for StreamSubscription
+import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:racecar_tracker/Services/racer_provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
 
 class DealsScreen extends StatefulWidget {
   const DealsScreen({super.key});
@@ -158,14 +164,26 @@ class _DealsScreenState extends State<DealsScreen> {
       if (!mounted) return;
 
       // Check if we have all required data
+      List<String> missingItems = [];
       if (racers.isEmpty) {
-        throw Exception('No racers available. Please add a racer first.');
+        missingItems.add('racers');
       }
       if (events.isEmpty) {
-        throw Exception('No events available. Please add an event first.');
+        missingItems.add('events');
       }
       if (sponsors.isEmpty) {
-        throw Exception('No sponsors available. Please add a sponsor first.');
+        missingItems.add('sponsors');
+      }
+
+      if (missingItems.isNotEmpty) {
+        // Show missing data dialog with action buttons
+        await _showMissingDataDialog(
+          missingItems: missingItems,
+          title: 'Missing Required Data',
+          message:
+              'To create a deal, you need to have at least one racer, event, and sponsor. Please add the missing items:',
+        );
+        return; // Exit the function
       }
 
       // Navigate to AddNewDealScreen
@@ -231,6 +249,175 @@ class _DealsScreenState extends State<DealsScreen> {
         return null;
       }
     };
+  }
+
+  // Add method to show missing data dialog with action buttons
+  Future<void> _showMissingDataDialog({
+    required List<String> missingItems,
+    required String title,
+    required String message,
+  }) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF13386B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              ...missingItems.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFFFFCC29),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+            if (missingItems.contains('racers'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddNewRacerScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    // Refresh racers list if needed
+                    final userId = UserService().getCurrentUserId();
+                    if (userId != null) {
+                      await Provider.of<RacerProvider>(
+                        context,
+                        listen: false,
+                      ).initializeRacers(userId);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Racer',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('events'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddNewEventScreen(),
+                    ),
+                  );
+                  // Refresh events after returning
+                  final userId = UserService().getCurrentUserId();
+                  if (userId != null) {
+                    Provider.of<EventProvider>(
+                      context,
+                      listen: false,
+                    ).initUserEvents(userId);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Event',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (missingItems.contains('sponsors'))
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => AddNewSponsorScreen(
+                            provider: Provider.of<SponsorProvider>(
+                              context,
+                              listen: false,
+                            ),
+                          ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFCC29),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Add Sponsor',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   @override
