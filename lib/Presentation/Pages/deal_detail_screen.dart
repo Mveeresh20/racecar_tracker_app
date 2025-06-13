@@ -306,7 +306,7 @@ class DealDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // --- Deal Duration & Renewal Section ---
+            
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -411,7 +411,7 @@ class DealDetailScreen extends StatelessWidget {
           style: TextStyle(
             color:
                 valueColor ??
-                Colors.white, // Use provided color or default white
+                Colors.white, 
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),

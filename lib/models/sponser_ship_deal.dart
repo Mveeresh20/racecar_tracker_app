@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum DealStatus { pending, active, expired, completed } // Example enum for status
+enum DealStatus { pending, active, expired, completed } 
 
 class SponsorshipDeal {
   final String title;
@@ -32,6 +32,6 @@ class SponsorshipDeal {
   }
 
   String get statusText {
-    return status.toString().split('.').last.toUpperCase(); // Converts enum to "PENDING"
+    return status.toString().split('.').last.toUpperCase(); 
   }
 }

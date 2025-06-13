@@ -15,17 +15,17 @@ class TrackService {
     }
 
     final userTracksRef = _databaseRef.child(userId).child('tracks');
-    // Use push() to generate a unique key for each track
+   
     final newTrackRef = userTracksRef.push();
 
     await newTrackRef.set(track.toMap());
   }
 
-  // Fetch all tracks for the current user
+  
   Future<List<Track>> fetchTracks() async {
     String? userId = _userService.getCurrentUserId();
     if (userId == null) {
-      // Return an empty list if the user is not authenticated
+     
       return [];
     }
 
@@ -45,7 +45,7 @@ class TrackService {
         return tracks;
       }
     }
-    // Return an empty list if no tracks are found or data is in an unexpected format
+    
     return [];
   }
 }

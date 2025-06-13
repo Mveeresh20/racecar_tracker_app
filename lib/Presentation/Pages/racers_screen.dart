@@ -26,6 +26,30 @@ class RacersScreen extends StatefulWidget {
 }
 
 class _RacersScreenState extends State<RacersScreen> {
+  double _calculateChildAspectRatio(BuildContext context) {
+  
+    final screenWidth = MediaQuery.of(context).size.width;
+
+   
+    const double desiredCardHeight = 350.0; // Adjust this value
+
+   
+   
+    const double horizontalPadding =
+        2.0 * 2; 
+    const double crossAxisSpacing = 0; 
+    const int crossAxisCount = 2;
+
+    final cardWidth =
+        (screenWidth -
+            horizontalPadding -
+            (crossAxisSpacing * (crossAxisCount - 1))) /
+        crossAxisCount;
+
+    // Calculate childAspectRatio
+    return cardWidth / desiredCardHeight;
+  }
+
   int _currentIndex = 2;
   final TextEditingController _searchController = TextEditingController();
   final UserService _userService = UserService();
@@ -211,59 +235,61 @@ class _RacersScreenState extends State<RacersScreen> {
                                       ],
                                     ),
 
-                                     Consumer<EditProfileProvider>(
-                                builder: (context, provider, child) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ProfilePage(),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          width: 3,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      padding: EdgeInsets.all(2),
-                                      child: ClipOval(
-                                        child: CachedNetworkImage(
-                                          imageUrl:
-                                              provider.getProfileImageUrl(),
-                                          height: 30,
-                                          width: 30,
-                                          fit: BoxFit.cover,
-                                          placeholder:
-                                              (context, url) => Container(
-                                                color: Colors.grey[300],
-                                                child: const Icon(
-                                                  Icons.person,
-                                                  size: 16,
-                                                  color: Colors.grey,
-                                                ),
+                                    Consumer<EditProfileProvider>(
+                                      builder: (context, provider, child) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) => ProfilePage(),
                                               ),
-                                          errorWidget:
-                                              (context, url, error) =>
-                                                  Container(
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(
-                                                      Icons.person,
-                                                      size: 16,
-                                                      color: Colors.grey,
+                                            );
+                                          },
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                width: 3,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.all(2),
+                                            child: ClipOval(
+                                              child: CachedNetworkImage(
+                                                imageUrl:
+                                                    provider
+                                                        .getProfileImageUrl(),
+                                                height: 30,
+                                                width: 30,
+                                                fit: BoxFit.cover,
+                                                placeholder:
+                                                    (context, url) => Container(
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(
+                                                        Icons.person,
+                                                        size: 16,
+                                                        color: Colors.grey,
+                                                      ),
                                                     ),
-                                                  ),
-                                        ),
-                                      ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Container(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          child: const Icon(
+                                                            Icons.person,
+                                                            size: 16,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
-                              ),
-                                    
                                   ],
                                 ),
                               ),
@@ -365,7 +391,8 @@ class _RacersScreenState extends State<RacersScreen> {
                                     ? Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Image.network(
                                           Images.noRacer,
@@ -404,6 +431,7 @@ class _RacersScreenState extends State<RacersScreen> {
                                     ),
                           ),
                         )
+                        // In your screen where the GridView.builder is located (e.g., RacersScreen)
                         : GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -411,13 +439,16 @@ class _RacersScreenState extends State<RacersScreen> {
                             horizontal: 2,
                             vertical: 0,
                           ),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 0,
-                                mainAxisSpacing: 10,
-                                childAspectRatio: 0.48,
-                              ),
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent:
+                                200, // Or 220, as per your previous choice for max width
+                            crossAxisSpacing: 0,
+                            mainAxisSpacing: 10,
+                            mainAxisExtent:
+                                350, // <--- **THIS IS THE KEY CHANGE**
+                            // Adjust this value (e.g., 300, 320, 350) until your cards look correct
+                            // on a typical phone screen based on the content in your RacerCardItem.
+                          ),
                           itemCount: displayedRacers.length,
                           itemBuilder: (context, index) {
                             final racer = displayedRacers[index];
@@ -443,6 +474,8 @@ class _RacersScreenState extends State<RacersScreen> {
                             );
                           },
                         ),
+                  
+                   
                     const SizedBox(height: 100),
                   ],
                 ),

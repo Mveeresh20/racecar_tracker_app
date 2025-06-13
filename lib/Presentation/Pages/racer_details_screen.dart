@@ -477,7 +477,7 @@ class RacerDetailsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 16),
-          // Parts/Categories for the deal (Optional for Racer Deals based on screenshot, but included for consistency)
+        
           if (deal.parts.isNotEmpty)
             Wrap(
               spacing: 8.0,

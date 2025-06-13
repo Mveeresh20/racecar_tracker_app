@@ -3,6 +3,7 @@ import 'package:intl/intl.dart'; // For date formatting
 import 'package:racecar_tracker/Presentation/Pages/sponser_detail_screen.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // For kDefaultPadding
 import 'package:racecar_tracker/Utils/theme_extensions.dart';
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/sponsor.dart'; // Import the Sponsor model
 import 'package:cached_network_image/cached_network_image.dart';
@@ -48,24 +49,18 @@ class _SponsorCardItemState extends State<SponsorCardItem> {
 
         // Show success message
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sponsor data refreshed successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
+          SnackbarHelper.showSuccess(
+            context,
+            '${widget.sponsor.name} data refreshed successfully! 🔄',
           );
         }
       }
     } catch (e) {
       // Show error message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to refresh data: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        SnackbarHelper.showError(
+          context,
+          'Failed to refresh ${widget.sponsor.name} data. Please try again.',
         );
       }
     } finally {
@@ -261,10 +256,13 @@ class _SponsorCardItemState extends State<SponsorCardItem> {
                         );
                       }),
                       const SizedBox(width: 8),
+                      // Debug print for sync button state
                       _buildActionButton(
-                        _isSyncing ? Icons.sync : Icons.sync,
-                        _isSyncing ? () {} : _handleSync,
+                        Icons.sync,
+                        _handleSync,
                         isLoading: _isSyncing,
+                        iconColor:
+                            _isSyncing ? const Color(0xFFFFCC29) : Colors.white,
                       ),
                       const SizedBox(width: 8),
                       _buildActionButton(Icons.edit, () async {
@@ -330,6 +328,7 @@ class _SponsorCardItemState extends State<SponsorCardItem> {
     IconData icon,
     VoidCallback onPressed, {
     bool isLoading = false,
+    Color? iconColor,
   }) {
     return InkWell(
       onTap: onPressed,
@@ -345,10 +344,17 @@ class _SponsorCardItemState extends State<SponsorCardItem> {
         ),
         child:
             isLoading
-                ? const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFFCC29),
+                    ),
+                  ),
                 )
-                : Icon(icon, color: Colors.white, size: 20),
+                : Icon(icon, color: iconColor ?? Colors.white, size: 20),
       ),
     );
   }

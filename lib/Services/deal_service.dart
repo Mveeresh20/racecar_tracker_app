@@ -786,7 +786,7 @@ class DealService extends BaseService {
         raceType: map['raceType']?.toString() ?? '',
         dealValue: dealValue,
         commission: commission,
-        renewalDate: DateFormat('MMMM yyyy').format(endDate),
+        renewalDate: endDate.toIso8601String(),
         parts: parts,
         status: DealStatusType.values.firstWhere(
           (e) => e.toString() == map['status']?.toString(),
@@ -808,7 +808,7 @@ class DealService extends BaseService {
         raceType: '',
         dealValue: '\$0.00',
         commission: '0.0%',
-        renewalDate: DateFormat('MMMM yyyy').format(DateTime.now()),
+        renewalDate: DateTime.now().toIso8601String(),
         parts: [],
         status: DealStatusType.pending,
       );

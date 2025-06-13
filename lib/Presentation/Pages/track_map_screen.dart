@@ -384,30 +384,12 @@ class _TrackMapScreenState extends State<TrackMapScreen> {
                 onPressed:
                     _tracks.length > 1
                         ? _nextTrack
-                        : null, // Disable if only one track
+                        : null, 
               ),
             ],
           ),
         ),
-        // VIP/EDIT Button (optional, as in your screenshot)
-        // Padding(
-        //   padding: const EdgeInsets.only(left: 24, top: 8, bottom: 4),
-        //   child: Align(
-        //     alignment: Alignment.centerLeft,
-        //     child: ElevatedButton.icon(
-        //       onPressed: () {},
-        //       icon: Icon(Icons.edit, color: Colors.black),
-        //       label: Text("Edit", style: TextStyle(color: Colors.black)),
-        //       style: ElevatedButton.styleFrom(
-        //         backgroundColor: Color(0xFFFFCC29),
-        //         shape: RoundedRectangleBorder(
-        //           borderRadius: BorderRadius.circular(8),
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        // ),
-        // Zoomable, pannable image
+      
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {

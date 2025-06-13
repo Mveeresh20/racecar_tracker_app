@@ -52,6 +52,8 @@ class Images {
       'https://ik.imagekit.io/sports123/e1385139470f646dadeba8eaa4e4608f9d86240d%20(1).png?updatedAt=1747984623224';
   static const String helmet =
       'https://ik.imagekit.io/sports123/fc22d06e1c3418610da0aa5e3563f3eaacb80220%20(1).png?updatedAt=1747988193541';
+  static const String racersIcon =
+      'https://ik.imagekit.io/sports123/fc22d06e1c3418610da0aa5e3563f3eaacb80220%20(1).png?updatedAt=1747988193541'; // Using helmet image as racersIcon
   static const String brandingImg1 =
       'https://ik.imagekit.io/sports123/0d3297e75d50170379de388a877c40c316904d80.png?updatedAt=1748316483865';
   static const String brandingImg2 =
@@ -90,6 +92,10 @@ class Images {
       "https://ik.imagekit.io/sports123/Vector%20(3).png?updatedAt=1749275066141";
   static const logoImg =
       "https://ik.imagekit.io/sports123/Vector%20(4).png?updatedAt=1749304293061";
+  static const highwayImg =
+      "https://ik.imagekit.io/sports123/Vector%20(10).png?updatedAt=1749799265933";
+  static const carImag =
+      "https://ik.imagekit.io/sports123/Vector%20(11).png?updatedAt=1749800600870";
 
   // Add more as needed for other track names
 }

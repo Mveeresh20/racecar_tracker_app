@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
-
+import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/sponsor_card_item.dart';
+import 'package:racecar_tracker/Services/deal_service.dart';
 import 'package:racecar_tracker/Services/edit_profile_provider.dart';
 import 'package:racecar_tracker/Services/sponsor_provider.dart';
+import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/Utils/Constants/text.dart';
-import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
-import 'package:provider/provider.dart';
-import 'package:racecar_tracker/Services/user_service.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:racecar_tracker/Services/deal_service.dart';
 
 class SponsorsScreen extends StatefulWidget {
   const SponsorsScreen({super.key});
@@ -53,9 +56,7 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
     final userId = UserService().getCurrentUserId();
     if (userId == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to view sponsors')),
-        );
+        SnackbarHelper.showInfo(context, 'Please log in to view sponsors');
       }
       return;
     }
@@ -92,9 +93,10 @@ class _SponsorsScreenState extends State<SponsorsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        SnackbarHelper.showError(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error initializing data: $e')));
+          'Unable to load sponsors. Please try again.',
+        );
       }
     }
   }

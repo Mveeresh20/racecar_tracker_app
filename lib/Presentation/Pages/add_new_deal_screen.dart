@@ -12,6 +12,13 @@ import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/Services/deal_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:racecar_tracker/Services/racer_provider.dart';
+import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_sponsor_screen.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
 
 class AddNewDealScreen extends StatefulWidget {
   final List<Sponsor> sponsors;
@@ -166,17 +173,17 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       if (_startDate == null || _endDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select both start and end dates'),
-          ),
+        SnackbarHelper.showInfo(
+          context,
+          'Please select both start and end dates',
         );
         return;
       }
 
       if (_endDate!.isBefore(_startDate!)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End date must be after start date')),
+        SnackbarHelper.showWarning(
+          context,
+          'End date must be after start date',
         );
         return;
       }
@@ -189,12 +196,9 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
           0.0;
 
       if (commissionPercentage > 100.0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Commission percentage cannot be greater than 100%'),
-            backgroundColor: Colors.blueGrey,
-            duration: Duration(seconds: 3),
-          ),
+        SnackbarHelper.showWarning(
+          context,
+          'Commission percentage cannot be greater than 100%',
         );
         return;
       }
@@ -219,8 +223,6 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             ) ??
             0.0;
 
-        // Commission percentage already validated above
-        // final commissionPercentage = double.tryParse(...) - removed duplicate
 
         if (widget.existingDeal != null) {
           // Update existing deal
@@ -254,7 +256,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             raceType: _selectedEvent!.type,
             dealValue: '\$${dealValue.toStringAsFixed(2)}',
             commission: '${commissionPercentage.toStringAsFixed(1)}%',
-            renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
+            renewalDate: _endDate!.toIso8601String(),
             parts: _selectedBranding.toList(),
             status: _paymentStatus,
             sponsorInitials: sponsorInitials,
@@ -294,7 +296,7 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
             raceType: _selectedEvent!.type,
             dealValue: '\$${dealValue.toStringAsFixed(2)}',
             commission: '${commissionPercentage.toStringAsFixed(1)}%',
-            renewalDate: DateFormat('MMMM yyyy').format(_endDate!),
+            renewalDate: _endDate!.toIso8601String(),
             parts: _selectedBranding.toList(),
             status: _paymentStatus,
             sponsorInitials: sponsorInitials,
@@ -310,14 +312,9 @@ class _AddNewDealScreenState extends State<AddNewDealScreen> {
         );
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error ${widget.existingDeal != null ? 'updating' : 'creating'} deal: ${e.toString()}',
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        SnackbarHelper.showError(
+          context,
+          'Unable to ${widget.existingDeal != null ? 'update' : 'create'} deal. Please try again.',
         );
       } finally {
         if (mounted) {

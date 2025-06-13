@@ -5,27 +5,27 @@ import 'package:racecar_tracker/models/deal_item.dart';
 // Import shared enum
 
 class DealDetailItem {
-  final String id; // Matches the ID from DealCardItem
+  final String id; 
   final String sponsorId;
   final String racerId;
   final String eventId;
 
-  // Fields visible on the Deal Detail screen
-  final String title; // "DC Auto X John Meave"
-  final String raceType; // "Summership 2023"
+  
+  final String title; 
+  final String raceType; 
   final double dealValue;
   final double commissionPercentage;
   final double commissionAmount;
-  final String renewalReminder; // "2 Days Before"
-  final DateTime startDate; // "03/12/2025"
-  final DateTime endDate; // "03/25/2025"
-  final List<String> parts; // Assigned Branding Locations
-  final List<String> brandingImageUrls; // Branding images
-  final DealStatusType status; // "Pending" / "Paid"
+  final String renewalReminder; 
+  final DateTime startDate;
+  final DateTime endDate; 
+  final List<String> parts; 
+  final List<String> brandingImageUrls; 
+  final DealStatusType status;
 
-  // Additional detail-specific fields for the top section
-  final String sponsorInitials; // "DC"
-  final String racerInitials; // "JM"
+  
+  final String sponsorInitials; 
+  final String racerInitials; 
 
   DealDetailItem({
     required this.id,

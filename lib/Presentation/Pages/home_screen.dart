@@ -8,10 +8,10 @@ import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/race_evets_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
-import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
+
 import 'package:racecar_tracker/Presentation/Pages/sponsors_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/track_map_screen.dart';
-import 'package:racecar_tracker/Presentation/Pages/track_maps_page.dart';
+
 
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsership_deals_section.dart';
 import 'package:racecar_tracker/Presentation/Widgets/active_sponsorship_deals_content.dart';
@@ -49,6 +49,7 @@ import 'dart:async'; // Import for StreamSubscription
 import 'package:racecar_tracker/models/sponsor.dart'; // Import Sponsor model
 import 'package:flutter/services.dart'; // Import for SystemNavigator
 import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart'; // Import the AddNewEventScreen
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   final int? initialTabIndex;
@@ -716,9 +717,7 @@ class _HomeContentState extends State<HomeContent> {
                     if (deal.renewalDate == null || deal.renewalDate.isEmpty)
                       return false;
                     try {
-                      final endDate = DateFormat(
-                        'MMMM yyyy',
-                      ).parse(deal.renewalDate);
+                      final endDate = DateTime.parse(deal.renewalDate);
                       return endDate.month == currentMonth &&
                           endDate.year == currentYear;
                     } catch (e) {
@@ -761,7 +760,7 @@ class _HomeContentState extends State<HomeContent> {
             if (deal.renewalDate == null || deal.renewalDate.isEmpty)
               return false;
             try {
-              final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+              final endDate = DateTime.parse(deal.renewalDate);
               return endDate.isAfter(now) ||
                   (endDate.month == now.month && endDate.year == now.year);
             } catch (e) {
@@ -824,8 +823,8 @@ class _HomeContentState extends State<HomeContent> {
       print('Deal RenewalDate (raw): ${deal.renewalDate}');
 
       try {
-        // Parse the renewal date (format: "MMMM yyyy")
-        final endDate = DateFormat('MMMM yyyy').parse(deal.renewalDate);
+        // Parse the renewal date (now stored as ISO8601 string)
+        final endDate = DateTime.parse(deal.renewalDate);
         print('Parsed endDate: $endDate');
 
         // For pending deals: show deals that are expiring within 30 days
@@ -1305,12 +1304,9 @@ class _HomeContentState extends State<HomeContent> {
                           try {
                             final userId = UserService().getCurrentUserId();
                             if (userId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please log in to create a deal',
-                                  ),
-                                ),
+                              SnackbarHelper.showInfo(
+                                context,
+                                'Please log in to create a deal',
                               );
                               return;
                             }
@@ -1391,12 +1387,9 @@ class _HomeContentState extends State<HomeContent> {
                                 );
 
                                 // Show success message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Deal created successfully!'),
-                                    backgroundColor: Colors.green,
-                                    duration: Duration(seconds: 3),
-                                  ),
+                                SnackbarHelper.showSuccess(
+                                  context,
+                                  'Deal created successfully! 🎉',
                                 );
                               }
                             }
@@ -1406,12 +1399,9 @@ class _HomeContentState extends State<HomeContent> {
                               Navigator.pop(
                                 context,
                               ); // Remove loading indicator if still showing
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: Colors.red,
-                                  duration: const Duration(seconds: 5),
-                                ),
+                              SnackbarHelper.showError(
+                                context,
+                                'Unable to create deal. Please try again.',
                               );
                             }
                           }

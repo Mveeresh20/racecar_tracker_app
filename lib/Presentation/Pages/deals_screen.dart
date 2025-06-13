@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
-import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
+
 import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
 import 'package:racecar_tracker/Presentation/Widgets/deal_card_item.dart';
 import 'package:racecar_tracker/Services/deal_service.dart';
@@ -14,6 +14,7 @@ import 'package:racecar_tracker/Services/user_service.dart';
 import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
 import 'package:racecar_tracker/Utils/Constants/images.dart';
 import 'package:racecar_tracker/Utils/Constants/text.dart';
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:racecar_tracker/models/event.dart';
@@ -203,19 +204,14 @@ class _DealsScreenState extends State<DealsScreen> {
 
       if (newDeal != null) {
         print('Deal created successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deal created successfully')),
-        );
+        SnackbarHelper.showSuccess(context, 'Deal created successfully! 🎉');
       }
     } catch (e) {
       print('Error in _navigateToAddDealScreen: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        SnackbarHelper.showError(
+          context,
+          'Unable to create deal. Please try again.',
         );
       }
     } finally {

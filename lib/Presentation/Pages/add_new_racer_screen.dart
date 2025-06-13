@@ -683,29 +683,7 @@ class _AddNewRacerScreenState extends State<AddNewRacerScreen> {
     );
   }
 
-  // Widget _input(
-  //   TextEditingController controller,
-  //   String hint, {
-  //   TextInputType keyboardType = TextInputType.text,
-  // }) {
-  //   return TextFormField(
-  //     controller: controller,
-  //     keyboardType: keyboardType,
-  //     style: TextStyle(color: Colors.white),
-  //     decoration: InputDecoration(
-  //       filled: true,
-  //       fillColor: const Color(0xFF13386B),
-  //       border: OutlineInputBorder(
-  //         borderRadius: BorderRadius.circular(8),
-  //         borderSide: BorderSide.none,
-  //       ),
-  //       hintText: hint,
-  //       hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-  //     ),
-  //     validator:
-  //         (value) => (value == null || value.isEmpty) ? "Required" : null,
-  //   );
-  // }
+  
 
   Widget _datePickerBox(
     BuildContext context,

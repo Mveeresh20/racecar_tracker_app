@@ -115,9 +115,7 @@ class EventCardItem extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                DateFormat(
-                                  'MMMM dd, yyyy hh:mm a',
-                                ).format(event.startDate),
+                                "${DateFormat('MMMM dd, yyyy').format(event.startDate)} ${DateFormat('hh:mm a').format(event.startDate)} - ${DateFormat('hh:mm a').format(event.endDate)}",
                                 style: context.titleSmall?.copyWith(
                                   color: Colors.white,
                                 ),
@@ -130,12 +128,12 @@ class EventCardItem extends StatelessWidget {
                         // Location
                         Row(
                           children: [
-                            const Icon(
-                              Icons.location_on,
-                              color: Colors.white,
-                              size: 16,
+                            Image.network(
+                              Images.highwayImg,
+                              height: 14,
+                              width: 16,
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               event.location,
                               overflow: TextOverflow.ellipsis,
@@ -166,6 +164,28 @@ class EventCardItem extends StatelessWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+
+                        // Location
+                        Row(
+                          children: [
+                            Image.network(
+                              Images.carImag,
+                              height: 14,
+                              width: 16,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              event.type,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.titleSmall?.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        )
+
+                       
                       ],
                     ),
                   ),
@@ -177,13 +197,13 @@ class EventCardItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
                         _getTrackImage(event.trackName),
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
+                        
+                        height: 100,
+                        fit: BoxFit.contain,
                         errorBuilder:
                             (context, url, error) => Container(
-                              width: 80,
-                              height: 80,
+                              
+                              height: 100,
                               color: Colors.grey.shade700,
                               child: const Icon(
                                 Icons.broken_image,
@@ -626,16 +646,21 @@ class EventCardItem extends StatelessWidget {
           !updatedRacerImageUrls.contains(racer.racerImageUrl!)) {
         updatedRacerImageUrls.add(racer.racerImageUrl!);
 
-        // Create an updated event object
+        // Create an updated event object with incremented currentRacers count
         final updatedEvent = event.copyWith(
           racerImageUrls: updatedRacerImageUrls,
+          currentRacers: event.currentRacers + 1,
         );
 
         // Update the event in Firebase
         await eventService.updateEvent(userId, updatedEvent);
 
-        // Optionally, update the currentRacers count
-        await eventService.updateCurrentRacers(event.id, 1);
+        // Refresh the event provider to update the UI
+        final eventProvider = Provider.of<EventProvider>(
+          context,
+          listen: false,
+        );
+        await eventProvider.initUserEvents(userId);
 
         if (!context.mounted) return; // Add mounted check
         ScaffoldMessenger.of(context).showSnackBar(

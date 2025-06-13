@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:racecar_tracker/models/deal_detail_item.dart';
 
-enum DealStatusType {
-  pending,
-  paid,
-  // Add other statuses like 'completed', 'cancelled' if needed
-}
+enum DealStatusType { pending, paid }
 
 class DealItem {
   final String id;
@@ -89,12 +85,11 @@ class DealItem {
         return [];
       }
 
-      // Helper function to safely parse numeric values
       String safeNumeric(dynamic value, [String defaultValue = '0']) {
         if (value == null) return defaultValue;
         if (value is num) return value.toString();
         if (value is String) {
-          // Try to parse the string as a number
+         
           final numericValue = double.tryParse(
             value.replaceAll(RegExp(r'[^0-9.]'), ''),
           );
@@ -103,27 +98,29 @@ class DealItem {
         return defaultValue;
       }
 
-      // Helper function to safely parse date
+      
       String safeDate(dynamic value) {
-        if (value == null) return DateTime.now().toString();
+        if (value == null) return DateTime.now().toIso8601String();
         if (value is int) {
-          return DateTime.fromMillisecondsSinceEpoch(value).toString();
+          return DateTime.fromMillisecondsSinceEpoch(value).toIso8601String();
         }
         if (value is String) {
           try {
             // Try parsing as milliseconds timestamp
             final timestamp = int.tryParse(value);
             if (timestamp != null) {
-              return DateTime.fromMillisecondsSinceEpoch(timestamp).toString();
+              return DateTime.fromMillisecondsSinceEpoch(
+                timestamp,
+              ).toIso8601String();
             }
             // Try parsing as date string
-            return DateTime.parse(value).toString();
+            return DateTime.parse(value).toIso8601String();
           } catch (e) {
             print('Error parsing date: $e');
-            return DateTime.now().toString();
+            return DateTime.now().toIso8601String();
           }
         }
-        return DateTime.now().toString();
+        return DateTime.now().toIso8601String();
       }
 
       return DealItem(
@@ -173,7 +170,7 @@ class DealItem {
     };
   }
 
-  // Helper getters for status text and color
+  
   String get statusText {
     switch (status) {
       case DealStatusType.pending:
@@ -186,9 +183,9 @@ class DealItem {
   Color get statusColor {
     switch (status) {
       case DealStatusType.pending:
-        return const Color(0xFFFF9800); // Light orange for Pending
+        return const Color(0xFFFF9800); 
       case DealStatusType.paid:
-        return Color(0xFF4CAF50); // Green for Paid
+        return Color(0xFF4CAF50); 
     }
   }
 }

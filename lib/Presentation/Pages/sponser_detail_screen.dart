@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For date formatting if needed, though renewalDate is String here
+import 'package:intl/intl.dart';
 import 'package:racecar_tracker/Presentation/Widgets/assist_text_theme.dart';
-import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart'; // Assuming this exists
-import 'package:racecar_tracker/Utils/Constants/app_constants.dart'; // For kDefaultPadding, kScaffoldBackgroundColor
-import 'package:racecar_tracker/Utils/Constants/images.dart'; // For Images.profile, Images.homeScreen
-import 'package:racecar_tracker/Utils/theme_extensions.dart'; // For context.bodyMedium etc.
-import 'package:racecar_tracker/models/sponsor.dart'; // Import Sponsor model
-import 'package:racecar_tracker/models/deal_item.dart'; // Import the new DealItem model
+import 'package:racecar_tracker/Presentation/Widgets/bottom_icons.dart';
+import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
+import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/theme_extensions.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
+import 'package:racecar_tracker/models/deal_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:racecar_tracker/Services/image_picker_util.dart';
 
@@ -15,23 +15,18 @@ class SponsorDetailScreen extends StatelessWidget {
   final List<DealItem> sponsorDealItems;
   final DealItem? dealItem;
 
-  // List of deals specifically for this sponsor
-
   const SponsorDetailScreen({
     Key? key,
     required this.sponsor,
     required this.sponsorDealItems,
     this.dealItem,
-
-    // Pass relevant deals
   }) : super(key: key);
 
-  // Helper widget to build the "Parts" chips for deal items
   Widget _buildDealPartChip(String text, BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: const Color(0xFF1B2953), // Dark blue chip background
+        color: const Color(0xFF1B2953),
         border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: Padding(
@@ -48,7 +43,6 @@ class SponsorDetailScreen extends StatelessWidget {
     );
   }
 
-  // Helper widget for action buttons (View, Log Payment, Edit) for deal items
   Widget _buildDealActionButton(
     IconData icon,
     String label,
@@ -213,8 +207,7 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            sponsor.industryType ??
-                                "N/A", // Hardcoded as per screenshot. Consider adding to Sponsor model if dynamic.
+                            sponsor.industryType ?? "N/A",
                             style: context.labelMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -276,8 +269,7 @@ class SponsorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            sponsor
-                                .name, // Hardcoded as per screenshot. Consider adding to Sponsor model.
+                            sponsor.name,
                             style: context.titleMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -321,10 +313,8 @@ class SponsorDetailScreen extends StatelessWidget {
                           ),
                           Text(
                             dealItem != null
-                                ? dealItem!
-                                    .dealValue // Use deal value from the passed deal
-                                : sponsor.lastDealAmount ??
-                                    "No deals yet", // Fallback to sponsor's last deal amount or default text
+                                ? dealItem!.dealValue
+                                : sponsor.lastDealAmount ?? "No deals yet",
                             style: context.titleMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -365,10 +355,8 @@ class SponsorDetailScreen extends StatelessWidget {
                       )
                       : ListView.builder(
                         padding: EdgeInsets.zero,
-                        shrinkWrap:
-                            true, // Important for nesting ListView in SingleChildScrollView
-                        physics:
-                            const NeverScrollableScrollPhysics(), // Important to prevent nested scrolling
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: sponsorDealItems.length,
                         itemBuilder: (context, index) {
                           final deal = sponsorDealItems[index];
@@ -402,15 +390,12 @@ class SponsorDetailScreen extends StatelessWidget {
     );
   }
 
-  // Helper widget to build an individual DealItem Card (matching Deals screen)
   Widget _buildDealItemCard(DealItem deal, BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16), // Spacing between deal cards
       padding: const EdgeInsets.all(kDefaultPadding),
       decoration: BoxDecoration(
-        color: const Color(
-          0xFF13386B,
-        ), // Same card background as SponsorCardItem/Deal card
+        color: const Color(0xFF13386B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
       ),
@@ -471,8 +456,7 @@ class SponsorDetailScreen extends StatelessWidget {
                 ],
               ),
               Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.end, // Align to end for Commission
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     "Commission",
@@ -503,40 +487,6 @@ class SponsorDetailScreen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-
-          // Parts/Categories for the deal
-          // Wrap(
-          //   spacing: 8.0,
-          //   runSpacing: 4.0,
-          //   children:
-          //       deal.parts
-          //           .map((part) => _buildDealPartChip(part, context))
-          //           .toList(), // Dynamic parts
-          // ),
-
-          // Deal Action Buttons
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //   children: [
-          //     _buildDealActionButton(
-          //       Icons.remove_red_eye_outlined,
-          //       "View Deal",
-          //       () {
-          //         print("View Deal for ${deal.title}");
-          //         // Implement navigation to a specific Deal Details screen if needed
-          //       },
-          //       context,
-          //     ),
-          //     _buildDealActionButton(Icons.payments, "Log Payment", () {
-          //       print("Log Payment for ${deal.title}");
-          //       // Implement payment logging logic
-          //     }, context),
-          //     _buildDealActionButton(Icons.edit, "Edit", () {
-          //       print("Edit Deal for ${deal.title}");
-          //       // Implement deal editing logic
-          //     }, context),
-          //   ],
-          // ),
         ],
       ),
     );

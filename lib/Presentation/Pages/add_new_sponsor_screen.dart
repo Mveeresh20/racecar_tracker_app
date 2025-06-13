@@ -1,27 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
-import 'package:racecar_tracker/Services/image_picker_util.dart';
-import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
-import 'package:racecar_tracker/Utils/Constants/images.dart';
-import 'package:racecar_tracker/Utils/theme_extensions.dart';
-import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:intl/intl.dart';
-import 'package:racecar_tracker/Services/sponsor_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_deal_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
+import 'package:racecar_tracker/Presentation/Pages/home_screen.dart';
+import 'package:racecar_tracker/Services/image_picker_util.dart';
+import 'package:racecar_tracker/Services/sponsor_provider.dart';
 import 'package:racecar_tracker/Services/user_service.dart';
-import 'package:racecar_tracker/Presentation/Pages/make_deal_screen.dart';
-import 'package:uuid/uuid.dart';
 import 'package:racecar_tracker/Services/racer_service.dart';
 import 'package:racecar_tracker/Services/event_service.dart';
+import 'package:racecar_tracker/Services/sponsor_service.dart';
+import 'package:racecar_tracker/Utils/Constants/app_constants.dart';
+import 'package:racecar_tracker/Utils/Constants/images.dart';
+import 'package:racecar_tracker/Utils/snackbar_helper.dart';
+import 'package:racecar_tracker/Utils/theme_extensions.dart';
+import 'package:racecar_tracker/models/sponsor.dart';
 import 'package:racecar_tracker/models/racer.dart';
 import 'package:racecar_tracker/models/event.dart';
-import 'package:racecar_tracker/Services/sponsor_service.dart';
-import 'package:racecar_tracker/Presentation/Pages/deals_screen.dart';
 import 'package:racecar_tracker/models/deal_item.dart';
-import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
-import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
+import 'package:uuid/uuid.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:racecar_tracker/Services/racer_provider.dart';
 import 'package:racecar_tracker/Services/event_provider.dart';
+import 'package:racecar_tracker/Presentation/Pages/add_new_racer_screen.dart';
+import 'package:racecar_tracker/Presentation/Views/add_new_event_screen.dart';
 
 class AddNewSponsorScreen extends StatefulWidget {
   final SponsorProvider provider;
@@ -219,7 +222,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           await widget.provider.createSponsor(sponsor);
         }
 
-        // Hide loading indicator and return to sponsors screen
+        
         if (mounted) {
           Navigator.pop(context); // Remove loading indicator
           Navigator.pop(context, sponsor); // Return to sponsors screen
@@ -1030,53 +1033,7 @@ class _AddNewSponsorScreenState extends State<AddNewSponsorScreen> {
           child: Column(children: _buildPartRows()),
         ),
 
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 16),
-        //   child: Wrap(
-        //     spacing: 10.0,
-        //     runSpacing: 10.0,
-        //     children:
-        //         _availableParts.map((part) {
-        //           return Container(
-        //             decoration: BoxDecoration(
-        //               color: const Color(0xFF27518A),
-        //               borderRadius: BorderRadius.circular(8),
-        //             ),
-        //             child: Row(
-        //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //               mainAxisSize: MainAxisSize.min,
-        //               children: [
-        //                 Container(
-        //                   padding: EdgeInsets.zero,
-        //                   child: Checkbox(
-        //                     side: const BorderSide(color: Colors.white),
-        //                     value: _selectedParts.contains(part),
-        //                     onChanged: (bool? selected) {
-        //                       setState(() {
-        //                         if (selected == true) {
-        //                           _selectedParts.add(part);
-        //                         } else {
-        //                           _selectedParts.remove(part);
-        //                         }
-        //                       });
-        //                     },
-        //                   ),
-        //                 ),
-        //                 Padding(
-        //                   padding: const EdgeInsets.only(right: 16),
-        //                   child: Text(
-        //                     part,
-        //                     style: context.labelLarge?.copyWith(
-        //                       color: Colors.white,
-        //                     ),
-        //                   ),
-        //                 ),
-        //               ],
-        //             ),
-        //           );
-        //         }).toList(),
-        //   ),
-        // ),
+        
         SizedBox(height: 16),
       ],
     );

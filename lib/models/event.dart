@@ -180,15 +180,15 @@ class Event {
   Color get statusColor {
     switch (status) {
       case EventStatusType.registrationOpen:
-        return const Color(0xFFA8E266); // Green
+        return const Color(0xFFA8E266); 
       case EventStatusType.registrationClosed:
-        return const Color(0xFFFE5F38); // Orange
+        return const Color(0xFFFE5F38); 
       case EventStatusType.upcoming:
-        return const Color(0xFFA8E266); // Green
+        return const Color(0xFFA8E266); 
       case EventStatusType.ongoing:
-        return const Color(0xFFFE5F38); // Orange
+        return const Color(0xFFFE5F38); 
       case EventStatusType.completed:
-        return const Color(0xFFFE5F38); // Orange
+        return const Color(0xFFFE5F38); 
     }
   }
 }

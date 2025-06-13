@@ -8,7 +8,7 @@ import 'package:racecar_tracker/Presentation/Pages/on_boarding1.dart';
 import 'package:racecar_tracker/Presentation/Pages/profile_page.dart';
 import 'package:racecar_tracker/Presentation/Pages/race_evets_screen.dart';
 import 'package:racecar_tracker/Presentation/Pages/racers_screen.dart';
-import 'package:racecar_tracker/Presentation/Pages/sponsers_screen.dart';
+
 import 'package:racecar_tracker/Presentation/Pages/track_map_screen.dart';
 import 'package:racecar_tracker/firebase_options.dart';
 import 'package:racecar_tracker/models/racer.dart';
